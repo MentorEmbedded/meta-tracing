@@ -1,0 +1,189 @@
+From fb0d0b3192b72ff511b295905aa85cd525366eb5 Mon Sep 17 00:00:00 2001
+From: Wade Farnsworth <wade_farnsworth@mentor.com>
+Date: Tue, 21 Feb 2012 14:58:05 -0600
+Subject: [PATCH 3/3] ARM: support syscall tracing
+
+As specified by ftrace-design.txt, TIF_SYSCALL_TRACEPOINT was
+added, as well as NR_syscalls in asm/unistd.h.  Additionally,
+__sys_trace was modified to call trace_sys_enter and
+trace_sys_exit when appropriate.
+
+Tests #2 - #4 of "perf test" now complete successfully.
+
+Signed-off-by: Steven Walter <stevenrwalter@gmail.com>
+Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
+Reviewed-by: Will Deacon <will.deacon@arm.com>
+---
+ arch/arm/Kconfig                   |    1 +
+ arch/arm/include/asm/syscall.h     |    4 ++++
+ arch/arm/include/asm/thread_info.h |    2 ++
+ arch/arm/include/asm/unistd.h      |    8 ++++++++
+ arch/arm/kernel/entry-common.S     |   16 ++++++++++++++--
+ arch/arm/kernel/ptrace.c           |   23 ++++++++++++++++++-----
+ 6 files changed, 47 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 20df152..818c312 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -11,6 +11,7 @@ config ARM
+ 	select HAVE_OPROFILE if (HAVE_PERF_EVENTS)
+ 	select HAVE_ARCH_KGDB
+ 	select HAVE_ARCH_TRACEHOOK
++	select HAVE_SYSCALL_TRACEPOINTS
+ 	select HAVE_KPROBES if (!XIP_KERNEL && !THUMB2_KERNEL)
+ 	select HAVE_KRETPROBES if (HAVE_KPROBES)
+ 	select HAVE_FUNCTION_TRACER if (!XIP_KERNEL)
+diff --git a/arch/arm/include/asm/syscall.h b/arch/arm/include/asm/syscall.h
+index c334a23..47486a4 100644
+--- a/arch/arm/include/asm/syscall.h
++++ b/arch/arm/include/asm/syscall.h
+@@ -9,6 +9,10 @@
+ 
+ #include <linux/err.h>
+ 
++#include <asm/unistd.h>
++
++#define NR_syscalls (__NR_syscalls)
++
+ extern const unsigned long sys_call_table[];
+ 
+ static inline int syscall_get_nr(struct task_struct *task,
+diff --git a/arch/arm/include/asm/thread_info.h b/arch/arm/include/asm/thread_info.h
+index 7b5cc8d..17a84b6 100644
+--- a/arch/arm/include/asm/thread_info.h
++++ b/arch/arm/include/asm/thread_info.h
+@@ -145,6 +145,7 @@ extern void vfp_flush_hwstate(struct thread_info *);
+ #define TIF_FREEZE		19
+ #define TIF_RESTORE_SIGMASK	20
+ #define TIF_SECCOMP		21
++#define TIF_SYSCALL_TRACEPOINT	22
+ 
+ #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
+ #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
+@@ -155,6 +156,7 @@ extern void vfp_flush_hwstate(struct thread_info *);
+ #define _TIF_FREEZE		(1 << TIF_FREEZE)
+ #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
+ #define _TIF_SECCOMP		(1 << TIF_SECCOMP)
++#define _TIF_SYSCALL_TRACEPOINT	(1 << TIF_SYSCALL_TRACEPOINT)
+ 
+ /*
+  * Change these and you break ASM code in entry-common.S
+diff --git a/arch/arm/include/asm/unistd.h b/arch/arm/include/asm/unistd.h
+index 2c04ed5..eef3a8a 100644
+--- a/arch/arm/include/asm/unistd.h
++++ b/arch/arm/include/asm/unistd.h
+@@ -404,6 +404,14 @@
+ #define __NR_setns			(__NR_SYSCALL_BASE+375)
+ 
+ /*
++ * This may need to be greater than __NR_last_syscall+1 in order to
++ * account for the padding in the syscall table
++ */
++#ifdef __KERNEL__
++#define __NR_syscalls  (376)
++#endif /* __KERNEL__ */
++
++/*
+  * The following SWIs are ARM private.
+  */
+ #define __ARM_NR_BASE			(__NR_SYSCALL_BASE+0x0f0000)
+diff --git a/arch/arm/kernel/entry-common.S b/arch/arm/kernel/entry-common.S
+index 8640488..d85e305 100644
+--- a/arch/arm/kernel/entry-common.S
++++ b/arch/arm/kernel/entry-common.S
+@@ -79,6 +79,11 @@ no_work_pending:
+ ENDPROC(ret_to_user_from_irq)
+ ENDPROC(ret_to_user)
+ 
++.macro test_syscall_tracing reg
++       tst     \reg, #_TIF_SYSCALL_TRACE
++       tsteq   \reg, #_TIF_SYSCALL_TRACEPOINT
++.endm
++
+ /*
+  * This is how we return from a fork.
+  */
+@@ -87,7 +92,7 @@ ENTRY(ret_from_fork)
+ 	get_thread_info tsk
+ 	ldr	r1, [tsk, #TI_FLAGS]		@ check for syscall tracing
+ 	mov	why, #1
+-	tst	r1, #_TIF_SYSCALL_TRACE		@ are we tracing syscalls?
++	test_syscall_tracing r1
+ 	beq	ret_slow_syscall
+ 	mov	r1, sp
+ 	mov	r0, #1				@ trace exit [IP = 1]
+@@ -98,6 +103,13 @@ ENDPROC(ret_from_fork)
+ 	.equ NR_syscalls,0
+ #define CALL(x) .equ NR_syscalls,NR_syscalls+1
+ #include "calls.S"
++
++/* Ensure that the system call table is not larger than __NR_syscalls,
++ * which is the value the rest of the system sees */
++.ifne NR_syscalls - __NR_syscalls
++.error "__NR_syscalls is less than the size of the syscall table"
++.endif
++
+ #undef CALL
+ #define CALL(x) .long x
+ 
+@@ -443,7 +455,7 @@ ENTRY(vector_swi)
+ 1:
+ #endif
+ 
+-	tst	r10, #_TIF_SYSCALL_TRACE		@ are we tracing syscalls?
++	test_syscall_tracing r10
+ 	bne	__sys_trace
+ 
+ 	cmp	scno, #NR_syscalls		@ check upper syscall limit
+diff --git a/arch/arm/kernel/ptrace.c b/arch/arm/kernel/ptrace.c
+index e702dcf..c2e5914 100644
+--- a/arch/arm/kernel/ptrace.c
++++ b/arch/arm/kernel/ptrace.c
+@@ -28,6 +28,9 @@
+ #include <asm/system.h>
+ #include <asm/traps.h>
+ 
++#define CREATE_TRACE_POINTS
++#include <trace/events/syscalls.h>
++
+ #define REG_PC	15
+ #define REG_PSR	16
+ /*
+@@ -929,7 +932,8 @@ asmlinkage int syscall_trace(int why, struct pt_regs *regs, int scno)
+ {
+ 	unsigned long ip;
+ 
+-	if (!test_thread_flag(TIF_SYSCALL_TRACE))
++	if (!test_thread_flag(TIF_SYSCALL_TRACE) &&
++	    !test_thread_flag(TIF_SYSCALL_TRACEPOINT))
+ 		return scno;
+ 
+ 	/*
+@@ -941,10 +945,19 @@ asmlinkage int syscall_trace(int why, struct pt_regs *regs, int scno)
+ 
+ 	current_thread_info()->syscall = scno;
+ 
+-	if (why)
+-		tracehook_report_syscall_exit(regs, 0);
+-	else if (tracehook_report_syscall_entry(regs))
+-		current_thread_info()->syscall = -1;
++	if (test_thread_flag(TIF_SYSCALL_TRACE)) {
++		if (why)
++			tracehook_report_syscall_exit(regs, 0);
++		else if (tracehook_report_syscall_entry(regs))
++			current_thread_info()->syscall = -1;
++	}
++
++	if (test_thread_flag(TIF_SYSCALL_TRACEPOINT)) {
++		if (why)
++			trace_sys_exit(regs, scno);
++		else
++			trace_sys_enter(regs, scno);
++	}
+ 
+ 	regs->ARM_ip = ip;
+ 
+-- 
+1.7.0.4
+
