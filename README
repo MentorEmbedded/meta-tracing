@@ -1,0 +1,74 @@
+                    Notes on using the sa-systemtap layer
+
+This repository contains a yocto layer which provides a staging area
+for systemtap related patches that are currently being pushed to
+their various upstream projects.  Please note that any commits to this
+repository should also be pushed up to their respective project.
+
+This layer may be used on top of Yocto or MEL5. At this time this is known
+to work only on the Beagleboard-XM.
+
+
+Using this layer with Yocto:
+============================
+
+1. Clone the poky tree, and checkout the 1.2_M3.rc1 tag.  Please note that
+   older versions may not work due to missing systemtap metadata.  Newer
+   versions are untested.
+
+   git clone git://git.yoctoproject.org/poky
+   git checkout 1.2_M3.rc1
+   cd poky
+
+2. Source the OE configure script:
+
+   . ./oe-init-build-env
+
+3. Modify conf/local.conf for your particular environment.  Uncomment the line
+   "#MACHINE ?= "beagleboard" and add the following line to the end of the
+   file:
+
+   IMAGE_INSTALL_append = " systemtap systemtap-uprobes"
+
+   Make any other adjustments to the file as necessary for your configuration.
+
+4. In conf/bblayers.conf add the path to this repository in the BBLAYERS
+   variable.  E.g.:
+
+   BBLAYERS ?= " \
+  /path/to/sa-systemtap \
+  /path/to/poky/meta \
+  /path/to/poky/meta-yocto \
+  "
+  
+5. Build the minimal image
+
+   bitbake core-image-minimal
+
+The resulting images should now contain the patches in the sa-systemtap layer.
+
+
+Using this layer with MEL5:
+===========================
+
+1. Follow the guide posted here to configure MEL:
+
+   http://confluence.alm.mentorg.com:8090/display/MEL/Getting+Started
+   
+   Be sure to modify the create-config.py command line to build the beagleboard
+   machine.
+
+2. Add the following line to conf/local.conf:
+
+   IMAGE_INSTALL_append = " systemtap systemtap-uprobes"
+
+3.  In conf/bblayers.conf add the path to this repository in the BBLAYERS
+    variable.  E.g.:
+
+    BBLAYERS = '/path/to/sa-systemtap ${OEDIR}/sb-core ${OEDIR}/meta-ti ${OEDIR}/oe-core/meta ${OEDIR}/meta-yocto'
+
+4.  Build the devel image:
+
+    bitbake devel-image
+
+The resulting images should now contain the patches in the sa-systemtap layer.
