@@ -28,9 +28,11 @@ Using this layer with Yocto:
    "#MACHINE ?= "beagleboard" and add the following line to the end of the
    file:
 
-   IMAGE_INSTALL_append = " systemtap systemtap-uprobes"
+   IMAGE_INSTALL_append = " systemtap systemtap-uprobes dropbear"
 
-   Make any other adjustments to the file as necessary for your configuration.
+   Note that the minimal Yocto image does not contain a SSH server by default.
+   Here we are adding the dropbear package to provide SSH access. Make any
+   other adjustments to the file as necessary for your configuration.
 
 4. In conf/bblayers.conf add the path to this repository in the BBLAYERS
    variable.  E.g.:
@@ -62,13 +64,60 @@ Using this layer with MEL5:
 
    IMAGE_INSTALL_append = " systemtap systemtap-uprobes"
 
-3.  In conf/bblayers.conf add the path to this repository in the BBLAYERS
-    variable.  E.g.:
+   Note that the MEL devel-image contains openssh as the SSH server.  Therefore,
+   it is unnecessary to supply an SSH package here. Make any
+   other adjustments to the file as necessary for your configuration.
 
-    BBLAYERS = '/path/to/sa-systemtap ${OEDIR}/sb-core ${OEDIR}/meta-ti ${OEDIR}/oe-core/meta ${OEDIR}/meta-yocto'
+3. In conf/bblayers.conf add the path to this repository in the BBLAYERS
+   variable.  E.g.:
 
-4.  Build the devel image:
+   BBLAYERS = '/path/to/sa-systemtap ${OEDIR}/sb-core ${OEDIR}/meta-ti ${OEDIR}/oe-core/meta ${OEDIR}/meta-yocto'
 
-    bitbake devel-image
+4. Build the devel image:
+
+   bitbake devel-image
 
 The resulting images should now contain the patches in the sa-systemtap layer.
+
+Kernel configuration:
+=======================
+
+The following options should be enabled in your kernel for proper
+systemtap operation:
+
+* CONFIG_RELAY
+* CONFIG_DEBUG_FS
+* CONFIG_DEBUG_INFO
+* CONFIG_KPROBES
+* CONFIG_PROFILING
+* CONFIG_TRACEPOINT
+* CONFIG_UTRACE
+
+Please ensure that these are enabled before compiling the probes.
+
+Compiling and running systemtap probes:
+=======================================
+
+1. Note the location of your Yocto or MEL build output directory, hereafter
+   referred to as <build>.  For Yocto <build> will be /path/to/poky/build/tmp.
+   For MEL, <build> will be /path/to/mel/build_beagleboard_debug.
+
+2. Copy the vmlinux file into the kernel headers directory in the OE sysroot.
+
+   cp <build>/work/beagleboard-poky-linux-gnueabi/linux-yocto-3.0.22+git1+808b49474268040ab27c8ee687b60807a11547b4_1+368e38c673ffac8b37fc2a2d4c1e4a1e6f8abf19-r3/linux-beagleboard-standard-build/vmlinux <build>/sysroots/beagleboard/kernel/
+
+3. If compiling a userspace probe, copy any relevant binary files (with debug
+   symbols enabled) into the sysroot.  The destination must match the actual
+   filesystem on the target.  For example, if the binary to be debugged is
+   located on the target at /home/root/foo, then this file must be copied to
+   <build>/sysroots/beagleboard/home/root/foo on the target.
+
+4. Compile the probe using the following command:
+
+   <build>/sysroots/i686-linux/usr/bin/stap -a arm -B CROSS_COMPILE=/path/to/codebench/bin/arm-none-linux-gnueabi- -r <build>/sysroots/beagleboard/kernel/ -m <probe_name> /path/to/probe_name.stp --sysroot=<build>/sysroots/beagleboard/ <additional parameters as specified by the probe>
+
+5. Copy the resulting .ko file to the target.
+
+6. Run the probe.  On the target, execute:
+
+   staprun -u <probe_name>.ko <additional parameters as specified by the probe>
