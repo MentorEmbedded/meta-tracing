@@ -1,15 +1,15 @@
                     Notes on using the sa-systemtap layer
 
-This repository contains a yocto layer which provides a staging area
-for systemtap related patches that are currently being pushed to
-their various upstream projects.  Please note that any commits to this
+This repository contains a Yocto Project layer which provides a staging area
+for systemtap related patches that are currently in the process ofbeing pushed
+to their various upstream projects.  Please note that any commits to this
 repository should also be pushed up to their respective project.
 
-This layer may be used on top of Yocto or MEL5. At this time this is known
+This layer may be used on top of Yocto/Poky or MEL5. At this time this is known
 to work only on the Beagleboard-XM.
 
 
-Using this layer with Yocto:
+Using this layer with Yocto/Poky:
 ============================
 
 1. Clone the poky tree, and checkout the 1.2_M3.rc1 tag.  Please note that
@@ -30,7 +30,7 @@ Using this layer with Yocto:
 
    IMAGE_INSTALL_append = " systemtap systemtap-uprobes dropbear"
 
-   Note that the minimal Yocto image does not contain a SSH server by default.
+   Note that the minimal Poky image does not contain a SSH server by default.
    Here we are adding the dropbear package to provide SSH access. Make any
    other adjustments to the file as necessary for your configuration.
 
@@ -98,8 +98,8 @@ Please ensure that these are enabled before compiling the probes.
 Compiling and running systemtap probes:
 =======================================
 
-1. Note the location of your Yocto or MEL build output directory, hereafter
-   referred to as <build>.  For Yocto <build> will be /path/to/poky/build/tmp.
+1. Note the location of your Poky or MEL build output directory, hereafter
+   referred to as <build>.  For Poky <build> will be /path/to/poky/build/tmp.
    For MEL, <build> will be /path/to/mel/build_beagleboard_debug.
 
 2. Copy the vmlinux file into the kernel headers directory in the OE sysroot.
