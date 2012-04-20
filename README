@@ -5,8 +5,8 @@ for systemtap related patches that are currently in the process ofbeing pushed
 to their various upstream projects.  Please note that any commits to this
 repository should also be pushed up to their respective project.
 
-This layer may be used on top of Yocto/Poky or MEL5. At this time this is known
-to work only on the Beagleboard-XM.
+This layer may be used on top of Yocto/Poky or MEL5. At this time the layer
+has only been tested on the Beagleboard-XM.
 
 
 Using this layer with Yocto/Poky:
@@ -79,6 +79,7 @@ Using this layer with MEL5:
 
 The resulting images should now contain the patches in the sa-systemtap layer.
 
+
 Kernel configuration:
 =======================
 
@@ -94,6 +95,7 @@ systemtap operation:
 * CONFIG_UTRACE
 
 Please ensure that these are enabled before compiling the probes.
+
 
 Compiling and running systemtap probes:
 =======================================
