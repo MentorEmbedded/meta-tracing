@@ -17,8 +17,8 @@ Using this layer with Yocto/Poky:
    versions are untested.
 
    git clone git://git.yoctoproject.org/poky
-   git checkout 1.2_M3.rc1
    cd poky
+   git checkout -b 1.2_M3.rc1 1.2_M3.rc1
 
 2. Source the OE configure script:
 
