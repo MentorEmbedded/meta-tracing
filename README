@@ -1,7 +1,7 @@
                     Notes on using the sa-systemtap layer
 
 This repository contains a Yocto Project layer which provides a staging area
-for systemtap related patches that are currently in the process ofbeing pushed
+for systemtap related patches that are currently in the process of being pushed
 to their various upstream projects.  Please note that any commits to this
 repository should also be pushed up to their respective project.
 
