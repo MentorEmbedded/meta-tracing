@@ -54,7 +54,10 @@ The resulting images should now contain the patches in the sa-systemtap layer.
 Using this layer with MEL:
 ===========================
 
-1. Follow the MEL documentation to configure MEL for the beagleboard.
+1. Follow the MEL documentation to configure MEL for the beagleboard, adding
+   "-l /path/to/sa-systemtap" to the create-config.py command line.  This
+   option will automatically configure the build to include sa-systemtap by
+   adding sa-systemtap to bblayers.conf.
 
 2. Add the following line to conf/local.conf:
 
@@ -64,12 +67,7 @@ Using this layer with MEL:
    it is unnecessary to supply an SSH package here. Make any
    other adjustments to the file as necessary for your configuration.
 
-3. In conf/bblayers.conf add the path to this repository in the BBLAYERS
-   variable.  E.g.:
-
-   BBLAYERS = '/path/to/sa-systemtap ${OEDIR}/sb-core ${OEDIR}/meta-ti ${OEDIR}/oe-core/meta ${OEDIR}/meta-yocto'
-
-4. Build the devel image:
+3. Build the devel image:
 
    bitbake devel-image
 
