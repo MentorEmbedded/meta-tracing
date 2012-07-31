@@ -1,5 +1,5 @@
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-3.0:"
+FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-3.2:"
 
 SRC_URI += " \
 	file://arm-tracehook/0001-ARM-add-support-for-the-generic-syscall.h-interface.patch \
