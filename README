@@ -12,14 +12,13 @@ this time the layer has only been tested on the Beagleboard-XM.
 Using this layer with Yocto/Poky:
 ============================
 
-1. Clone the poky tree, and checkout revision
-   0ffb02eec2beaea27ff0ec9d3d31b0a09e675a4c.  Please note that
+1. Clone the poky tree, and checkout the tag 1.3_M2.final.  Please note that
    older versions may not work due to missing systemtap metadata.  Newer
    versions are untested.
 
    git clone git://git.yoctoproject.org/poky
    cd poky
-   git checkout -b <local branch name> 0ffb02eec2beaea27ff0ec9d3d31b0a09e675a4c
+   git checkout -b 1.3_M2.final 1.3_M2.final
 
 2. Source the OE configure script:
 
