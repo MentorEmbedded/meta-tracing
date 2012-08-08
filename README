@@ -12,13 +12,16 @@ this time the layer has only been tested on the Beagleboard-XM.
 Using this layer with Yocto/Poky:
 ============================
 
-1. Clone the poky tree, and checkout the tag 1.3_M2.final.  Please note that
-   older versions may not work due to missing systemtap metadata.  Newer
-   versions are untested.
+1. Clone the poky tree, and checkout the tag that you want to use.  Tested tags
+   are denzil and 1.3_M2.final.  Please note that older versions may not work
+   due to missing systemtap metadata.  Newer versions are untested.
 
    git clone git://git.yoctoproject.org/poky
    cd poky
+
    git checkout -b 1.3_M2.final 1.3_M2.final
+   OR
+   git checkout -b denzil denzil
 
 2. Source the OE configure script:
 
