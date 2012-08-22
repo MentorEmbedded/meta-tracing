@@ -12,6 +12,9 @@ this time the layer has only been tested on the Beagleboard-XM platform.
 
 Using this layer with Yocto/Poky:
 =================================
+Note: The steps provided here are the minimum required to incorporate this
+layer into a Yocto build.  Please refer to the Yocto project for more extensive 
+documentation.
 
 1. Clone the poky tree, and checkout the tag that you want to use.  Tested tags
    are denzil and 1.3_M2.final.  Please note that older versions may not work
