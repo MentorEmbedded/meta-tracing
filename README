@@ -1,13 +1,15 @@
-                    Notes on using the sa-systemtap layer
+             Notes on using the meta-sourceryanalyzer layer
 
-This repository contains a Yocto Project layer which provides a staging area
+This repository contains a Yocto Project(tm) layer which provides a staging area
 for systemtap related patches that are currently in the process of being pushed
 to their various upstream projects.  Please note that any commits to this
 repository should also be pushed up to their respective project.
 
-This layer may be used on top of recent git clones of Yocto/Poky or MEL. At
-this time the layer has only been tested on the Beagleboard-XM.
+This layer may be used on top of recent git clones of Yocto Project and
+Mentor Embedded Linux.[1] At this time the layer has only been tested on the
+Beagleboard-XM.
 
+[1]: http://go.mentor.com/linux
 
 Using this layer with Yocto/Poky:
 ============================
@@ -53,7 +55,7 @@ Using this layer with Yocto/Poky:
 The resulting images should now contain the patches in the sa-systemtap layer.
 
 
-Using this layer with MEL:
+Using this layer with Mentor Embedded Linux:
 ===========================
 
 1. Follow the MEL documentation to configure MEL for the beagleboard, adding
