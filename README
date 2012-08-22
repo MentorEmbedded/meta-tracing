@@ -1,19 +1,21 @@
                     Notes on using the meta-sourceryanalyzer layer
 
-This repository contains a Yocto Project layer which provides a staging area
-for various patches that are currently required for proper Sourcery Analyzer
-agent operation.  Work on pushing these to their appropriate upstream projects
-is ongoing, but this will allow Yocto users of Sourcery Analyzer to use this
-functionality immediately.
+This repository contains a Yocto Project layer(tm) which provides a staging
+area for various patches that are currently required for proper Sourcery
+Analyzer agent operation.  Work on pushing these to their appropriate upstream
+projects is ongoing, but this will allow Yocto users of Sourcery Analyzer to
+use this functionality immediately.
 
-This layer may be used on top of recent git clones of Yocto or MEL. At
-this time the layer has only been tested on the Beagleboard-XM platform.
+This layer may be used on top of recent git clones of Yocto Project and 
+Mentor Embedded Linux.[1]. At this time the layer has only been tested on the
+Beagleboard-XM platform.
 
+[1]: http://go.mentor.com/linux
 
 Using this layer with Yocto/Poky:
 =================================
 Note: The steps provided here are the minimum required to incorporate this
-layer into a Yocto build.  Please refer to the Yocto project for more extensive 
+layer into a Yocto build.  Please refer to the Yocto Project for more extensive 
 documentation.
 
 1. Clone the poky tree, and checkout the tag that you want to use.  Tested tags
@@ -61,8 +63,8 @@ The resulting images should now contain the patches in the
 meta-sourceryanalyzer layer.
 
 
-Using this layer with MEL:
-===========================
+Using this layer with Mentor Embedded Linux:
+============================================
 
 1. Follow the MEL documentation to configure MEL for the beagleboard, adding
    "-l /path/to/meta-sourceryanalyzer" to the create-config.py command line.
