@@ -1,20 +1,21 @@
-                    Notes on using the sa-systemtap layer
+                    Notes on using the meta-sourceryanalyzer layer
 
 This repository contains a Yocto Project layer which provides a staging area
-for systemtap related patches that are currently in the process of being pushed
-to their various upstream projects.  Please note that any commits to this
-repository should also be pushed up to their respective project.
+for various patches that are currently required for proper Sourcery Analyzer
+agent operation.  Work on pushing these to their appropriate upstream projects
+is ongoing, but this will allow Yocto users of Sourcery Analyzer to use this
+functionality immediately.
 
-This layer may be used on top of recent git clones of Yocto/Poky or MEL. At
-this time the layer has only been tested on the Beagleboard-XM.
+This layer may be used on top of recent git clones of Yocto or MEL. At
+this time the layer has only been tested on the Beagleboard-XM platform.
 
 
 Using this layer with Yocto/Poky:
-============================
+=================================
 
 1. Clone the poky tree, and checkout the tag that you want to use.  Tested tags
    are denzil and 1.3_M2.final.  Please note that older versions may not work
-   due to missing systemtap metadata.  Newer versions are untested.
+   due to missing metadata.  Newer versions are untested.
 
    git clone git://git.yoctoproject.org/poky
    cd poky
@@ -28,20 +29,23 @@ Using this layer with Yocto/Poky:
    . ./oe-init-build-env
 
 3. Modify conf/local.conf for your particular environment.  Uncomment the line
-   "#MACHINE ?= "beagleboard" and add the following line to the end of the
+   "#MACHINE ?= "beagleboard". To add systemtap support to your filesystem 
+   image, add the following line to the end of the
    file:
 
-   IMAGE_INSTALL_append = " systemtap systemtap-uprobes dropbear"
+   IMAGE_INSTALL_append = " systemtap systemtap-uprobes"
 
-   Note that the minimal Poky image does not contain a SSH server by default.
-   Here we are adding the dropbear package to provide SSH access. Make any
-   other adjustments to the file as necessary for your configuration.
+   To add the dropbear SSH server to your image, add the following line as well:
+
+   IMAGE_INSTALL_append = " dropbear"
+
+   Make any other adjustments to the file as necessary for your configuration.
 
 4. In conf/bblayers.conf add the path to this repository in the BBLAYERS
    variable.  E.g.:
 
    BBLAYERS ?= " \
-  /path/to/sa-systemtap \
+  /path/to/meta-sourceryanalyzer \
   /path/to/poky/meta \
   /path/to/poky/meta-yocto \
   "
@@ -50,78 +54,30 @@ Using this layer with Yocto/Poky:
 
    bitbake core-image-minimal
 
-The resulting images should now contain the patches in the sa-systemtap layer.
+The resulting images should now contain the patches in the
+meta-sourceryanalyzer layer.
 
 
 Using this layer with MEL:
 ===========================
 
 1. Follow the MEL documentation to configure MEL for the beagleboard, adding
-   "-l /path/to/sa-systemtap" to the create-config.py command line.  This
-   option will automatically configure the build to include sa-systemtap by
-   adding sa-systemtap to bblayers.conf.
+   "-l /path/to/meta-sourceryanalyzer" to the create-config.py command line.
+   This option will automatically configure the build to include
+   meta-sourceryanalyzer in the bblayers.conf file by adding sa-systemtap to
+   bblayers.conf.
 
-2. Add the following line to conf/local.conf:
+2. For systemtap support, add the following line to conf/local.conf:
 
    IMAGE_INSTALL_append = " systemtap systemtap-uprobes"
 
-   Note that the MEL devel-image contains openssh as the SSH server.  Therefore,
-   it is unnecessary to supply an SSH package here. Make any
+   Note that the MEL devel-image contains openssh as the default SSH server.
+   Therefore, it is unnecessary to supply an SSH package here. Make any
    other adjustments to the file as necessary for your configuration.
 
 3. Build the devel image:
 
    bitbake devel-image
 
-The resulting images should now contain the patches in the sa-systemtap layer.
-
-
-Kernel configuration:
-=======================
-
-sa-systemtap enables the following kernel configuration options for proper
-systemtap support:
-
-* CONFIG_RELAY
-* CONFIG_DEBUG_FS
-* CONFIG_DEBUG_INFO
-* CONFIG_KPROBES
-* CONFIG_PROFILING
-* CONFIG_TRACEPOINT
-* CONFIG_UTRACE
-
-
-Compiling and running systemtap probes:
-=======================================
-
-1. Note the location of your Poky or MEL build output directory, hereafter
-   referred to as <build>.  For Poky <build> will be /path/to/poky/build/tmp.
-   For MEL, <build> will be /path/to/mel/build_beagleboard_debug.
-
-2. We need to create a sysroot directory for systemtap's use.  We
-   base this on the OE sysroot provided by Poky or MEL.  Copy the OE sysroot
-   to a temporary directory.
-
-   cp -a <build>/sysroots/beagleboard <path-to-temp-dir>/beagle-sysroot
-
-3. Copy the vmlinux file into the kernel headers directory in the sysroot.
-   This is required so that systemtap can access the kernel debug info.
-
-   cp <build>/work/beagleboard-poky-linux-gnueabi/linux-yocto-3.0.22+git1+808b49474268040ab27c8ee687b60807a11547b4_1+368e38c673ffac8b37fc2a2d4c1e4a1e6f8abf19-r3/linux-beagleboard-standard-build/vmlinux <path-to-temp-dir>/beagle-sysroot/usr/src/kernel
-
-3. systemtap must also have access to the debug info for any userspace
-   binaries or libraries that are to be traced. Copy any relevant binary files
-   (with debug symbols enabled) into the sysroot.  The destination must match
-   the actual filesystem on the target.  For example, if the binary to be
-   debugged is located on the target at /home/root/foo, then this file must be
-   copied to <build>/beagle-sysroot/home/root/foo on the target.
-
-4. Compile the probe using the following command:
-
-   <build>/sysroots/i686-linux/usr/bin/stap -a arm -B CROSS_COMPILE=/path/to/codebench/bin/arm-none-linux-gnueabi- -r <build>/beagle-sysroot/usr/src/kernel -m <probe_name> /path/to/probe_name.stp --sysroot=<build>/beagle-sysroot <additional parameters as specified by the probe>
-
-5. Copy the resulting .ko file to the target.
-
-6. Run the probe.  On the target, execute:
-
-   staprun -u <probe_name>.ko <additional parameters as specified by the probe>
+The resulting images should now contain the patches in the
+meta-sourceryanalyzer layer.
