@@ -1,16 +1,34 @@
-                    Notes on using the meta-sourceryanalyzer layer
+                     Notes on using the meta-tracing layer
 
 This repository contains a Yocto Project layer(tm) which provides a staging
-area for various patches that are currently required for proper Sourcery
-Analyzer agent operation.  Work on pushing these to their appropriate upstream
-projects is ongoing, but this will allow Yocto users of Sourcery Analyzer to
-use this functionality immediately.
+area for various patches that improve support for various Linux tracing
+technologies supported by Yocto or Yocto-based distributions.  Work on pushing
+these to their appropriate upstream projects is ongoing, but this will current
+Yocto users to use this functionality immediately.
+
+This layer is intended to target the following Linux tracing technologies.
+* LTTng
+* SystemTap
 
 This layer may be used on top of recent git clones of Yocto Project and 
 Mentor Embedded Linux.[1]. At this time the layer has only been tested on the
 Beagleboard-XM platform.
 
 [1]: http://go.mentor.com/linux
+
+Current Contents:
+=================
+The layer currently contains the following fixes for Yocto-based
+distributions:
+* ARM tracehook support for kernel versions 3.0 and 3.2, with a .bbappend file
+  targeting the linux-yocto package.
+* ARM syscall tracepoint support for kernel versions 3.0 and 3.2, with a
+  .bbappend file targeting the linux-yocto package.
+* A Kernel configuration fragment to enable Profiling support for kernel
+  versions 3.0 and 3.2,  with a .bbappend file targeting the linux-yocto
+  package.
+* A workaround for a bug in Yocto "denzil" to handle incorrect stripping of
+  the uprobes.ko file in the systemtap-uprobes package.
 
 Using this layer with Yocto/Poky:
 =================================
@@ -50,7 +68,7 @@ documentation.
    variable.  E.g.:
 
    BBLAYERS ?= " \
-  /path/to/meta-sourceryanalyzer \
+  /path/to/meta-tracing \
   /path/to/poky/meta \
   /path/to/poky/meta-yocto \
   "
@@ -60,17 +78,16 @@ documentation.
    bitbake core-image-minimal
 
 The resulting images should now contain the patches in the
-meta-sourceryanalyzer layer.
+meta-tracing layer.
 
 
 Using this layer with Mentor Embedded Linux:
 ============================================
 
 1. Follow the MEL documentation to configure MEL for the beagleboard, adding
-   "-l /path/to/meta-sourceryanalyzer" to the create-config.py command line.
+   "-l /path/to/meta-tracing" to the create-config.py command line.
    This option will automatically configure the build to include
-   meta-sourceryanalyzer in the bblayers.conf file by adding sa-systemtap to
-   bblayers.conf.
+   meta-tracing in the bblayers.conf file.
 
 2. For systemtap support, add the following line to conf/local.conf:
 
@@ -85,4 +102,4 @@ Using this layer with Mentor Embedded Linux:
    bitbake devel-image
 
 The resulting images should now contain the patches in the
-meta-sourceryanalyzer layer.
+meta-tracing layer.
