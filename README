@@ -1,6 +1,6 @@
                      Notes on using the meta-tracing layer
 
-This repository contains a Yocto Project layer(tm) which provides a staging
+This repository contains a Yocto Project(tm) layer which provides a staging
 area for various patches that improve support for various Linux tracing
 technologies supported by Yocto or Yocto-based distributions.  Work on pushing
 these to their appropriate upstream projects is ongoing, but this will current
