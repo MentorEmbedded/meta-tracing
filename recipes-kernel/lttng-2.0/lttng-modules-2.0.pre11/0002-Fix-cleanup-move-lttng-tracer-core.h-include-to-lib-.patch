@@ -28,7 +28,7 @@ index bd5ba77..657c04d 100644
  #define	RING_BUFFER_RFLAG_FULL_TSC		(1U << 0)
  #define RING_BUFFER_RFLAG_END			(1U << 1)
  
-+#ifndef LTTNG_TRACER_CORE_H
++#ifndef LTT_TRACER_CORE_H
 +#error "ltt-tracer-core.h is needed for RING_BUFFER_ALIGN define"
 +#endif
 +
