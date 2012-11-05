@@ -11,11 +11,8 @@ This layer is intended to target the following Linux tracing technologies.
 * SystemTap
 
 This layer may be used on top of recent git clones of Yocto Project and 
-Mentor Embedded Linux.[1]. At this time the layer has been tested on the
-following platforms:
-
-* Beagleboard-XM
-* Pandaboard (using the meta-ti layer denzil branch)
+Mentor Embedded Linux.[1]. At this time the layer has only been tested on the
+Beagleboard-XM platform.
 
 [1]: http://go.mentor.com/linux
 
@@ -23,12 +20,13 @@ Current Contents:
 =================
 The layer currently contains the following fixes for Yocto-based
 distributions:
-* ARM tracehook support and syscall tracepoint support for the following kernel
-  packages and versions:
-  - linux-yocto: 3.0, 3.2 (Beagleboard-XM only)
-  - linux-omap4: 3.1 (Pandaboard only)
-* A Kernel configuration fragment to enable Profiling support for the above
-  kernel packages/versions.
+* ARM tracehook support for kernel versions 3.0 and 3.2, with a .bbappend file
+  targeting the linux-yocto package.
+* ARM syscall tracepoint support for kernel versions 3.0 and 3.2, with a
+  .bbappend file targeting the linux-yocto package.
+* A Kernel configuration fragment to enable Profiling support for kernel
+  versions 3.0 and 3.2,  with a .bbappend file targeting the linux-yocto
+  package.
 * A workaround for a bug in Yocto "denzil" to handle incorrect stripping of
   the uprobes.ko file in the systemtap-uprobes package.
 
@@ -38,17 +36,9 @@ Note: The steps provided here are the minimum required to incorporate this
 layer into a Yocto build.  Please refer to the Yocto Project for more extensive 
 documentation.
 
-1. If Pandaboard support is desired, clone the meta-ti tree and checkout the
-   denzil tag:
-
-   git clone git://git.yoctoproject.org/meta-ti
-   cd meta-ti
-   git checkout -b denzil denzil
-
-2. Clone the poky tree, and checkout the tag that you want to use.  Tested tags
-   are denzil (Pandaboard and Beagleboard-XM) and 1.3_M2.final (Beagleboard-XM
-   only).  Please note that older versions may not work due to missing
-   metadata.  Newer versions are untested.
+1. Clone the poky tree, and checkout the tag that you want to use.  Tested tags
+   are denzil and 1.3_M2.final.  Please note that older versions may not work
+   due to missing metadata.  Newer versions are untested.
 
    git clone git://git.yoctoproject.org/poky
    cd poky
@@ -57,14 +47,13 @@ documentation.
    OR
    git checkout -b denzil denzil
 
-3. Source the OE configure script:
+2. Source the OE configure script:
 
    . ./oe-init-build-env
 
-3. Modify conf/local.conf for your particular environment.  If building for the
-   Beagleboard-XM, uncomment the line '#MACHINE ?= "beagleboard"'. If building
-   for the Pandaboard, add a line 'MACHINE = "pandaboard'.  To add systemtap
-   support to your filesystem image, add the following line to the end of the
+3. Modify conf/local.conf for your particular environment.  Uncomment the line
+   "#MACHINE ?= "beagleboard". To add systemtap support to your filesystem 
+   image, add the following line to the end of the
    file:
 
    IMAGE_INSTALL_append = " systemtap systemtap-uprobes"
@@ -75,25 +64,15 @@ documentation.
 
    Make any other adjustments to the file as necessary for your configuration.
 
-4. Update the conf/bblayers.conf file to add the meta-tracing laye to the
-   BBLAYERS variable.  If building for the Pandaboard, add the meta-ti layer
-   as well. In conf/bblayers.conf add the path to this repository in the
-   BBLAYERS variable.  E.g.:
+4. In conf/bblayers.conf add the path to this repository in the BBLAYERS
+   variable.  E.g.:
 
    BBLAYERS ?= " \
-   /path/to/meta-tracing \
-   /path/to/poky/meta \
-   /path/to/poky/meta-yocto \
-   "
-
-   On Pandaboard, this should be the following:
-   
-   BBLAYERS ?= " \
-   /path/to/meta-tracing \
-   /path/to/poky/meta \
-   /path/to/poky/meta-yocto \
-   /path/to/meta-ti \
-   "
+  /path/to/meta-tracing \
+  /path/to/poky/meta \
+  /path/to/poky/meta-yocto \
+  "
+  
 5. Build the minimal image
 
    bitbake core-image-minimal
@@ -105,9 +84,9 @@ meta-tracing layer.
 Using this layer with Mentor Embedded Linux:
 ============================================
 
-1. Follow the MEL documentation to configure MEL for the Beagleboard or
-   Pandaboard, adding "-l /path/to/meta-tracing" to the create-config.py
-   command line.  This option will automatically configure the build to include
+1. Follow the MEL documentation to configure MEL for the beagleboard, adding
+   "-l /path/to/meta-tracing" to the create-config.py command line.
+   This option will automatically configure the build to include
    meta-tracing in the bblayers.conf file.
 
 2. For systemtap support, add the following line to conf/local.conf:
