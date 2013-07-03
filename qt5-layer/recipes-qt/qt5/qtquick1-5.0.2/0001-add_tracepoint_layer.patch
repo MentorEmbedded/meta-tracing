@@ -230,7 +230,7 @@ index 691fb71..4de0057 100644
  }
  
 diff --git a/src/declarative/qml/qdeclarativetypeloader.cpp b/src/declarative/qml/qdeclarativetypeloader.cpp
-index ee73b73..1e1ca83 100644
+index ee73b73..e5b5783 100644
 --- a/src/declarative/qml/qdeclarativetypeloader.cpp
 +++ b/src/declarative/qml/qdeclarativetypeloader.cpp
 @@ -53,6 +53,10 @@
@@ -269,7 +269,7 @@ index ee73b73..1e1ca83 100644
          QFile file(lf);
          if (file.open(QFile::ReadOnly)) {
              QByteArray data = file.readAll();
-@@ -544,10 +558,13 @@ void QDeclarativeDataLoader::load(QDeclarativeDataBlob *blob)
+@@ -544,6 +558,10 @@ void QDeclarativeDataLoader::load(QDeclarativeDataBlob *blob)
              blob->downloadProgressChanged(1.);
  
              setData(blob, data);
@@ -280,11 +280,7 @@ index ee73b73..1e1ca83 100644
          } else {
              blob->networkError(QNetworkReply::ContentNotFoundError);
          }
--
-     } else {
- 
-         blob->m_manager = this;
-@@ -602,6 +619,10 @@ void QDeclarativeDataLoader::networkReplyFinished(QNetworkReply *reply)
+@@ -602,6 +620,10 @@ void QDeclarativeDataLoader::networkReplyFinished(QNetworkReply *reply)
          setData(blob, data);
      }
  
@@ -295,7 +291,7 @@ index ee73b73..1e1ca83 100644
      blob->release();
  }
  
-@@ -922,6 +943,10 @@ void QDeclarativeTypeData::unregisterCallback(TypeDataCallback *callback)
+@@ -922,6 +944,10 @@ void QDeclarativeTypeData::unregisterCallback(TypeDataCallback *callback)
  
  void QDeclarativeTypeData::done()
  {
@@ -306,7 +302,7 @@ index ee73b73..1e1ca83 100644
      addref();
  
      // Check all script dependencies for errors
-@@ -1034,6 +1059,11 @@ void QDeclarativeTypeData::downloadProgressChanged(qreal p)
+@@ -1034,6 +1060,11 @@ void QDeclarativeTypeData::downloadProgressChanged(qreal p)
  void QDeclarativeTypeData::compile()
  {
      Q_ASSERT(m_compiledData == 0);
@@ -318,7 +314,7 @@ index ee73b73..1e1ca83 100644
      QDeclarativeDebugTrace::startRange(QDeclarativeDebugTrace::Compiling);
  
      m_compiledData = new QDeclarativeCompiledData(typeLoader()->engine());
-@@ -1048,6 +1078,10 @@ void QDeclarativeTypeData::compile()
+@@ -1048,6 +1079,10 @@ void QDeclarativeTypeData::compile()
          m_compiledData = 0;
      }
      QDeclarativeDebugTrace::endRange(QDeclarativeDebugTrace::Compiling);
