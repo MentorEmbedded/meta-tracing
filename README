@@ -1,8 +1,8 @@
                      Notes on using the meta-tracing layer
 
 This repository contains a Yocto Project(tm) layer which provides intrumentation 
-fucntionality for different packages based on LTTng. This layer might add instrumentation
-fetures to different packages.
+functionality for different packages based on LTTng. This layer might add instrumentation
+features to different packages.
 
 This layer may be used on top of recent git clones of Yocto Project and Mentor's
 Automotive Technology Platform.
