@@ -5,5 +5,3 @@ SRC_URI += " \
 	"
 
 QT_CONFIG_FLAGS += " -no-c++11 -sa-trace "
-
-export SA_TRACE_INSTALL="${SOURCERY_ANALYZER_INSTALLATION_HARDWARE}"
