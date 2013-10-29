@@ -5,3 +5,4 @@ SRC_URI += " \
 	"
 
 QT_CONFIG_FLAGS += " -no-c++11 -sa-trace "
+DEPENDS += "lttng-ust"
