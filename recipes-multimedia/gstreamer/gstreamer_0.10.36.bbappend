@@ -9,13 +9,5 @@ SRC_URI += "file://0001-Add-optional-LTTng-support-in-configure.patch \
             file://0007-Tracepoint-modifications-for-gstpad.c.patch \
             file://0008-New-event-traces-and-latency-traces.patch"
 
-
-GSTREAMER_DEBUG ?= "--disable-debug"
-GSTREAMER_ENABLE_LTTNG ?= "--enable-lttng-tracepoints"
-
-PACKAGECONFIG = "${@base_contains("MACHINE_FEATURES",'lttng2', 'LTTNG', '', d)}"
-PACKAGECONFIG[LTTNG] = "${GSTREAMER_ENABLE_LTTNG},, lttng-ust"
-
-
-
-
+PACKAGECONFIG ?= "lttng"
+PACKAGECONFIG[lttng] = "--enable-lttng-tracepoints,--disable-lttng-tracepoints,lttng-ust"
