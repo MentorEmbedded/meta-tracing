@@ -1,0 +1,597 @@
+diff --git a/configure b/configure
+index aaa59bd..34082ae 100755
+--- a/configure
++++ b/configure
+@@ -732,6 +732,7 @@ OPT_MAC_SDK=
+ COMMERCIAL_USER=ask
+ LICENSE_FILE=
+ CFG_DEV=no
++CFG_SOURCERYANALYZER=no
+ 
+ # initalize variables used for installation
+ QT_INSTALL_PREFIX=
+@@ -2132,6 +2133,13 @@ while [ "$#" -gt 0 ]; do
+             UNKNOWN_OPT=yes
+         fi
+         ;;
++    sa-trace)
++        if [ "$VAL" = "yes" ]; then
++            CFG_SOURCERYANALYZER="yes"
++        else
++            UNKNOWN_OPT=yes
++        fi
++        ;;
+     *)
+         UNKNOWN_OPT=yes
+         ;;
+@@ -5867,7 +5875,15 @@ if [ "$CFG_WIDGETS" = "no" ]; then
+     QT_CONFIG="$QT_CONFIG no-widgets"
+     QCONFIG_FLAGS="$QCONFIG_FLAGS QT_NO_WIDGETS"
+ fi
++if [ "$CFG_SOURCERYANALYZER" = "yes" ]; then
++    QT_CONFIG="$QT_CONFIG sa-trace"
++
++    QT_SA_TRACE_PRIDIR="$relpath/src/3rdparty"
++    QMakeVar set QT_SA_TRACE_PRIDIR "$QT_SA_TRACE_PRIDIR"
+ 
++    QT_SA_TRACE_LIBDIR="$outpath/lib"
++    QMakeVar set QT_SA_TRACE_LIBDIR "$QT_SA_TRACE_LIBDIR"
++fi
+ if [ "$XPLATFORM_MAC" = "yes" ]; then
+     #On Mac we implicitly link against libz, so we
+     #never use the 3rdparty stuff.
+@@ -6777,6 +6793,7 @@ report_support "    TDS .................." "$CFG_SQL_tds" plugin "plugin" yes "
+ report_support "  udev ..................." "$CFG_LIBUDEV"
+ report_support "  xkbcommon .............." "$CFG_XKBCOMMON" system "system library" qt "bundled copy"
+ report_support "  zlib ..................." "$CFG_ZLIB" system "system library" yes "bundled copy"
++report_support "  Sourcery Analyzer ......" "$CFG_SOURCERYANALYZER"
+ 
+ echo
+ 
+diff --git a/src/3rdparty/sa-trace.pri b/src/3rdparty/sa-trace.pri
+new file mode 100644
+index 0000000..e39cc96
+--- /dev/null
++++ b/src/3rdparty/sa-trace.pri
+@@ -0,0 +1,4 @@
++DEFINES         *= ENABLE_SA_TRACE
++CFLAGS          *= -g3 -O1
++INCLUDEPATH     *= $$PWD/sa-trace
++LIBS            *= -L$$QT_SA_TRACE_LIBDIR -lsa-trace -ldl
+diff --git a/src/3rdparty/sa-trace/qt_tracepoints.c b/src/3rdparty/sa-trace/qt_tracepoints.c
+new file mode 100644
+index 0000000..121df3d
+--- /dev/null
++++ b/src/3rdparty/sa-trace/qt_tracepoints.c
+@@ -0,0 +1,2 @@
++#define TRACEPOINT_CREATE_PROBES
++#include "qt_tracepoints.h"
+diff --git a/src/3rdparty/sa-trace/qt_tracepoints.h b/src/3rdparty/sa-trace/qt_tracepoints.h
+new file mode 100644
+index 0000000..f1e33ba
+--- /dev/null
++++ b/src/3rdparty/sa-trace/qt_tracepoints.h
+@@ -0,0 +1,85 @@
++#undef TRACEPOINT_PROVIDER
++#define TRACEPOINT_PROVIDER         Qt
++
++#undef TRACEPOINT_INCLUDE_FILE
++#define TRACEPOINT_INCLUDE_FILE     ./qt_tracepoints.h
++
++#if !defined(_QT_TRACEPOINTS_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
++#define _QT_TRACEPOINTS_H
++
++/* This define will be present exactly once per output library */
++#ifdef QT_TRACEPOINT_PER_LIBRARY_DEFINITION
++    #define TRACEPOINT_DEFINE
++    #define TRACEPOINT_PROBE_DYNAMIC_LINKAGE
++#endif
++
++#include <lttng/tracepoint.h>
++#include <stdint.h>
++
++/* Map qt_tracepont to the tracepoint implementation used: */
++#define qt_tracepoint tracepoint
++
++/* Startup Agent, app start stop. */
++TRACEPOINT_EVENT(Qt, qtApplicationCreated,
++                TP_ARGS(int, isAlive),
++                TP_FIELDS(ctf_integer(int, isAlive, isAlive)))
++
++/* Qt event processed by Qt core event loop (event types & name) */
++TRACEPOINT_EVENT(Qt, qtQmlResourceLoad,
++                 TP_ARGS(int, isLoading, const char *, qmlFileName),
++                 TP_FIELDS(ctf_integer(int, isLoading, isLoading)
++                           ctf_string(qmlFileName, qmlFileName)))
++
++/* To show the start & end of Qt QML processing events (1=> Start, 0=> Stop) */
++TRACEPOINT_EVENT(Qt, qtQmlFrameCompile,
++                 TP_ARGS(int, isCompiling, const char *, qmlFileName),
++                 TP_FIELDS(ctf_integer(int, isCompiling, isCompiling) ctf_string(qmlFileName, qmlFileName)))
++TRACEPOINT_EVENT(Qt, qtQmlFrameCreate,
++                 TP_ARGS(int, isCreating, const char *, qmlFileName),
++                 TP_FIELDS(ctf_integer(int, isCreating,  isCreating) ctf_string(qmlFileName, qmlFileName)))
++TRACEPOINT_EVENT(Qt, qtQmlFrameBind,
++                 TP_ARGS(int, isBinding, const char *, qmlFileName),
++                 TP_FIELDS(ctf_integer(int, isBinding,   isBinding) ctf_string(qmlFileName, qmlFileName)))
++
++/* Qt Frame Sync (OpenGL or Raster) */
++TRACEPOINT_EVENT(Qt, qtFrameSync, TP_ARGS(int, isRendering),  TP_FIELDS(ctf_integer(int, isRendering, isRendering)))
++
++/* Qt animation framework timer activity */
++TRACEPOINT_EVENT(Qt, qtAnimDriver, TP_ARGS(int, isActive), TP_FIELDS(ctf_integer(int, isActive, isActive)))
++TRACEPOINT_EVENT(Qt, qtAnimTick, TP_ARGS(int, isUpdating), TP_FIELDS(ctf_integer(int, isUpdating, isUpdating)))
++TRACEPOINT_EVENT(Qt, qtAnimTimingInterval, TP_ARGS(int, interval), TP_FIELDS(ctf_integer(int, interval, interval)))
++
++/* Qt event processed by Qt core event loop (event types & name) */
++TRACEPOINT_EVENT(Qt, qtCoreEvents,
++                 TP_ARGS(int, eventType),
++                 TP_FIELDS(ctf_integer(int, eventType, eventType)))
++
++/* Qt event processed by Qt core event loop (event types & name) */
++TRACEPOINT_EVENT(Qt, qtGraphicsSceneEvents,
++                 TP_ARGS(int, eventType),
++                 TP_FIELDS(ctf_integer(int, eventType, eventType)))
++
++/* Qt QSendMouseEvent (event types & name) */
++TRACEPOINT_EVENT(Qt, qtSendMouseEvent, TP_ARGS(int, buttons), TP_FIELDS(ctf_integer(int, buttons, buttons)))
++TRACEPOINT_EVENT(Qt, qtMouseEventConsumed, TP_ARGS(int, buttons), TP_FIELDS(ctf_integer(int, buttons, buttons)))
++
++/* Qt NotifyKeyEvent (event types & name) */
++TRACEPOINT_EVENT(Qt, qtNotifyKeyEvent, TP_ARGS(int, type, int, key, int, modifiers),
++                 TP_FIELDS(ctf_integer(int, type, type)
++                           ctf_integer(int, key, key)
++                           ctf_integer(int, modifiers, modifiers)))
++TRACEPOINT_EVENT(Qt, qtKeyEventConsumed, TP_ARGS(int, type, int, key, int, modifiers),
++                 TP_FIELDS(ctf_integer(int, type, type)
++                           ctf_integer(int, key, key)
++                           ctf_integer(int, modifiers, modifiers)))
++
++/* Qt ImageReader Event (image filename) */
++TRACEPOINT_EVENT(Qt, qtImageReader,
++                 TP_ARGS(int, threadPtr, int, isLoading, const char *, imageName),
++                 TP_FIELDS(ctf_integer(int, threadPtr, threadPtr)
++                           ctf_integer(int, isLoading, isLoading)
++                           ctf_string(imageName, imageName)))
++
++#endif /* _QT_TRACEPOINTS_H */
++
++#include <lttng/tracepoint-event.h>
+diff --git a/src/3rdparty/sa-trace/sa-trace.pro b/src/3rdparty/sa-trace/sa-trace.pro
+new file mode 100644
+index 0000000..4acd35d
+--- /dev/null
++++ b/src/3rdparty/sa-trace/sa-trace.pro
+@@ -0,0 +1,20 @@
++TEMPLATE = lib
++DESTDIR = ../../../lib
++
++CONFIG += create_prl
++
++QT -= core gui
++
++#################################
++
++DEFINES         *= ENABLE_SA_TRACE
++CFLAGS          *= -g3 -O1
++INCLUDEPATH     *= $$PWD/sa-trace 
++LIBS            *= -llttng-ust -lurcu-bp
++
++#################################
++
++SOURCES = qt_tracepoints.c
++
++target.path = $$[QT_INSTALL_LIBS]
++INSTALLS += target
+diff --git a/src/corelib/animation/qabstractanimation.cpp b/src/corelib/animation/qabstractanimation.cpp
+index 139876d..7e56140 100644
+--- a/src/corelib/animation/qabstractanimation.cpp
++++ b/src/corelib/animation/qabstractanimation.cpp
+@@ -155,6 +155,10 @@
+ #include <QtCore/qcoreevent.h>
+ #include <QtCore/qpointer.h>
+ 
++#ifdef ENABLE_SA_TRACE
++    #include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ #ifndef QT_NO_ANIMATION
+ 
+ #define DEFAULT_TIMER_INTERVAL 16
+@@ -224,6 +228,10 @@ QUnifiedTimer::QUnifiedTimer() :
+     startTimersPending(false), stopTimerPending(false),
+     slowdownFactor(5.0f), profilerCallback(0)
+ {
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtAnimTimingInterval, DEFAULT_TIMER_INTERVAL);
++#endif // ENABLE_SA_TRACE
++
+     time.invalidate();
+     driver = &defaultDriver;
+ }
+@@ -281,6 +289,10 @@ void QUnifiedTimer::updateAnimationTimers(qint64 currentTick)
+     //it might happen in some cases that the time doesn't change because events are delayed
+     //when the CPU load is high
+     if (delta) {
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtAnimTick, 1);
++#endif // ENABLE_SA_TRACE
++
+         insideTick = true;
+         if (profilerCallback)
+             profilerCallback(delta);
+@@ -290,6 +302,10 @@ void QUnifiedTimer::updateAnimationTimers(qint64 currentTick)
+         }
+         insideTick = false;
+         currentAnimationIdx = 0;
++        
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtAnimTick, 0);
++#endif // ENABLE_SA_TRACE
+     }
+ }
+ 
+@@ -338,6 +354,10 @@ void QUnifiedTimer::restart()
+ 
+ void QUnifiedTimer::setTimingInterval(int interval)
+ {
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtAnimTimingInterval, interval);
++#endif // ENABLE_SA_TRACE
++    
+     timingInterval = interval;
+ 
+     if (driver->isRunning() && !pauseTimer.isActive()) {
+@@ -825,6 +845,10 @@ bool QAnimationDriver::isRunning() const
+ 
+ void QAnimationDriver::start()
+ {
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtAnimDriver, 1);
++#endif // ENABLE_SA_TRACE
++
+     Q_D(QAnimationDriver);
+     if (!d->running) {
+         d->running = true;
+@@ -840,6 +864,10 @@ void QAnimationDriver::stop()
+         d->running = false;
+         emit stopped();
+     }
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtAnimDriver, 0);
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ 
+diff --git a/src/corelib/corelib.pro b/src/corelib/corelib.pro
+index b513149..7471b26 100644
+--- a/src/corelib/corelib.pro
++++ b/src/corelib/corelib.pro
+@@ -42,6 +42,8 @@ include(statemachine/statemachine.pri)
+ include(mimetypes/mimetypes.pri)
+ include(xml/xml.pri)
+ 
++contains(QT_CONFIG,sa-trace):include(../3rdparty/sa-trace.pri)
++
+ mac|darwin {
+     !ios {
+         LIBS_PRIVATE += -framework ApplicationServices
+diff --git a/src/corelib/kernel/qcoreapplication.cpp b/src/corelib/kernel/qcoreapplication.cpp
+index e77d689..487cbc0 100644
+--- a/src/corelib/kernel/qcoreapplication.cpp
++++ b/src/corelib/kernel/qcoreapplication.cpp
+@@ -106,6 +106,11 @@
+ 
+ #include <algorithm>
+ 
++#ifdef ENABLE_SA_TRACE
++    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
++    #include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ #ifndef QT_NO_QOBJECT
+@@ -396,6 +401,10 @@ QCoreApplicationPrivate::QCoreApplicationPrivate(int &aargc, char **aargv, uint
+     , q_ptr(0)
+ #endif
+ {
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtApplicationCreated, 1);
++#endif // ENABLE_SA_TRACE
++
+     app_compile_version = flags & 0xffffff;
+     static const char *const empty = "";
+     if (argc == 0 || argv == 0) {
+@@ -428,6 +437,10 @@ QCoreApplicationPrivate::~QCoreApplicationPrivate()
+     delete [] origArgv;
+ #endif
+     QCoreApplicationPrivate::clearApplicationFilePath();
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtApplicationCreated, 0);
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ #ifndef QT_NO_QOBJECT
+@@ -863,6 +876,11 @@ void QCoreApplication::setQuitLockEnabled(bool enabled)
+ */
+ bool QCoreApplication::notifyInternal(QObject *receiver, QEvent *event)
+ {
++#ifdef ENABLE_SA_TRACE
++    if (event)
++        qt_tracepoint(Qt, qtCoreEvents, event->type());
++#endif // ENABLE_SA_TRACE
++
+     // Make it possible for Qt Script to hook into events even
+     // though QApplication is subclassed...
+     bool result = false;
+diff --git a/src/gui/gui.pro b/src/gui/gui.pro
+index 3203b41..a5f368c 100644
+--- a/src/gui/gui.pro
++++ b/src/gui/gui.pro
+@@ -43,6 +43,8 @@ include(opengl/opengl.pri)
+ include(animation/animation.pri)
+ include(itemmodels/itemmodels.pri)
+ 
++contains(QT_CONFIG, sa-trace):include(../3rdparty/sa-trace.pri)
++
+ QMAKE_LIBS += $$QMAKE_LIBS_GUI
+ 
+ load(cmake_functions)
+diff --git a/src/gui/image/qimagereader.cpp b/src/gui/image/qimagereader.cpp
+index 636d869..4a66aff 100644
+--- a/src/gui/image/qimagereader.cpp
++++ b/src/gui/image/qimagereader.cpp
+@@ -152,6 +152,11 @@
+ 
+ #include <algorithm>
+ 
++#ifdef ENABLE_SA_TRACE
++    #include <QThread>
++    #include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ #ifndef QT_NO_IMAGEFORMATPLUGIN
+@@ -1175,6 +1180,11 @@ bool QImageReader::read(QImage *image)
+     if (!d->handler && !d->initHandler())
+         return false;
+ 
++#ifdef ENABLE_SA_TRACE
++    long threadId = (long)(QThread::currentThread());
++    qt_tracepoint(Qt, qtImageReader, threadId, 1, fileName().toLatin1().constData());
++#endif // ENABLE_SA_TRACE
++
+     // set the handler specific options.
+     if (d->handler->supportsOption(QImageIOHandler::ScaledSize) && d->scaledSize.isValid()) {
+         if ((d->handler->supportsOption(QImageIOHandler::ClipRect) && !d->clipRect.isNull())
+@@ -1195,6 +1205,9 @@ bool QImageReader::read(QImage *image)
+     if (!d->handler->read(image)) {
+         d->imageReaderError = InvalidDataError;
+         d->errorString = QLatin1String(QT_TRANSLATE_NOOP(QImageReader, "Unable to read image data"));
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtImageReader, threadId, 0, fileName().toLatin1().constData());
++#endif // ENABLE_SA_TRACE
+         return false;
+     }
+ 
+@@ -1254,6 +1267,10 @@ bool QImageReader::read(QImage *image)
+         image->setDevicePixelRatio(2.0);
+     }
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtImageReader, threadId, 0, fileName().toLatin1().constData());
++#endif // ENABLE_SA_TRACE
++
+     return true;
+ }
+ 
+diff --git a/src/gui/kernel/qguiapplication.cpp b/src/gui/kernel/qguiapplication.cpp
+index 0711a37..7893da2 100644
+--- a/src/gui/kernel/qguiapplication.cpp
++++ b/src/gui/kernel/qguiapplication.cpp
+@@ -103,6 +103,11 @@
+ 
+ #include <ctype.h>
+ 
++#ifdef ENABLE_SA_TRACE
++    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
++    #include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ Q_GUI_EXPORT bool qt_is_gui_used = true;
+@@ -1336,6 +1341,35 @@ int QGuiApplication::exec()
+ */
+ bool QGuiApplication::notify(QObject *object, QEvent *event)
+ {
++#ifdef ENABLE_SA_TRACE
++    if (event) {
++        switch (event->type())
++        {
++        case QEvent::KeyPress:
++        case QEvent::KeyRelease:
++            {
++                QKeyEvent* key = static_cast<QKeyEvent*>(event);
++                qt_tracepoint(Qt, qtNotifyKeyEvent, key->type(), key->key(), key->modifiers());
++            }
++            break;
++
++        case QEvent::MouseButtonPress:
++        case QEvent::MouseButtonRelease:
++        case QEvent::MouseButtonDblClick:
++        case QEvent::MouseMove:
++            {
++                QMouseEvent* mouse = static_cast<QMouseEvent*>(event);
++                qt_tracepoint(Qt, qtSendMouseEvent, mouse->buttons());
++            }
++            break;
++
++        default:
++            // Ignore
++            break;
++        }
++    }
++#endif // ENABLE_SA_TRACE
++
+ #ifndef QT_NO_SHORTCUT
+     if (event->type() == QEvent::KeyPress) {
+         // Try looking for a Shortcut before sending key events
+diff --git a/src/src.pro b/src/src.pro
+index b7887a6..c330007 100644
+--- a/src/src.pro
++++ b/src/src.pro
+@@ -108,7 +108,11 @@ src_plugins.depends = src_sql src_xml src_network
+ 
+ src_android.subdir = $$PWD/android
+ 
++src_satrace.subdir = $$PWD/3rdparty/sa-trace
++src_satrace.target = sub-satrace
++
+ # this order is important
++contains(QT_CONFIG, sa-trace): SUBDIRS += src_satrace
+ SUBDIRS += src_tools_bootstrap src_tools_moc src_tools_rcc src_corelib
+ TOOLS = src_tools_moc src_tools_rcc
+ win32:SUBDIRS += src_winmain
+diff --git a/src/widgets/graphicsview/qgraphicsscene.cpp b/src/widgets/graphicsview/qgraphicsscene.cpp
+index 41d4fc9..6c1d9a0 100644
+--- a/src/widgets/graphicsview/qgraphicsscene.cpp
++++ b/src/widgets/graphicsview/qgraphicsscene.cpp
+@@ -251,6 +251,10 @@
+ #include <private/qgesturemanager_p.h>
+ #include <private/qpathclipper_p.h>
+ 
++#ifdef ENABLE_SA_TRACE
++	#include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ // #define GESTURE_DEBUG
+ #ifndef GESTURE_DEBUG
+ # define DEBUG if (0) qDebug
+@@ -3280,6 +3284,10 @@ void QGraphicsScene::advance()
+ */
+ bool QGraphicsScene::event(QEvent *event)
+ {
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtGraphicsSceneEvents, event->type());
++#endif // ENABLE_SA_TRACE
++
+     Q_D(QGraphicsScene);
+ 
+     switch (event->type()) {
+diff --git a/src/widgets/kernel/qapplication.cpp b/src/widgets/kernel/qapplication.cpp
+index c9d6593..3e86cd7 100644
+--- a/src/widgets/kernel/qapplication.cpp
++++ b/src/widgets/kernel/qapplication.cpp
+@@ -106,6 +106,11 @@ extern bool qt_wince_is_pocket_pc();  //qguifunctions_wince.cpp
+ 
+ #include <qpa/qplatformwindow.h>
+ 
++#ifdef ENABLE_SA_TRACE
++    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
++	#include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ //#define ALIEN_DEBUG
+ 
+ static void initResources()
+@@ -2444,6 +2449,10 @@ bool QApplicationPrivate::sendMouseEvent(QWidget *receiver, QMouseEvent *event,
+     Q_ASSERT(nativeWidget);
+     Q_ASSERT(buttonDown);
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtSendMouseEvent, event->buttons());
++#endif // ENABLE_SA_TRACE
++
+     if (alienWidget && !isAlien(alienWidget))
+         alienWidget = 0;
+ 
+@@ -2906,6 +2915,13 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
+     case QEvent::KeyPress:
+     case QEvent::KeyRelease:
+         {
++#ifdef ENABLE_SA_TRACE
++            {
++                QKeyEvent* key = static_cast<QKeyEvent*>(e);
++                qt_tracepoint(Qt, qtNotifyKeyEvent, key->type(), key->key(), key->modifiers());
++            }
++#endif // ENABLE_SA_TRACE
++
+             bool isWidget = receiver->isWidgetType();
+             bool isGraphicsWidget = false;
+ #ifndef QT_NO_GRAPHICSVIEW
+@@ -2954,6 +2970,10 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
+ #endif
+             }
+             qt_in_tab_key_event = false;
++
++#ifdef ENABLE_SA_TRACE
++            qt_tracepoint(Qt, qtKeyEventConsumed, key->type(), key->key(), key->modifiers());
++#endif // ENABLE_SA_TRACE
+         }
+         break;
+     case QEvent::MouseButtonPress:
+@@ -3027,6 +3047,10 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
+ 
+             mouse->setAccepted(eventAccepted);
+ 
++#ifdef ENABLE_SA_TRACE
++            qt_tracepoint(Qt, qtMouseEventConsumed, mouse->buttons());
++#endif // ENABLE_SA_TRACE
++
+             if (e->type() == QEvent::MouseMove) {
+                 if (!pw)
+                     break;
+diff --git a/src/widgets/kernel/qwidgetbackingstore.cpp b/src/widgets/kernel/qwidgetbackingstore.cpp
+index 4a94cd6..3ee884d 100644
+--- a/src/widgets/kernel/qwidgetbackingstore.cpp
++++ b/src/widgets/kernel/qwidgetbackingstore.cpp
+@@ -62,6 +62,10 @@
+ #  include <qpa/qplatformnativeinterface.h>
+ #endif
+ 
++#ifdef ENABLE_SA_TRACE
++	#include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ extern QRegion qt_dirtyRegion(QWidget *);
+@@ -79,6 +83,10 @@ static inline void qt_flush(QWidget *widget, const QRegion &region, QBackingStor
+     Q_ASSERT(backingStore);
+     Q_ASSERT(tlw);
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtFrameSync, 1);
++#endif // ENABLE_SA_TRACE
++
+ #if !defined(QT_NO_PAINT_DEBUG)
+     static int flushUpdate = qgetenv("QT_FLUSH_UPDATE").toInt();
+     if (flushUpdate > 0)
+@@ -108,6 +116,10 @@ static inline void qt_flush(QWidget *widget, const QRegion &region, QBackingStor
+         backingStore->flush(region, widget->windowHandle(), tlwOffset + widget->mapTo(tlw, QPoint()));
+     else
+         backingStore->flush(region, widget->windowHandle(), tlwOffset);
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtFrameSync, 0);
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ #ifndef QT_NO_PAINT_DEBUG
+diff --git a/src/widgets/widgets.pro b/src/widgets/widgets.pro
+index e3222b4..f8a62d3 100644
+--- a/src/widgets/widgets.pro
++++ b/src/widgets/widgets.pro
+@@ -30,6 +30,7 @@ include(util/util.pri)
+ include(statemachine/statemachine.pri)
+ include(effects/effects.pri)
+ 
++contains(QT_CONFIG, sa-trace):include(../3rdparty/sa-trace.pri)
+ 
+ QMAKE_LIBS += $$QMAKE_LIBS_GUI
+ 

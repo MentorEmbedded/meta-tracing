@@ -1,0 +1,328 @@
+diff --git a/src/declarative/declarative.pro b/src/declarative/declarative.pro
+index 476ef8d..52a1fc4 100644
+--- a/src/declarative/declarative.pro
++++ b/src/declarative/declarative.pro
+@@ -25,6 +25,7 @@ include(qml/qml.pri)
+ include(util/util.pri)
+ include(graphicsitems/graphicsitems.pri)
+ include(debugger/debugger.pri)
++contains(QT_CONFIG, sa-trace):include($$QT_SA_TRACE_PRIDIR/sa-trace.pri)
+ 
+ HEADERS += \
+     qtdeclarativeglobal.h \
+diff --git a/src/declarative/qml/qdeclarativebinding.cpp b/src/declarative/qml/qdeclarativebinding.cpp
+index cdfb5ce..ac90428 100644
+--- a/src/declarative/qml/qdeclarativebinding.cpp
++++ b/src/declarative/qml/qdeclarativebinding.cpp
+@@ -55,6 +55,10 @@
+ #include <QVariant>
+ #include <QtCore/qdebug.h>
+ 
++#ifdef ENABLE_SA_TRACE
++    #include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ QDeclarativeAbstractBinding::QDeclarativeAbstractBinding()
+@@ -338,6 +342,10 @@ void QDeclarativeBinding::update(QDeclarativePropertyPrivate::WriteFlags flags)
+         return;
+ 
+     if (!d->updating) {
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtQmlFrameBind, 1, qPrintable(d->url));
++#endif // ENABLE_SA_TRACE
++
+         QDeclarativeBindingProfiler prof(this);
+         d->updating = true;
+         bool wasDeleted = false;
+@@ -355,8 +363,13 @@ void QDeclarativeBinding::update(QDeclarativePropertyPrivate::WriteFlags flags)
+                                   QMetaObject::WriteProperty,
+                                   idx, a);
+ 
+-            if (wasDeleted)
++            if (wasDeleted) {
++#ifdef ENABLE_SA_TRACE
++                qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(d->url));
++#endif // ENABLE_SA_TRACE
++
+                 return;
++            }
+ 
+         } else {
+             QDeclarativeEnginePrivate *ep = QDeclarativeEnginePrivate::get(d->context()->engine);
+@@ -365,8 +378,13 @@ void QDeclarativeBinding::update(QDeclarativePropertyPrivate::WriteFlags flags)
+             QVariant value;
+ 
+             QScriptValue scriptValue = d->scriptValue(0, &isUndefined);
+-            if (wasDeleted)
++            if (wasDeleted) {
++#ifdef ENABLE_SA_TRACE
++                qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(d->url));
++#endif // ENABLE_SA_TRACE
++
+                 return;
++            }
+ 
+             if (d->property.propertyTypeCategory() == QDeclarativeProperty::List) {
+                 value = ep->scriptValueToVariant(scriptValue, qMetaTypeId<QList<QObject *> >());
+@@ -421,8 +439,13 @@ void QDeclarativeBinding::update(QDeclarativePropertyPrivate::WriteFlags flags)
+             } else if (d->property.object() &&
+                        !QDeclarativePropertyPrivate::write(d->property, value, flags)) {
+ 
+-                if (wasDeleted)
++                if (wasDeleted) {
++#ifdef ENABLE_SA_TRACE
++                    qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(d->url));
++#endif // ENABLE_SA_TRACE
++
+                     return;
++                }
+ 
+                 QUrl url = QUrl(d->url);
+                 int line = d->line;
+@@ -441,7 +464,13 @@ void QDeclarativeBinding::update(QDeclarativePropertyPrivate::WriteFlags flags)
+             }
+ 
+             if (wasDeleted)
++            {
++#ifdef ENABLE_SA_TRACE
++                qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(d->url));
++#endif // ENABLE_SA_TRACE
++
+                 return;
++            }
+ 
+             if (d->error.isValid()) {
+                if (!d->addError(ep)) ep->warning(this->error());
+@@ -452,6 +481,10 @@ void QDeclarativeBinding::update(QDeclarativePropertyPrivate::WriteFlags flags)
+ 
+         d->updating = false;
+         d->deleted = 0;
++
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(d->url));
++#endif // ENABLE_SA_TRACE
+     } else {
+         qmlInfo(d->property.object()) << tr("Binding loop detected for property \"%1\"").arg(d->property.name());
+     }
+diff --git a/src/declarative/qml/qdeclarativecompiledbindings.cpp b/src/declarative/qml/qdeclarativecompiledbindings.cpp
+index 5546a5e..4143db2 100644
+--- a/src/declarative/qml/qdeclarativecompiledbindings.cpp
++++ b/src/declarative/qml/qdeclarativecompiledbindings.cpp
+@@ -57,6 +57,10 @@
+ #include <private/qdeclarativefastproperties_p.h>
+ #include <private/qdeclarativedebugtrace_p.h>
+ 
++#ifdef ENABLE_SA_TRACE
++    #include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ DEFINE_BOOL_CONFIG_OPTION(qmlExperimental, QML_EXPERIMENTAL);
+@@ -379,6 +383,10 @@ void QDeclarativeCompiledBindingsPrivate::run(Binding *binding, QDeclarativeProp
+     if (!context || !context->isValid()) 
+         return;
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlFrameBind, 1, qPrintable(context->url.toString()));
++#endif // ENABLE_SA_TRACE
++
+     if (binding->updating) {
+         QString name;
+         if (binding->property & 0xFFFF0000) {
+@@ -394,6 +402,11 @@ void QDeclarativeCompiledBindingsPrivate::run(Binding *binding, QDeclarativeProp
+             name = QLatin1String(binding->target->metaObject()->property(binding->property).name());
+         }
+         qmlInfo(binding->target) << QCoreApplication::translate("QDeclarativeCompiledBindings", "Binding loop detected for property \"%1\"").arg(name);
++
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(context->url.toString()));
++#endif // ENABLE_SA_TRACE
++
+         return;
+     }
+ 
+@@ -413,6 +426,10 @@ void QDeclarativeCompiledBindingsPrivate::run(Binding *binding, QDeclarativeProp
+         run(binding->index, context, binding, binding->scope, binding->target, flags);
+     }
+     binding->updating = false;
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(context->url.toString()));
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ namespace {
+diff --git a/src/declarative/qml/qdeclarativecomponent.cpp b/src/declarative/qml/qdeclarativecomponent.cpp
+index f2596cc..74fbe96 100644
+--- a/src/declarative/qml/qdeclarativecomponent.cpp
++++ b/src/declarative/qml/qdeclarativecomponent.cpp
+@@ -62,6 +62,10 @@
+ #include <QApplication>
+ #include <qdeclarativeinfo.h>
+ 
++#ifdef ENABLE_SA_TRACE
++	#include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ class QByteArray;
+@@ -850,6 +854,10 @@ QObject * QDeclarativeComponentPrivate::begin(QDeclarativeContextData *parentCon
+     Q_ASSERT((state != 0) ^ (errors != 0)); // One of state or errors (but not both) must be provided
+ 
+     if (isRoot) {
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtQmlFrameCreate, 1, qPrintable(component->url.toString()));
++#endif // ENABLE_SA_TRACE
++
+         QDeclarativeDebugTrace::startRange(QDeclarativeDebugTrace::Creating);
+         QDeclarativeDebugTrace::rangeData(QDeclarativeDebugTrace::Creating, component->url);
+     }
+@@ -1044,6 +1052,10 @@ void QDeclarativeComponentPrivate::completeCreate()
+         complete(ep, &state);
+ 
+         QDeclarativeDebugTrace::endRange(QDeclarativeDebugTrace::Creating);
++
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtQmlFrameCreate, 0, qPrintable(url.toString()));
++#endif // ENABLE_SA_TRACE
+     }
+ }
+ 
+diff --git a/src/declarative/qml/qdeclarativeengine.cpp b/src/declarative/qml/qdeclarativeengine.cpp
+index a42c6a0..c71f5a0 100644
+--- a/src/declarative/qml/qdeclarativeengine.cpp
++++ b/src/declarative/qml/qdeclarativeengine.cpp
+@@ -113,6 +113,11 @@
+ #define CSIDL_APPDATA		0x001a	// <username>\Application Data
+ #endif
+ 
++#ifdef ENABLE_SA_TRACE
++    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
++	#include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ Q_DECLARE_METATYPE(QDeclarativeProperty)
+ Q_DECLARE_METATYPE(QScriptValue)
+ 
+@@ -1023,6 +1028,10 @@ void qmlExecuteDeferred(QObject *object)
+     QDeclarativeData *data = QDeclarativeData::get(object);
+ 
+     if (data && data->deferredComponent) {
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtQmlFrameCreate, 1, qPrintable(data->outerContext->url.toString()));
++#endif // ENABLE_SA_TRACE
++
+         if (QDeclarativeDebugService::isDebuggingEnabled()) {
+             QDeclarativeDebugTrace::startRange(QDeclarativeDebugTrace::Creating);
+             QDeclarativeType *type = QDeclarativeMetaType::qmlType(object->metaObject());
+@@ -1041,6 +1050,10 @@ void qmlExecuteDeferred(QObject *object)
+ 
+         QDeclarativeComponentPrivate::complete(ep, &state);
+         QDeclarativeDebugTrace::endRange(QDeclarativeDebugTrace::Creating);
++
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtQmlFrameCreate, 0, qPrintable(data->outerContext->url.toString()));
++#endif // ENABLE_SA_TRACE
+     }
+ }
+ 
+diff --git a/src/declarative/qml/qdeclarativetypeloader.cpp b/src/declarative/qml/qdeclarativetypeloader.cpp
+index 42847ea..8c70d3b 100644
+--- a/src/declarative/qml/qdeclarativetypeloader.cpp
++++ b/src/declarative/qml/qdeclarativetypeloader.cpp
+@@ -53,6 +53,10 @@
+ #include <QtCore/qdiriterator.h>
+ #include <QtCore/qfile.h>
+ 
++#ifdef ENABLE_SA_TRACE
++	#include "qt_tracepoints.h"
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ /*
+@@ -528,14 +532,24 @@ void QDeclarativeDataLoader::load(QDeclarativeDataBlob *blob)
+ 
+     QString lf = QDeclarativeEnginePrivate::urlToLocalFileOrQrc(blob->m_url);
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlResourceLoad, 1, qPrintable(blob->finalUrl().toString()));
++#endif // ENABLE_SA_TRACE
++
+     if (!lf.isEmpty()) {
+         if (!QDeclarative_isFileCaseCorrect(lf)) {
+             QDeclarativeError error;
+             error.setUrl(blob->m_url);
+             error.setDescription(QLatin1String("File name case mismatch"));
+             blob->setError(error);
++
++#ifdef ENABLE_SA_TRACE
++            qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->finalUrl().toString()));
++#endif // ENABLE_SA_TRACE
++
+             return;
+         }
++
+         QFile file(lf);
+         if (file.open(QFile::ReadOnly)) {
+             QByteArray data = file.readAll();
+@@ -544,6 +558,10 @@ void QDeclarativeDataLoader::load(QDeclarativeDataBlob *blob)
+             blob->downloadProgressChanged(1.);
+ 
+             setData(blob, data);
++
++#ifdef ENABLE_SA_TRACE
++            qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->finalUrl().toString()));
++#endif // ENABLE_SA_TRACE
+         } else {
+             blob->networkError(QNetworkReply::ContentNotFoundError);
+         }
+@@ -602,6 +620,10 @@ void QDeclarativeDataLoader::networkReplyFinished(QNetworkReply *reply)
+         setData(blob, data);
+     }
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->finalUrl().toString()));
++#endif // ENABLE_SA_TRACE
++
+     blob->release();
+ }
+ 
+@@ -922,6 +944,10 @@ void QDeclarativeTypeData::unregisterCallback(TypeDataCallback *callback)
+ 
+ void QDeclarativeTypeData::done()
+ {
++#ifdef ENABLE_SA_TRACE
++	qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(finalUrl().toString()));
++#endif // ENABLE_SA_TRACE
++
+     addref();
+ 
+     // Check all script dependencies for errors
+@@ -1034,6 +1060,11 @@ void QDeclarativeTypeData::downloadProgressChanged(qreal p)
+ void QDeclarativeTypeData::compile()
+ {
+     Q_ASSERT(m_compiledData == 0);
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlFrameCompile, 1, qPrintable(finalUrl().toString()));
++#endif // ENABLE_SA_TRACE
++
+     QDeclarativeDebugTrace::startRange(QDeclarativeDebugTrace::Compiling);
+ 
+     m_compiledData = new QDeclarativeCompiledData(typeLoader()->engine());
+@@ -1048,6 +1079,10 @@ void QDeclarativeTypeData::compile()
+         m_compiledData = 0;
+     }
+     QDeclarativeDebugTrace::endRange(QDeclarativeDebugTrace::Compiling);
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlFrameCompile, 0, qPrintable(finalUrl().toString()));
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ void QDeclarativeTypeData::resolveTypes()
