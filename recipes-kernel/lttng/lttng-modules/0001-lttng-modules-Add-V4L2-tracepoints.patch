@@ -124,12 +124,14 @@ Index: git/probes/Makefile
 ===================================================================
 --- git.orig/probes/Makefile	2013-05-15 10:40:38.663833252 -0700
 +++ git/probes/Makefile	2013-05-15 10:40:39.043833645 -0700
-@@ -102,6 +102,10 @@
+@@ -102,6 +102,12 @@
  obj-m += lttng-probe-lock.o
  endif
  
 +ifneq ($(CONFIG_VIDEO_V4L2),)
++ifneq ($(wildcard $(KERNEL_SRC)/include/trace/events/v4l2.h ),)
 +obj-m += lttng-probe-v4l2.o
++endif
 +endif
 +
  ifneq ($(CONFIG_KPROBES),)
