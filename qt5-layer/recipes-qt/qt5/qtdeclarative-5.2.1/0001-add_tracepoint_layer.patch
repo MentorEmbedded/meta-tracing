@@ -1,14 +1,14 @@
 diff --git a/src/qml/qml.pro b/src/qml/qml.pro
-index 79e83a1..3f11d26 100644
+index 79e83a1..6da03cd 100644
 --- a/src/qml/qml.pro
 +++ b/src/qml/qml.pro
 @@ -39,3 +39,4 @@ include(qml/qml.pri)
  include(debugger/debugger.pri)
  include(animations/animations.pri)
  include(types/types.pri)
-+contains(QT_CONFIG, sa-trace):include($$QT_SA_TRACE_PRIDIR/sa-trace.pri)
++contains(QT_CONFIG,tracesupport):CONFIG += tracesupport
 diff --git a/src/qml/qml/qqmlbinding.cpp b/src/qml/qml/qqmlbinding.cpp
-index 9e2fb07..19730a6 100644
+index 9e2fb07..13b9355 100644
 --- a/src/qml/qml/qqmlbinding.cpp
 +++ b/src/qml/qml/qqmlbinding.cpp
 @@ -55,6 +55,10 @@
@@ -16,7 +16,7 @@ index 9e2fb07..19730a6 100644
  #include <QtCore/qdebug.h>
  
 +#ifdef ENABLE_SA_TRACE
-+    #include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
@@ -45,7 +45,7 @@ index 9e2fb07..19730a6 100644
          QQmlProperty p = property();
          QQmlAbstractBinding::printBindingLoopError(p);
 diff --git a/src/qml/qml/qqmlcomponent.cpp b/src/qml/qml/qqmlcomponent.cpp
-index 21bcd35..f25aa6e 100644
+index 21bcd35..61c30de 100644
 --- a/src/qml/qml/qqmlcomponent.cpp
 +++ b/src/qml/qml/qqmlcomponent.cpp
 @@ -86,6 +86,10 @@
@@ -53,7 +53,7 @@ index 21bcd35..f25aa6e 100644
          "})"
  
 +#ifdef ENABLE_SA_TRACE
-+	#include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  
@@ -82,7 +82,7 @@ index 21bcd35..f25aa6e 100644
  
      if (depthIncreased) {
 diff --git a/src/qml/qml/qqmlengine.cpp b/src/qml/qml/qqmlengine.cpp
-index f8e5ad5..af11d94 100644
+index f8e5ad5..3d4f602 100644
 --- a/src/qml/qml/qqmlengine.cpp
 +++ b/src/qml/qml/qqmlengine.cpp
 @@ -110,6 +110,11 @@
@@ -91,7 +91,7 @@ index f8e5ad5..af11d94 100644
  
 +#ifdef ENABLE_SA_TRACE
 +    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
-+	#include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  Q_DECLARE_METATYPE(QQmlProperty)
@@ -122,7 +122,7 @@ index f8e5ad5..af11d94 100644
  }
  
 diff --git a/src/qml/qml/qqmltypeloader.cpp b/src/qml/qml/qqmltypeloader.cpp
-index 6eda55e..a9d34b2 100644
+index 6eda55e..4fc0d14 100644
 --- a/src/qml/qml/qqmltypeloader.cpp
 +++ b/src/qml/qml/qqmltypeloader.cpp
 @@ -64,6 +64,10 @@
@@ -130,7 +130,7 @@ index 6eda55e..a9d34b2 100644
  #include <QtQml/qqmlextensioninterface.h>
  
 +#ifdef ENABLE_SA_TRACE
-+	#include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  #if defined (Q_OS_UNIX)
@@ -141,7 +141,7 @@ index 6eda55e..a9d34b2 100644
      blob->startLoading(this);
  
 +#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtQmlResourceLoad, 1, qPrintable(blob->finalUrl().toString()));
++    if (blob) qt_tracepoint(Qt, qtQmlResourceLoad, 1, qPrintable(blob->url().toString()));
 +#endif // ENABLE_SA_TRACE
 +
      if (m_thread->isThisThread()) {
@@ -152,7 +152,7 @@ index 6eda55e..a9d34b2 100644
                      m_thread->callDownloadProgressChanged(blob, 1.);
                  setData(blob, debugCache.value(url, QByteArray()));
 +#ifdef ENABLE_SA_TRACE
-+                qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->finalUrl().toString()));
++                if (blob) qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->url().toString()));
 +#endif // ENABLE_SA_TRACE
                  return;
              }
@@ -162,7 +162,7 @@ index 6eda55e..a9d34b2 100644
          setData(blob, &file);
  
 +#ifdef ENABLE_SA_TRACE
-+        qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->finalUrl().toString()));
++        if (blob) qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->url().toString()));
 +#endif // ENABLE_SA_TRACE
      } else {
  
@@ -172,7 +172,7 @@ index 6eda55e..a9d34b2 100644
      }
  
 +#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->finalUrl().toString()));
++    if (blob) qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->url().toString()));
 +#endif // ENABLE_SA_TRACE
 +
      blob->release();
@@ -183,7 +183,7 @@ index 6eda55e..a9d34b2 100644
  void QQmlTypeData::done()
  {
 +#ifdef ENABLE_SA_TRACE
-+	qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(finalUrl().toString()));
++	qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(url().toString()));
 +#endif // ENABLE_SA_TRACE
 +
      // Check all script dependencies for errors
@@ -194,7 +194,7 @@ index 6eda55e..a9d34b2 100644
      Q_ASSERT(m_compiledData == 0);
  
 +#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtQmlFrameCompile, 1, qPrintable(finalUrl().toString()));
++    qt_tracepoint(Qt, qtQmlFrameCompile, 1, qPrintable(url().toString()));
 +#endif // ENABLE_SA_TRACE
 +
      m_compiledData = new QQmlCompiledData(typeLoader()->engine());
@@ -206,13 +206,13 @@ index 6eda55e..a9d34b2 100644
      }
 +
 +#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtQmlFrameCompile, 0, qPrintable(finalUrl().toString()));
++    qt_tracepoint(Qt, qtQmlFrameCompile, 0, qPrintable(url().toString()));
 +#endif // ENABLE_SA_TRACE
  }
  
  void QQmlTypeData::resolveTypes()
 diff --git a/src/quick/items/qquickwindow.cpp b/src/quick/items/qquickwindow.cpp
-index d286ccf..d421be7 100644
+index d286ccf..b44ab50 100644
 --- a/src/quick/items/qquickwindow.cpp
 +++ b/src/quick/items/qquickwindow.cpp
 @@ -71,6 +71,11 @@
@@ -221,7 +221,7 @@ index d286ccf..d421be7 100644
  
 +#ifdef ENABLE_SA_TRACE
 +    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
-+    #include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
@@ -328,19 +328,19 @@ index d286ccf..d421be7 100644
      }
  
 diff --git a/src/quick/quick.pro b/src/quick/quick.pro
-index 5168ec2..674c976 100644
+index 5168ec2..430660c 100644
 --- a/src/quick/quick.pro
 +++ b/src/quick/quick.pro
 @@ -30,6 +30,7 @@ include(util/util.pri)
  include(scenegraph/scenegraph.pri)
  include(items/items.pri)
  include(designer/designer.pri)
-+contains(QT_CONFIG, sa-trace):include($$QT_SA_TRACE_PRIDIR/sa-trace.pri)
++contains(QT_CONFIG,tracesupport):CONFIG += tracesupport
  
  HEADERS += \
      qtquickglobal.h \
 diff --git a/src/quick/scenegraph/coreapi/qsgrenderer.cpp b/src/quick/scenegraph/coreapi/qsgrenderer.cpp
-index e35bfe5..c11c4af 100644
+index e35bfe5..8b84889 100644
 --- a/src/quick/scenegraph/coreapi/qsgrenderer.cpp
 +++ b/src/quick/scenegraph/coreapi/qsgrenderer.cpp
 @@ -56,6 +56,10 @@
@@ -348,7 +348,7 @@ index e35bfe5..c11c4af 100644
  #include <private/qqmlprofilerservice_p.h>
  
 +#ifdef ENABLE_SA_TRACE
-+	#include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
