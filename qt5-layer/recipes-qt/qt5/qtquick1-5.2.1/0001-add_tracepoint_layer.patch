@@ -1,17 +1,17 @@
 diff --git a/src/declarative/declarative.pro b/src/declarative/declarative.pro
-index 476ef8d..52a1fc4 100644
+index 476ef8d..9e2d2da 100644
 --- a/src/declarative/declarative.pro
 +++ b/src/declarative/declarative.pro
 @@ -25,6 +25,7 @@ include(qml/qml.pri)
  include(util/util.pri)
  include(graphicsitems/graphicsitems.pri)
  include(debugger/debugger.pri)
-+contains(QT_CONFIG, sa-trace):include($$QT_SA_TRACE_PRIDIR/sa-trace.pri)
++contains(QT_CONFIG,tracesupport):CONFIG += tracesupport
  
  HEADERS += \
      qtdeclarativeglobal.h \
 diff --git a/src/declarative/qml/qdeclarativebinding.cpp b/src/declarative/qml/qdeclarativebinding.cpp
-index cdfb5ce..ac90428 100644
+index cdfb5ce..5b1e16c 100644
 --- a/src/declarative/qml/qdeclarativebinding.cpp
 +++ b/src/declarative/qml/qdeclarativebinding.cpp
 @@ -55,6 +55,10 @@
@@ -19,7 +19,7 @@ index cdfb5ce..ac90428 100644
  #include <QtCore/qdebug.h>
  
 +#ifdef ENABLE_SA_TRACE
-+    #include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
@@ -107,7 +107,7 @@ index cdfb5ce..ac90428 100644
          qmlInfo(d->property.object()) << tr("Binding loop detected for property \"%1\"").arg(d->property.name());
      }
 diff --git a/src/declarative/qml/qdeclarativecompiledbindings.cpp b/src/declarative/qml/qdeclarativecompiledbindings.cpp
-index 5546a5e..4143db2 100644
+index 5546a5e..0f3fd14 100644
 --- a/src/declarative/qml/qdeclarativecompiledbindings.cpp
 +++ b/src/declarative/qml/qdeclarativecompiledbindings.cpp
 @@ -57,6 +57,10 @@
@@ -115,7 +115,7 @@ index 5546a5e..4143db2 100644
  #include <private/qdeclarativedebugtrace_p.h>
  
 +#ifdef ENABLE_SA_TRACE
-+    #include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
@@ -156,7 +156,7 @@ index 5546a5e..4143db2 100644
  
  namespace {
 diff --git a/src/declarative/qml/qdeclarativecomponent.cpp b/src/declarative/qml/qdeclarativecomponent.cpp
-index f2596cc..74fbe96 100644
+index f2596cc..518ade8 100644
 --- a/src/declarative/qml/qdeclarativecomponent.cpp
 +++ b/src/declarative/qml/qdeclarativecomponent.cpp
 @@ -62,6 +62,10 @@
@@ -164,7 +164,7 @@ index f2596cc..74fbe96 100644
  #include <qdeclarativeinfo.h>
  
 +#ifdef ENABLE_SA_TRACE
-+	#include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
@@ -193,7 +193,7 @@ index f2596cc..74fbe96 100644
  }
  
 diff --git a/src/declarative/qml/qdeclarativeengine.cpp b/src/declarative/qml/qdeclarativeengine.cpp
-index a42c6a0..c71f5a0 100644
+index a42c6a0..a1ad339 100644
 --- a/src/declarative/qml/qdeclarativeengine.cpp
 +++ b/src/declarative/qml/qdeclarativeengine.cpp
 @@ -113,6 +113,11 @@
@@ -202,7 +202,7 @@ index a42c6a0..c71f5a0 100644
  
 +#ifdef ENABLE_SA_TRACE
 +    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
-+	#include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  Q_DECLARE_METATYPE(QDeclarativeProperty)
@@ -231,7 +231,7 @@ index a42c6a0..c71f5a0 100644
  }
  
 diff --git a/src/declarative/qml/qdeclarativetypeloader.cpp b/src/declarative/qml/qdeclarativetypeloader.cpp
-index 42847ea..8c70d3b 100644
+index 42847ea..09ea93b 100644
 --- a/src/declarative/qml/qdeclarativetypeloader.cpp
 +++ b/src/declarative/qml/qdeclarativetypeloader.cpp
 @@ -53,6 +53,10 @@
@@ -239,7 +239,7 @@ index 42847ea..8c70d3b 100644
  #include <QtCore/qfile.h>
  
 +#ifdef ENABLE_SA_TRACE
-+	#include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE

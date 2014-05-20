@@ -1,5 +1,5 @@
 diff --git a/configure b/configure
-index aaa59bd..34082ae 100755
+index aaa59bd..c3b1e5a 100755
 --- a/configure
 +++ b/configure
 @@ -732,6 +732,7 @@ OPT_MAC_SDK=
@@ -24,23 +24,18 @@ index aaa59bd..34082ae 100755
      *)
          UNKNOWN_OPT=yes
          ;;
-@@ -5867,7 +5875,15 @@ if [ "$CFG_WIDGETS" = "no" ]; then
+@@ -5867,7 +5875,9 @@ if [ "$CFG_WIDGETS" = "no" ]; then
      QT_CONFIG="$QT_CONFIG no-widgets"
      QCONFIG_FLAGS="$QCONFIG_FLAGS QT_NO_WIDGETS"
  fi
+-
 +if [ "$CFG_SOURCERYANALYZER" = "yes" ]; then
-+    QT_CONFIG="$QT_CONFIG sa-trace"
-+
-+    QT_SA_TRACE_PRIDIR="$relpath/src/3rdparty"
-+    QMakeVar set QT_SA_TRACE_PRIDIR "$QT_SA_TRACE_PRIDIR"
- 
-+    QT_SA_TRACE_LIBDIR="$outpath/lib"
-+    QMakeVar set QT_SA_TRACE_LIBDIR "$QT_SA_TRACE_LIBDIR"
++    QT_CONFIG="$QT_CONFIG tracesupport"
 +fi
  if [ "$XPLATFORM_MAC" = "yes" ]; then
      #On Mac we implicitly link against libz, so we
      #never use the 3rdparty stuff.
-@@ -6777,6 +6793,7 @@ report_support "    TDS .................." "$CFG_SQL_tds" plugin "plugin" yes "
+@@ -6777,6 +6787,7 @@ report_support "    TDS .................." "$CFG_SQL_tds" plugin "plugin" yes "
  report_support "  udev ..................." "$CFG_LIBUDEV"
  report_support "  xkbcommon .............." "$CFG_XKBCOMMON" system "system library" qt "bundled copy"
  report_support "  zlib ..................." "$CFG_ZLIB" system "system library" yes "bundled copy"
@@ -48,29 +43,310 @@ index aaa59bd..34082ae 100755
  
  echo
  
-diff --git a/src/3rdparty/sa-trace.pri b/src/3rdparty/sa-trace.pri
+diff --git a/mkspecs/features/tracesupport.prf b/mkspecs/features/tracesupport.prf
 new file mode 100644
-index 0000000..e39cc96
+index 0000000..d94a437
 --- /dev/null
-+++ b/src/3rdparty/sa-trace.pri
-@@ -0,0 +1,4 @@
-+DEFINES         *= ENABLE_SA_TRACE
-+CFLAGS          *= -g3 -O1
-+INCLUDEPATH     *= $$PWD/sa-trace
-+LIBS            *= -L$$QT_SA_TRACE_LIBDIR -lsa-trace -ldl
-diff --git a/src/3rdparty/sa-trace/qt_tracepoints.c b/src/3rdparty/sa-trace/qt_tracepoints.c
++++ b/mkspecs/features/tracesupport.prf
+@@ -0,0 +1,3 @@
++DEFINES += ENABLE_SA_TRACE
++CFLAGS          += -g3 -O1
++LIBS            += -L$$[QT_INSTALL_LIBS] -lQt5TraceSupport -ldl -llttng-ust -lurcu-bp
+diff --git a/src/corelib/animation/qabstractanimation.cpp b/src/corelib/animation/qabstractanimation.cpp
+index 139876d..f13ac0d 100644
+--- a/src/corelib/animation/qabstractanimation.cpp
++++ b/src/corelib/animation/qabstractanimation.cpp
+@@ -155,6 +155,10 @@
+ #include <QtCore/qcoreevent.h>
+ #include <QtCore/qpointer.h>
+ 
++#ifdef ENABLE_SA_TRACE
++    #include <QtTraceSupport/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
+ #ifndef QT_NO_ANIMATION
+ 
+ #define DEFAULT_TIMER_INTERVAL 16
+@@ -224,6 +228,10 @@ QUnifiedTimer::QUnifiedTimer() :
+     startTimersPending(false), stopTimerPending(false),
+     slowdownFactor(5.0f), profilerCallback(0)
+ {
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtAnimTimingInterval, DEFAULT_TIMER_INTERVAL);
++#endif // ENABLE_SA_TRACE
++
+     time.invalidate();
+     driver = &defaultDriver;
+ }
+@@ -281,6 +289,10 @@ void QUnifiedTimer::updateAnimationTimers(qint64 currentTick)
+     //it might happen in some cases that the time doesn't change because events are delayed
+     //when the CPU load is high
+     if (delta) {
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtAnimTick, 1);
++#endif // ENABLE_SA_TRACE
++
+         insideTick = true;
+         if (profilerCallback)
+             profilerCallback(delta);
+@@ -290,6 +302,10 @@ void QUnifiedTimer::updateAnimationTimers(qint64 currentTick)
+         }
+         insideTick = false;
+         currentAnimationIdx = 0;
++        
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtAnimTick, 0);
++#endif // ENABLE_SA_TRACE
+     }
+ }
+ 
+@@ -338,6 +354,10 @@ void QUnifiedTimer::restart()
+ 
+ void QUnifiedTimer::setTimingInterval(int interval)
+ {
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtAnimTimingInterval, interval);
++#endif // ENABLE_SA_TRACE
++    
+     timingInterval = interval;
+ 
+     if (driver->isRunning() && !pauseTimer.isActive()) {
+@@ -825,6 +845,10 @@ bool QAnimationDriver::isRunning() const
+ 
+ void QAnimationDriver::start()
+ {
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtAnimDriver, 1);
++#endif // ENABLE_SA_TRACE
++
+     Q_D(QAnimationDriver);
+     if (!d->running) {
+         d->running = true;
+@@ -840,6 +864,10 @@ void QAnimationDriver::stop()
+         d->running = false;
+         emit stopped();
+     }
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtAnimDriver, 0);
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ 
+diff --git a/src/corelib/corelib.pro b/src/corelib/corelib.pro
+index b513149..b6c854b 100644
+--- a/src/corelib/corelib.pro
++++ b/src/corelib/corelib.pro
+@@ -27,6 +27,9 @@ ANDROID_BUNDLED_JAR_DEPENDENCIES = \
+ 
+ load(qt_module)
+ 
++contains(QT_CONFIG,tracesupport):CONFIG += tracesupport
++contains(QT_CONFIG,tracesupport):LIBS += -L$$DESTDIR
++
+ include(animation/animation.pri)
+ include(arch/arch.pri)
+ include(global/global.pri)
+diff --git a/src/corelib/kernel/qcoreapplication.cpp b/src/corelib/kernel/qcoreapplication.cpp
+index e77d689..42e1d6f 100644
+--- a/src/corelib/kernel/qcoreapplication.cpp
++++ b/src/corelib/kernel/qcoreapplication.cpp
+@@ -106,6 +106,11 @@
+ 
+ #include <algorithm>
+ 
++#ifdef ENABLE_SA_TRACE
++    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
++    #include <QtTraceSupport/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ #ifndef QT_NO_QOBJECT
+@@ -396,6 +401,10 @@ QCoreApplicationPrivate::QCoreApplicationPrivate(int &aargc, char **aargv, uint
+     , q_ptr(0)
+ #endif
+ {
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtApplicationCreated, 1);
++#endif // ENABLE_SA_TRACE
++
+     app_compile_version = flags & 0xffffff;
+     static const char *const empty = "";
+     if (argc == 0 || argv == 0) {
+@@ -428,6 +437,10 @@ QCoreApplicationPrivate::~QCoreApplicationPrivate()
+     delete [] origArgv;
+ #endif
+     QCoreApplicationPrivate::clearApplicationFilePath();
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtApplicationCreated, 0);
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ #ifndef QT_NO_QOBJECT
+@@ -863,6 +876,11 @@ void QCoreApplication::setQuitLockEnabled(bool enabled)
+ */
+ bool QCoreApplication::notifyInternal(QObject *receiver, QEvent *event)
+ {
++#ifdef ENABLE_SA_TRACE
++    if (event)
++        qt_tracepoint(Qt, qtCoreEvents, event->type());
++#endif // ENABLE_SA_TRACE
++
+     // Make it possible for Qt Script to hook into events even
+     // though QApplication is subclassed...
+     bool result = false;
+diff --git a/src/gui/gui.pro b/src/gui/gui.pro
+index 3203b41..a6d4194 100644
+--- a/src/gui/gui.pro
++++ b/src/gui/gui.pro
+@@ -43,6 +43,8 @@ include(opengl/opengl.pri)
+ include(animation/animation.pri)
+ include(itemmodels/itemmodels.pri)
+ 
++contains(QT_CONFIG,tracesupport):CONFIG += tracesupport
++
+ QMAKE_LIBS += $$QMAKE_LIBS_GUI
+ 
+ load(cmake_functions)
+diff --git a/src/gui/image/qimagereader.cpp b/src/gui/image/qimagereader.cpp
+index 636d869..648e0d2 100644
+--- a/src/gui/image/qimagereader.cpp
++++ b/src/gui/image/qimagereader.cpp
+@@ -152,6 +152,11 @@
+ 
+ #include <algorithm>
+ 
++#ifdef ENABLE_SA_TRACE
++    #include <QThread>
++    #include <QtTraceSupport/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ #ifndef QT_NO_IMAGEFORMATPLUGIN
+@@ -1175,6 +1180,11 @@ bool QImageReader::read(QImage *image)
+     if (!d->handler && !d->initHandler())
+         return false;
+ 
++#ifdef ENABLE_SA_TRACE
++    long threadId = (long)(QThread::currentThread());
++    qt_tracepoint(Qt, qtImageReader, threadId, 1, fileName().toLatin1().constData());
++#endif // ENABLE_SA_TRACE
++
+     // set the handler specific options.
+     if (d->handler->supportsOption(QImageIOHandler::ScaledSize) && d->scaledSize.isValid()) {
+         if ((d->handler->supportsOption(QImageIOHandler::ClipRect) && !d->clipRect.isNull())
+@@ -1195,6 +1205,9 @@ bool QImageReader::read(QImage *image)
+     if (!d->handler->read(image)) {
+         d->imageReaderError = InvalidDataError;
+         d->errorString = QLatin1String(QT_TRANSLATE_NOOP(QImageReader, "Unable to read image data"));
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtImageReader, threadId, 0, fileName().toLatin1().constData());
++#endif // ENABLE_SA_TRACE
+         return false;
+     }
+ 
+@@ -1254,6 +1267,10 @@ bool QImageReader::read(QImage *image)
+         image->setDevicePixelRatio(2.0);
+     }
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtImageReader, threadId, 0, fileName().toLatin1().constData());
++#endif // ENABLE_SA_TRACE
++
+     return true;
+ }
+ 
+diff --git a/src/gui/kernel/qguiapplication.cpp b/src/gui/kernel/qguiapplication.cpp
+index 0711a37..7f53c9a 100644
+--- a/src/gui/kernel/qguiapplication.cpp
++++ b/src/gui/kernel/qguiapplication.cpp
+@@ -103,6 +103,11 @@
+ 
+ #include <ctype.h>
+ 
++#ifdef ENABLE_SA_TRACE
++    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
++    #include <QtTraceSupport/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ Q_GUI_EXPORT bool qt_is_gui_used = true;
+@@ -1336,6 +1341,35 @@ int QGuiApplication::exec()
+ */
+ bool QGuiApplication::notify(QObject *object, QEvent *event)
+ {
++#ifdef ENABLE_SA_TRACE
++    if (event) {
++        switch (event->type())
++        {
++        case QEvent::KeyPress:
++        case QEvent::KeyRelease:
++            {
++                QKeyEvent* key = static_cast<QKeyEvent*>(event);
++                qt_tracepoint(Qt, qtNotifyKeyEvent, key->type(), key->key(), key->modifiers());
++            }
++            break;
++
++        case QEvent::MouseButtonPress:
++        case QEvent::MouseButtonRelease:
++        case QEvent::MouseButtonDblClick:
++        case QEvent::MouseMove:
++            {
++                QMouseEvent* mouse = static_cast<QMouseEvent*>(event);
++                qt_tracepoint(Qt, qtSendMouseEvent, mouse->buttons());
++            }
++            break;
++
++        default:
++            // Ignore
++            break;
++        }
++    }
++#endif // ENABLE_SA_TRACE
++
+ #ifndef QT_NO_SHORTCUT
+     if (event->type() == QEvent::KeyPress) {
+         // Try looking for a Shortcut before sending key events
+diff --git a/src/src.pro b/src/src.pro
+index b7887a6..c26f6bc 100644
+--- a/src/src.pro
++++ b/src/src.pro
+@@ -108,7 +108,11 @@ src_plugins.depends = src_sql src_xml src_network
+ 
+ src_android.subdir = $$PWD/android
+ 
++src_tracesupport.subdir = $$PWD/tracesupport
++src_tracesupport.target = sub-tracesupport
++
+ # this order is important
++contains(QT_CONFIG, tracesupport): SUBDIRS += src_tracesupport
+ SUBDIRS += src_tools_bootstrap src_tools_moc src_tools_rcc src_corelib
+ TOOLS = src_tools_moc src_tools_rcc
+ win32:SUBDIRS += src_winmain
+@@ -156,4 +160,4 @@ TR_EXCLUDE = \
+     src_tools_bootstrap_dbus src_tools_qdbusxml2cpp src_tools_qdbuscpp2xml
+ 
+ sub-tools.depends = $$TOOLS
+-QMAKE_EXTRA_TARGETS = sub-tools
+\ No newline at end of file
++QMAKE_EXTRA_TARGETS = sub-tools
+diff --git a/src/tracesupport/qt_tracepoints.c b/src/tracesupport/qt_tracepoints.c
 new file mode 100644
 index 0000000..121df3d
 --- /dev/null
-+++ b/src/3rdparty/sa-trace/qt_tracepoints.c
++++ b/src/tracesupport/qt_tracepoints.c
 @@ -0,0 +1,2 @@
 +#define TRACEPOINT_CREATE_PROBES
 +#include "qt_tracepoints.h"
-diff --git a/src/3rdparty/sa-trace/qt_tracepoints.h b/src/3rdparty/sa-trace/qt_tracepoints.h
+diff --git a/src/tracesupport/qt_tracepoints.h b/src/tracesupport/qt_tracepoints.h
 new file mode 100644
 index 0000000..f1e33ba
 --- /dev/null
-+++ b/src/3rdparty/sa-trace/qt_tracepoints.h
++++ b/src/tracesupport/qt_tracepoints.h
 @@ -0,0 +1,85 @@
 +#undef TRACEPOINT_PROVIDER
 +#define TRACEPOINT_PROVIDER         Qt
@@ -157,308 +433,36 @@ index 0000000..f1e33ba
 +#endif /* _QT_TRACEPOINTS_H */
 +
 +#include <lttng/tracepoint-event.h>
-diff --git a/src/3rdparty/sa-trace/sa-trace.pro b/src/3rdparty/sa-trace/sa-trace.pro
+diff --git a/src/tracesupport/tracesupport.pro b/src/tracesupport/tracesupport.pro
 new file mode 100644
-index 0000000..4acd35d
+index 0000000..858f75d
 --- /dev/null
-+++ b/src/3rdparty/sa-trace/sa-trace.pro
-@@ -0,0 +1,20 @@
-+TEMPLATE = lib
-+DESTDIR = ../../../lib
-+
++++ b/src/tracesupport/tracesupport.pro
+@@ -0,0 +1,22 @@
++TARGET  = QtTraceSupport
 +CONFIG += create_prl
 +
 +QT -= core gui
 +
++load(qt_module)
++
 +#################################
 +
-+DEFINES         *= ENABLE_SA_TRACE
-+CFLAGS          *= -g3 -O1
-+INCLUDEPATH     *= $$PWD/sa-trace 
-+LIBS            *= -llttng-ust -lurcu-bp
++DEFINES         += ENABLE_SA_TRACE
++CFLAGS          += -g3 -O1
++LIBS            += -llttng-ust -lurcu-bp -ldl
++
 +
 +#################################
 +
 +SOURCES = qt_tracepoints.c
 +
-+target.path = $$[QT_INSTALL_LIBS]
-+INSTALLS += target
-diff --git a/src/corelib/animation/qabstractanimation.cpp b/src/corelib/animation/qabstractanimation.cpp
-index 139876d..7e56140 100644
---- a/src/corelib/animation/qabstractanimation.cpp
-+++ b/src/corelib/animation/qabstractanimation.cpp
-@@ -155,6 +155,10 @@
- #include <QtCore/qcoreevent.h>
- #include <QtCore/qpointer.h>
- 
-+#ifdef ENABLE_SA_TRACE
-+    #include "qt_tracepoints.h"
-+#endif // ENABLE_SA_TRACE
++HEADERS += qt_tracepoints.h
 +
- #ifndef QT_NO_ANIMATION
- 
- #define DEFAULT_TIMER_INTERVAL 16
-@@ -224,6 +228,10 @@ QUnifiedTimer::QUnifiedTimer() :
-     startTimersPending(false), stopTimerPending(false),
-     slowdownFactor(5.0f), profilerCallback(0)
- {
-+#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtAnimTimingInterval, DEFAULT_TIMER_INTERVAL);
-+#endif // ENABLE_SA_TRACE
 +
-     time.invalidate();
-     driver = &defaultDriver;
- }
-@@ -281,6 +289,10 @@ void QUnifiedTimer::updateAnimationTimers(qint64 currentTick)
-     //it might happen in some cases that the time doesn't change because events are delayed
-     //when the CPU load is high
-     if (delta) {
-+#ifdef ENABLE_SA_TRACE
-+        qt_tracepoint(Qt, qtAnimTick, 1);
-+#endif // ENABLE_SA_TRACE
 +
-         insideTick = true;
-         if (profilerCallback)
-             profilerCallback(delta);
-@@ -290,6 +302,10 @@ void QUnifiedTimer::updateAnimationTimers(qint64 currentTick)
-         }
-         insideTick = false;
-         currentAnimationIdx = 0;
-+        
-+#ifdef ENABLE_SA_TRACE
-+        qt_tracepoint(Qt, qtAnimTick, 0);
-+#endif // ENABLE_SA_TRACE
-     }
- }
- 
-@@ -338,6 +354,10 @@ void QUnifiedTimer::restart()
- 
- void QUnifiedTimer::setTimingInterval(int interval)
- {
-+#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtAnimTimingInterval, interval);
-+#endif // ENABLE_SA_TRACE
-+    
-     timingInterval = interval;
- 
-     if (driver->isRunning() && !pauseTimer.isActive()) {
-@@ -825,6 +845,10 @@ bool QAnimationDriver::isRunning() const
- 
- void QAnimationDriver::start()
- {
-+#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtAnimDriver, 1);
-+#endif // ENABLE_SA_TRACE
-+
-     Q_D(QAnimationDriver);
-     if (!d->running) {
-         d->running = true;
-@@ -840,6 +864,10 @@ void QAnimationDriver::stop()
-         d->running = false;
-         emit stopped();
-     }
-+
-+#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtAnimDriver, 0);
-+#endif // ENABLE_SA_TRACE
- }
- 
- 
-diff --git a/src/corelib/corelib.pro b/src/corelib/corelib.pro
-index b513149..7471b26 100644
---- a/src/corelib/corelib.pro
-+++ b/src/corelib/corelib.pro
-@@ -42,6 +42,8 @@ include(statemachine/statemachine.pri)
- include(mimetypes/mimetypes.pri)
- include(xml/xml.pri)
- 
-+contains(QT_CONFIG,sa-trace):include(../3rdparty/sa-trace.pri)
-+
- mac|darwin {
-     !ios {
-         LIBS_PRIVATE += -framework ApplicationServices
-diff --git a/src/corelib/kernel/qcoreapplication.cpp b/src/corelib/kernel/qcoreapplication.cpp
-index e77d689..487cbc0 100644
---- a/src/corelib/kernel/qcoreapplication.cpp
-+++ b/src/corelib/kernel/qcoreapplication.cpp
-@@ -106,6 +106,11 @@
- 
- #include <algorithm>
- 
-+#ifdef ENABLE_SA_TRACE
-+    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
-+    #include "qt_tracepoints.h"
-+#endif // ENABLE_SA_TRACE
-+
- QT_BEGIN_NAMESPACE
- 
- #ifndef QT_NO_QOBJECT
-@@ -396,6 +401,10 @@ QCoreApplicationPrivate::QCoreApplicationPrivate(int &aargc, char **aargv, uint
-     , q_ptr(0)
- #endif
- {
-+#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtApplicationCreated, 1);
-+#endif // ENABLE_SA_TRACE
-+
-     app_compile_version = flags & 0xffffff;
-     static const char *const empty = "";
-     if (argc == 0 || argv == 0) {
-@@ -428,6 +437,10 @@ QCoreApplicationPrivate::~QCoreApplicationPrivate()
-     delete [] origArgv;
- #endif
-     QCoreApplicationPrivate::clearApplicationFilePath();
-+
-+#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtApplicationCreated, 0);
-+#endif // ENABLE_SA_TRACE
- }
- 
- #ifndef QT_NO_QOBJECT
-@@ -863,6 +876,11 @@ void QCoreApplication::setQuitLockEnabled(bool enabled)
- */
- bool QCoreApplication::notifyInternal(QObject *receiver, QEvent *event)
- {
-+#ifdef ENABLE_SA_TRACE
-+    if (event)
-+        qt_tracepoint(Qt, qtCoreEvents, event->type());
-+#endif // ENABLE_SA_TRACE
-+
-     // Make it possible for Qt Script to hook into events even
-     // though QApplication is subclassed...
-     bool result = false;
-diff --git a/src/gui/gui.pro b/src/gui/gui.pro
-index 3203b41..a5f368c 100644
---- a/src/gui/gui.pro
-+++ b/src/gui/gui.pro
-@@ -43,6 +43,8 @@ include(opengl/opengl.pri)
- include(animation/animation.pri)
- include(itemmodels/itemmodels.pri)
- 
-+contains(QT_CONFIG, sa-trace):include(../3rdparty/sa-trace.pri)
-+
- QMAKE_LIBS += $$QMAKE_LIBS_GUI
- 
- load(cmake_functions)
-diff --git a/src/gui/image/qimagereader.cpp b/src/gui/image/qimagereader.cpp
-index 636d869..4a66aff 100644
---- a/src/gui/image/qimagereader.cpp
-+++ b/src/gui/image/qimagereader.cpp
-@@ -152,6 +152,11 @@
- 
- #include <algorithm>
- 
-+#ifdef ENABLE_SA_TRACE
-+    #include <QThread>
-+    #include "qt_tracepoints.h"
-+#endif // ENABLE_SA_TRACE
-+
- QT_BEGIN_NAMESPACE
- 
- #ifndef QT_NO_IMAGEFORMATPLUGIN
-@@ -1175,6 +1180,11 @@ bool QImageReader::read(QImage *image)
-     if (!d->handler && !d->initHandler())
-         return false;
- 
-+#ifdef ENABLE_SA_TRACE
-+    long threadId = (long)(QThread::currentThread());
-+    qt_tracepoint(Qt, qtImageReader, threadId, 1, fileName().toLatin1().constData());
-+#endif // ENABLE_SA_TRACE
-+
-     // set the handler specific options.
-     if (d->handler->supportsOption(QImageIOHandler::ScaledSize) && d->scaledSize.isValid()) {
-         if ((d->handler->supportsOption(QImageIOHandler::ClipRect) && !d->clipRect.isNull())
-@@ -1195,6 +1205,9 @@ bool QImageReader::read(QImage *image)
-     if (!d->handler->read(image)) {
-         d->imageReaderError = InvalidDataError;
-         d->errorString = QLatin1String(QT_TRANSLATE_NOOP(QImageReader, "Unable to read image data"));
-+#ifdef ENABLE_SA_TRACE
-+        qt_tracepoint(Qt, qtImageReader, threadId, 0, fileName().toLatin1().constData());
-+#endif // ENABLE_SA_TRACE
-         return false;
-     }
- 
-@@ -1254,6 +1267,10 @@ bool QImageReader::read(QImage *image)
-         image->setDevicePixelRatio(2.0);
-     }
- 
-+#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtImageReader, threadId, 0, fileName().toLatin1().constData());
-+#endif // ENABLE_SA_TRACE
-+
-     return true;
- }
- 
-diff --git a/src/gui/kernel/qguiapplication.cpp b/src/gui/kernel/qguiapplication.cpp
-index 0711a37..7893da2 100644
---- a/src/gui/kernel/qguiapplication.cpp
-+++ b/src/gui/kernel/qguiapplication.cpp
-@@ -103,6 +103,11 @@
- 
- #include <ctype.h>
- 
-+#ifdef ENABLE_SA_TRACE
-+    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
-+    #include "qt_tracepoints.h"
-+#endif // ENABLE_SA_TRACE
-+
- QT_BEGIN_NAMESPACE
- 
- Q_GUI_EXPORT bool qt_is_gui_used = true;
-@@ -1336,6 +1341,35 @@ int QGuiApplication::exec()
- */
- bool QGuiApplication::notify(QObject *object, QEvent *event)
- {
-+#ifdef ENABLE_SA_TRACE
-+    if (event) {
-+        switch (event->type())
-+        {
-+        case QEvent::KeyPress:
-+        case QEvent::KeyRelease:
-+            {
-+                QKeyEvent* key = static_cast<QKeyEvent*>(event);
-+                qt_tracepoint(Qt, qtNotifyKeyEvent, key->type(), key->key(), key->modifiers());
-+            }
-+            break;
-+
-+        case QEvent::MouseButtonPress:
-+        case QEvent::MouseButtonRelease:
-+        case QEvent::MouseButtonDblClick:
-+        case QEvent::MouseMove:
-+            {
-+                QMouseEvent* mouse = static_cast<QMouseEvent*>(event);
-+                qt_tracepoint(Qt, qtSendMouseEvent, mouse->buttons());
-+            }
-+            break;
-+
-+        default:
-+            // Ignore
-+            break;
-+        }
-+    }
-+#endif // ENABLE_SA_TRACE
-+
- #ifndef QT_NO_SHORTCUT
-     if (event->type() == QEvent::KeyPress) {
-         // Try looking for a Shortcut before sending key events
-diff --git a/src/src.pro b/src/src.pro
-index b7887a6..c330007 100644
---- a/src/src.pro
-+++ b/src/src.pro
-@@ -108,7 +108,11 @@ src_plugins.depends = src_sql src_xml src_network
- 
- src_android.subdir = $$PWD/android
- 
-+src_satrace.subdir = $$PWD/3rdparty/sa-trace
-+src_satrace.target = sub-satrace
-+
- # this order is important
-+contains(QT_CONFIG, sa-trace): SUBDIRS += src_satrace
- SUBDIRS += src_tools_bootstrap src_tools_moc src_tools_rcc src_corelib
- TOOLS = src_tools_moc src_tools_rcc
- win32:SUBDIRS += src_winmain
 diff --git a/src/widgets/graphicsview/qgraphicsscene.cpp b/src/widgets/graphicsview/qgraphicsscene.cpp
-index 41d4fc9..6c1d9a0 100644
+index 41d4fc9..99dbdaf 100644
 --- a/src/widgets/graphicsview/qgraphicsscene.cpp
 +++ b/src/widgets/graphicsview/qgraphicsscene.cpp
 @@ -251,6 +251,10 @@
@@ -466,7 +470,7 @@ index 41d4fc9..6c1d9a0 100644
  #include <private/qpathclipper_p.h>
  
 +#ifdef ENABLE_SA_TRACE
-+	#include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  // #define GESTURE_DEBUG
@@ -484,7 +488,7 @@ index 41d4fc9..6c1d9a0 100644
  
      switch (event->type()) {
 diff --git a/src/widgets/kernel/qapplication.cpp b/src/widgets/kernel/qapplication.cpp
-index c9d6593..3e86cd7 100644
+index c9d6593..1b83985 100644
 --- a/src/widgets/kernel/qapplication.cpp
 +++ b/src/widgets/kernel/qapplication.cpp
 @@ -106,6 +106,11 @@ extern bool qt_wince_is_pocket_pc();  //qguifunctions_wince.cpp
@@ -493,7 +497,7 @@ index c9d6593..3e86cd7 100644
  
 +#ifdef ENABLE_SA_TRACE
 +    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
-+	#include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  //#define ALIEN_DEBUG
@@ -547,7 +551,7 @@ index c9d6593..3e86cd7 100644
                  if (!pw)
                      break;
 diff --git a/src/widgets/kernel/qwidgetbackingstore.cpp b/src/widgets/kernel/qwidgetbackingstore.cpp
-index 4a94cd6..3ee884d 100644
+index 4a94cd6..9ace73b 100644
 --- a/src/widgets/kernel/qwidgetbackingstore.cpp
 +++ b/src/widgets/kernel/qwidgetbackingstore.cpp
 @@ -62,6 +62,10 @@
@@ -555,7 +559,7 @@ index 4a94cd6..3ee884d 100644
  #endif
  
 +#ifdef ENABLE_SA_TRACE
-+	#include "qt_tracepoints.h"
++    #include <QtTraceSupport/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
@@ -584,14 +588,26 @@ index 4a94cd6..3ee884d 100644
  
  #ifndef QT_NO_PAINT_DEBUG
 diff --git a/src/widgets/widgets.pro b/src/widgets/widgets.pro
-index e3222b4..f8a62d3 100644
+index e3222b4..2ce90e0 100644
 --- a/src/widgets/widgets.pro
 +++ b/src/widgets/widgets.pro
 @@ -30,6 +30,7 @@ include(util/util.pri)
  include(statemachine/statemachine.pri)
  include(effects/effects.pri)
  
-+contains(QT_CONFIG, sa-trace):include(../3rdparty/sa-trace.pri)
++contains(QT_CONFIG,tracesupport):CONFIG += tracesupport
  
  QMAKE_LIBS += $$QMAKE_LIBS_GUI
  
+diff --git a/sync.profile b/sync.profile
+index 7bd10b4..b5f648a 100644
+--- a/sync.profile
++++ b/sync.profile
+@@ -16,6 +16,7 @@
+     "QtANGLE/EGL" => "!$basedir/src/3rdparty/angle/include/EGL",
+     "QtZlib" => "!$basedir/src/3rdparty/zlib",
+     "QtOpenGLExtensions" => "$basedir/src/openglextensions",
++    "QtTraceSupport" => "$basedir/src/tracesupport",
+ );
+ %moduleheaders = ( # restrict the module headers to those found in relative path
+ );
