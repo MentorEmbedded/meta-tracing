@@ -1,8 +1,8 @@
-diff --git a/configure b/configure
-index aaa59bd..c3b1e5a 100755
---- a/configure
-+++ b/configure
-@@ -732,6 +732,7 @@ OPT_MAC_SDK=
+diff --git c/configure i/configure
+index cb8d78f..862306c 100755
+--- c/configure
++++ i/configure
+@@ -735,6 +735,7 @@ OPT_MAC_SDK=
  COMMERCIAL_USER=ask
  LICENSE_FILE=
  CFG_DEV=no
@@ -10,7 +10,7 @@ index aaa59bd..c3b1e5a 100755
  
  # initalize variables used for installation
  QT_INSTALL_PREFIX=
-@@ -2132,6 +2133,13 @@ while [ "$#" -gt 0 ]; do
+@@ -2158,6 +2159,13 @@ while [ "$#" -gt 0 ]; do
              UNKNOWN_OPT=yes
          fi
          ;;
@@ -24,7 +24,7 @@ index aaa59bd..c3b1e5a 100755
      *)
          UNKNOWN_OPT=yes
          ;;
-@@ -5867,7 +5875,9 @@ if [ "$CFG_WIDGETS" = "no" ]; then
+@@ -5681,7 +5689,9 @@ if [ "$CFG_WIDGETS" = "no" ]; then
      QT_CONFIG="$QT_CONFIG no-widgets"
      QCONFIG_FLAGS="$QCONFIG_FLAGS QT_NO_WIDGETS"
  fi
@@ -35,27 +35,27 @@ index aaa59bd..c3b1e5a 100755
  if [ "$XPLATFORM_MAC" = "yes" ]; then
      #On Mac we implicitly link against libz, so we
      #never use the 3rdparty stuff.
-@@ -6777,6 +6787,7 @@ report_support "    TDS .................." "$CFG_SQL_tds" plugin "plugin" yes "
+@@ -6568,6 +6578,7 @@ report_support "    TDS .................." "$CFG_SQL_tds" plugin "plugin" yes "
  report_support "  udev ..................." "$CFG_LIBUDEV"
- report_support "  xkbcommon .............." "$CFG_XKBCOMMON" system "system library" qt "bundled copy"
+ report_support "  xkbcommon .............." "$CFG_XKBCOMMON" system "system library" qt "bundled copy, XKB config root: $CFG_XKB_CONFIG_ROOT"
  report_support "  zlib ..................." "$CFG_ZLIB" system "system library" yes "bundled copy"
 +report_support "  Sourcery Analyzer ......" "$CFG_SOURCERYANALYZER"
  
  echo
  
-diff --git a/mkspecs/features/tracesupport.prf b/mkspecs/features/tracesupport.prf
+diff --git c/mkspecs/features/tracesupport.prf i/mkspecs/features/tracesupport.prf
 new file mode 100644
 index 0000000..d94a437
 --- /dev/null
-+++ b/mkspecs/features/tracesupport.prf
++++ i/mkspecs/features/tracesupport.prf
 @@ -0,0 +1,3 @@
 +DEFINES += ENABLE_SA_TRACE
 +CFLAGS          += -g3 -O1
 +LIBS            += -L$$[QT_INSTALL_LIBS] -lQt5TraceSupport -ldl -llttng-ust -lurcu-bp
-diff --git a/src/corelib/animation/qabstractanimation.cpp b/src/corelib/animation/qabstractanimation.cpp
-index 139876d..f13ac0d 100644
---- a/src/corelib/animation/qabstractanimation.cpp
-+++ b/src/corelib/animation/qabstractanimation.cpp
+diff --git c/src/corelib/animation/qabstractanimation.cpp i/src/corelib/animation/qabstractanimation.cpp
+index 95d7713..a539807 100644
+--- c/src/corelib/animation/qabstractanimation.cpp
++++ i/src/corelib/animation/qabstractanimation.cpp
 @@ -155,6 +155,10 @@
  #include <QtCore/qcoreevent.h>
  #include <QtCore/qpointer.h>
@@ -78,7 +78,18 @@ index 139876d..f13ac0d 100644
      time.invalidate();
      driver = &defaultDriver;
  }
-@@ -281,6 +289,10 @@ void QUnifiedTimer::updateAnimationTimers(qint64 currentTick)
+@@ -341,6 +349,10 @@ void QUnifiedTimer::restart()
+ 
+ void QUnifiedTimer::setTimingInterval(int interval)
+ {
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtAnimTimingInterval, interval);
++#endif // ENABLE_SA_TRACE
++
+     timingInterval = interval;
+ 
+     if (driver->isRunning() && !pauseTimer.isActive()) {
+@@ -572,6 +584,10 @@ void QAnimationTimer::updateAnimationsTime(qint64 delta)
      //it might happen in some cases that the time doesn't change because events are delayed
      //when the CPU load is high
      if (delta) {
@@ -87,9 +98,9 @@ index 139876d..f13ac0d 100644
 +#endif // ENABLE_SA_TRACE
 +
          insideTick = true;
-         if (profilerCallback)
-             profilerCallback(delta);
-@@ -290,6 +302,10 @@ void QUnifiedTimer::updateAnimationTimers(qint64 currentTick)
+         for (currentAnimationIdx = 0; currentAnimationIdx < animations.count(); ++currentAnimationIdx) {
+             QAbstractAnimation *animation = animations.at(currentAnimationIdx);
+@@ -581,6 +597,10 @@ void QAnimationTimer::updateAnimationsTime(qint64 delta)
          }
          insideTick = false;
          currentAnimationIdx = 0;
@@ -100,18 +111,7 @@ index 139876d..f13ac0d 100644
      }
  }
  
-@@ -338,6 +354,10 @@ void QUnifiedTimer::restart()
- 
- void QUnifiedTimer::setTimingInterval(int interval)
- {
-+#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtAnimTimingInterval, interval);
-+#endif // ENABLE_SA_TRACE
-+    
-     timingInterval = interval;
- 
-     if (driver->isRunning() && !pauseTimer.isActive()) {
-@@ -825,6 +845,10 @@ bool QAnimationDriver::isRunning() const
+@@ -828,6 +848,10 @@ bool QAnimationDriver::isRunning() const
  
  void QAnimationDriver::start()
  {
@@ -122,7 +122,7 @@ index 139876d..f13ac0d 100644
      Q_D(QAnimationDriver);
      if (!d->running) {
          d->running = true;
-@@ -840,6 +864,10 @@ void QAnimationDriver::stop()
+@@ -843,6 +867,10 @@ void QAnimationDriver::stop()
          d->running = false;
          emit stopped();
      }
@@ -133,11 +133,11 @@ index 139876d..f13ac0d 100644
  }
  
  
-diff --git a/src/corelib/corelib.pro b/src/corelib/corelib.pro
-index b513149..b6c854b 100644
---- a/src/corelib/corelib.pro
-+++ b/src/corelib/corelib.pro
-@@ -27,6 +27,9 @@ ANDROID_BUNDLED_JAR_DEPENDENCIES = \
+diff --git c/src/corelib/corelib.pro i/src/corelib/corelib.pro
+index 812aee3..c116a3c 100644
+--- c/src/corelib/corelib.pro
++++ i/src/corelib/corelib.pro
+@@ -32,6 +32,9 @@ ANDROID_PERMISSIONS = \
  
  load(qt_module)
  
@@ -147,11 +147,11 @@ index b513149..b6c854b 100644
  include(animation/animation.pri)
  include(arch/arch.pri)
  include(global/global.pri)
-diff --git a/src/corelib/kernel/qcoreapplication.cpp b/src/corelib/kernel/qcoreapplication.cpp
-index e77d689..42e1d6f 100644
---- a/src/corelib/kernel/qcoreapplication.cpp
-+++ b/src/corelib/kernel/qcoreapplication.cpp
-@@ -106,6 +106,11 @@
+diff --git c/src/corelib/kernel/qcoreapplication.cpp i/src/corelib/kernel/qcoreapplication.cpp
+index 6868eb6..52f9f0d 100644
+--- c/src/corelib/kernel/qcoreapplication.cpp
++++ i/src/corelib/kernel/qcoreapplication.cpp
+@@ -112,6 +112,11 @@
  
  #include <algorithm>
  
@@ -163,7 +163,7 @@ index e77d689..42e1d6f 100644
  QT_BEGIN_NAMESPACE
  
  #ifndef QT_NO_QOBJECT
-@@ -396,6 +401,10 @@ QCoreApplicationPrivate::QCoreApplicationPrivate(int &aargc, char **aargv, uint
+@@ -406,6 +411,10 @@ QCoreApplicationPrivate::QCoreApplicationPrivate(int &aargc, char **aargv, uint
      , q_ptr(0)
  #endif
  {
@@ -174,7 +174,7 @@ index e77d689..42e1d6f 100644
      app_compile_version = flags & 0xffffff;
      static const char *const empty = "";
      if (argc == 0 || argv == 0) {
-@@ -428,6 +437,10 @@ QCoreApplicationPrivate::~QCoreApplicationPrivate()
+@@ -443,6 +452,10 @@ QCoreApplicationPrivate::~QCoreApplicationPrivate()
      delete [] origArgv;
  #endif
      QCoreApplicationPrivate::clearApplicationFilePath();
@@ -185,7 +185,7 @@ index e77d689..42e1d6f 100644
  }
  
  #ifndef QT_NO_QOBJECT
-@@ -863,6 +876,11 @@ void QCoreApplication::setQuitLockEnabled(bool enabled)
+@@ -917,6 +930,11 @@ void QCoreApplication::setQuitLockEnabled(bool enabled)
  */
  bool QCoreApplication::notifyInternal(QObject *receiver, QEvent *event)
  {
@@ -197,11 +197,11 @@ index e77d689..42e1d6f 100644
      // Make it possible for Qt Script to hook into events even
      // though QApplication is subclassed...
      bool result = false;
-diff --git a/src/gui/gui.pro b/src/gui/gui.pro
-index 3203b41..a6d4194 100644
---- a/src/gui/gui.pro
-+++ b/src/gui/gui.pro
-@@ -43,6 +43,8 @@ include(opengl/opengl.pri)
+diff --git c/src/gui/gui.pro i/src/gui/gui.pro
+index af84eb7..f9c8728 100644
+--- c/src/gui/gui.pro
++++ i/src/gui/gui.pro
+@@ -46,6 +46,8 @@ include(opengl/opengl.pri)
  include(animation/animation.pri)
  include(itemmodels/itemmodels.pri)
  
@@ -210,10 +210,10 @@ index 3203b41..a6d4194 100644
  QMAKE_LIBS += $$QMAKE_LIBS_GUI
  
  load(cmake_functions)
-diff --git a/src/gui/image/qimagereader.cpp b/src/gui/image/qimagereader.cpp
-index 636d869..648e0d2 100644
---- a/src/gui/image/qimagereader.cpp
-+++ b/src/gui/image/qimagereader.cpp
+diff --git c/src/gui/image/qimagereader.cpp i/src/gui/image/qimagereader.cpp
+index a10198a..331e972 100644
+--- c/src/gui/image/qimagereader.cpp
++++ i/src/gui/image/qimagereader.cpp
 @@ -152,6 +152,11 @@
  
  #include <algorithm>
@@ -226,7 +226,7 @@ index 636d869..648e0d2 100644
  QT_BEGIN_NAMESPACE
  
  #ifndef QT_NO_IMAGEFORMATPLUGIN
-@@ -1175,6 +1180,11 @@ bool QImageReader::read(QImage *image)
+@@ -1172,6 +1177,11 @@ bool QImageReader::read(QImage *image)
      if (!d->handler && !d->initHandler())
          return false;
  
@@ -238,7 +238,7 @@ index 636d869..648e0d2 100644
      // set the handler specific options.
      if (d->handler->supportsOption(QImageIOHandler::ScaledSize) && d->scaledSize.isValid()) {
          if ((d->handler->supportsOption(QImageIOHandler::ClipRect) && !d->clipRect.isNull())
-@@ -1195,6 +1205,9 @@ bool QImageReader::read(QImage *image)
+@@ -1192,6 +1202,9 @@ bool QImageReader::read(QImage *image)
      if (!d->handler->read(image)) {
          d->imageReaderError = InvalidDataError;
          d->errorString = QLatin1String(QT_TRANSLATE_NOOP(QImageReader, "Unable to read image data"));
@@ -248,8 +248,8 @@ index 636d869..648e0d2 100644
          return false;
      }
  
-@@ -1254,6 +1267,10 @@ bool QImageReader::read(QImage *image)
-         image->setDevicePixelRatio(2.0);
+@@ -1252,6 +1265,10 @@ bool QImageReader::read(QImage *image)
+            image->setDevicePixelRatio(2.0);
      }
  
 +#ifdef ENABLE_SA_TRACE
@@ -259,11 +259,11 @@ index 636d869..648e0d2 100644
      return true;
  }
  
-diff --git a/src/gui/kernel/qguiapplication.cpp b/src/gui/kernel/qguiapplication.cpp
-index 0711a37..7f53c9a 100644
---- a/src/gui/kernel/qguiapplication.cpp
-+++ b/src/gui/kernel/qguiapplication.cpp
-@@ -103,6 +103,11 @@
+diff --git c/src/gui/kernel/qguiapplication.cpp i/src/gui/kernel/qguiapplication.cpp
+index 7648233..5716cca 100644
+--- c/src/gui/kernel/qguiapplication.cpp
++++ i/src/gui/kernel/qguiapplication.cpp
+@@ -109,6 +109,11 @@
  
  #include <ctype.h>
  
@@ -275,7 +275,7 @@ index 0711a37..7f53c9a 100644
  QT_BEGIN_NAMESPACE
  
  Q_GUI_EXPORT bool qt_is_gui_used = true;
-@@ -1336,6 +1341,35 @@ int QGuiApplication::exec()
+@@ -1487,6 +1492,35 @@ int QGuiApplication::exec()
  */
  bool QGuiApplication::notify(QObject *object, QEvent *event)
  {
@@ -311,11 +311,11 @@ index 0711a37..7f53c9a 100644
  #ifndef QT_NO_SHORTCUT
      if (event->type() == QEvent::KeyPress) {
          // Try looking for a Shortcut before sending key events
-diff --git a/src/src.pro b/src/src.pro
-index b7887a6..c26f6bc 100644
---- a/src/src.pro
-+++ b/src/src.pro
-@@ -108,7 +108,11 @@ src_plugins.depends = src_sql src_xml src_network
+diff --git c/src/src.pro i/src/src.pro
+index 6a805a6..3ae220b 100644
+--- c/src/src.pro
++++ i/src/src.pro
+@@ -117,7 +117,11 @@ src_plugins.depends = src_sql src_xml src_network
  
  src_android.subdir = $$PWD/android
  
@@ -324,29 +324,22 @@ index b7887a6..c26f6bc 100644
 +
  # this order is important
 +contains(QT_CONFIG, tracesupport): SUBDIRS += src_tracesupport
- SUBDIRS += src_tools_bootstrap src_tools_moc src_tools_rcc src_corelib
- TOOLS = src_tools_moc src_tools_rcc
+ SUBDIRS += src_tools_bootstrap src_tools_moc src_tools_rcc src_corelib src_tools_qlalr
+ TOOLS = src_tools_moc src_tools_rcc src_tools_qlalr
  win32:SUBDIRS += src_winmain
-@@ -156,4 +160,4 @@ TR_EXCLUDE = \
-     src_tools_bootstrap_dbus src_tools_qdbusxml2cpp src_tools_qdbuscpp2xml
- 
- sub-tools.depends = $$TOOLS
--QMAKE_EXTRA_TARGETS = sub-tools
-\ No newline at end of file
-+QMAKE_EXTRA_TARGETS = sub-tools
-diff --git a/src/tracesupport/qt_tracepoints.c b/src/tracesupport/qt_tracepoints.c
+diff --git c/src/tracesupport/qt_tracepoints.c i/src/tracesupport/qt_tracepoints.c
 new file mode 100644
 index 0000000..121df3d
 --- /dev/null
-+++ b/src/tracesupport/qt_tracepoints.c
++++ i/src/tracesupport/qt_tracepoints.c
 @@ -0,0 +1,2 @@
 +#define TRACEPOINT_CREATE_PROBES
 +#include "qt_tracepoints.h"
-diff --git a/src/tracesupport/qt_tracepoints.h b/src/tracesupport/qt_tracepoints.h
+diff --git c/src/tracesupport/qt_tracepoints.h i/src/tracesupport/qt_tracepoints.h
 new file mode 100644
 index 0000000..f1e33ba
 --- /dev/null
-+++ b/src/tracesupport/qt_tracepoints.h
++++ i/src/tracesupport/qt_tracepoints.h
 @@ -0,0 +1,85 @@
 +#undef TRACEPOINT_PROVIDER
 +#define TRACEPOINT_PROVIDER         Qt
@@ -433,11 +426,11 @@ index 0000000..f1e33ba
 +#endif /* _QT_TRACEPOINTS_H */
 +
 +#include <lttng/tracepoint-event.h>
-diff --git a/src/tracesupport/tracesupport.pro b/src/tracesupport/tracesupport.pro
+diff --git c/src/tracesupport/tracesupport.pro i/src/tracesupport/tracesupport.pro
 new file mode 100644
 index 0000000..858f75d
 --- /dev/null
-+++ b/src/tracesupport/tracesupport.pro
++++ i/src/tracesupport/tracesupport.pro
 @@ -0,0 +1,22 @@
 +TARGET  = QtTraceSupport
 +CONFIG += create_prl
@@ -461,10 +454,10 @@ index 0000000..858f75d
 +
 +
 +
-diff --git a/src/widgets/graphicsview/qgraphicsscene.cpp b/src/widgets/graphicsview/qgraphicsscene.cpp
-index 41d4fc9..99dbdaf 100644
---- a/src/widgets/graphicsview/qgraphicsscene.cpp
-+++ b/src/widgets/graphicsview/qgraphicsscene.cpp
+diff --git c/src/widgets/graphicsview/qgraphicsscene.cpp i/src/widgets/graphicsview/qgraphicsscene.cpp
+index bccdb1f..85c189e 100644
+--- c/src/widgets/graphicsview/qgraphicsscene.cpp
++++ i/src/widgets/graphicsview/qgraphicsscene.cpp
 @@ -251,6 +251,10 @@
  #include <private/qgesturemanager_p.h>
  #include <private/qpathclipper_p.h>
@@ -487,11 +480,11 @@ index 41d4fc9..99dbdaf 100644
      Q_D(QGraphicsScene);
  
      switch (event->type()) {
-diff --git a/src/widgets/kernel/qapplication.cpp b/src/widgets/kernel/qapplication.cpp
-index c9d6593..1b83985 100644
---- a/src/widgets/kernel/qapplication.cpp
-+++ b/src/widgets/kernel/qapplication.cpp
-@@ -106,6 +106,11 @@ extern bool qt_wince_is_pocket_pc();  //qguifunctions_wince.cpp
+diff --git c/src/widgets/kernel/qapplication.cpp i/src/widgets/kernel/qapplication.cpp
+index 04d3982..e93b4eb 100644
+--- c/src/widgets/kernel/qapplication.cpp
++++ i/src/widgets/kernel/qapplication.cpp
+@@ -103,6 +103,11 @@ extern bool qt_wince_is_pocket_pc();  //qguifunctions_wince.cpp
  
  #include <qpa/qplatformwindow.h>
  
@@ -503,7 +496,7 @@ index c9d6593..1b83985 100644
  //#define ALIEN_DEBUG
  
  static void initResources()
-@@ -2444,6 +2449,10 @@ bool QApplicationPrivate::sendMouseEvent(QWidget *receiver, QMouseEvent *event,
+@@ -2480,6 +2485,10 @@ bool QApplicationPrivate::sendMouseEvent(QWidget *receiver, QMouseEvent *event,
      Q_ASSERT(nativeWidget);
      Q_ASSERT(buttonDown);
  
@@ -514,7 +507,7 @@ index c9d6593..1b83985 100644
      if (alienWidget && !isAlien(alienWidget))
          alienWidget = 0;
  
-@@ -2906,6 +2915,13 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
+@@ -2955,6 +2964,13 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
      case QEvent::KeyPress:
      case QEvent::KeyRelease:
          {
@@ -528,7 +521,7 @@ index c9d6593..1b83985 100644
              bool isWidget = receiver->isWidgetType();
              bool isGraphicsWidget = false;
  #ifndef QT_NO_GRAPHICSVIEW
-@@ -2954,6 +2970,10 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
+@@ -3003,6 +3019,10 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
  #endif
              }
              qt_in_tab_key_event = false;
@@ -539,7 +532,7 @@ index c9d6593..1b83985 100644
          }
          break;
      case QEvent::MouseButtonPress:
-@@ -3027,6 +3047,10 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
+@@ -3077,6 +3097,10 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
  
              mouse->setAccepted(eventAccepted);
  
@@ -550,11 +543,11 @@ index c9d6593..1b83985 100644
              if (e->type() == QEvent::MouseMove) {
                  if (!pw)
                      break;
-diff --git a/src/widgets/kernel/qwidgetbackingstore.cpp b/src/widgets/kernel/qwidgetbackingstore.cpp
-index 4a94cd6..9ace73b 100644
---- a/src/widgets/kernel/qwidgetbackingstore.cpp
-+++ b/src/widgets/kernel/qwidgetbackingstore.cpp
-@@ -62,6 +62,10 @@
+diff --git c/src/widgets/kernel/qwidgetbackingstore.cpp i/src/widgets/kernel/qwidgetbackingstore.cpp
+index 9d024fd..3f09639 100644
+--- c/src/widgets/kernel/qwidgetbackingstore.cpp
++++ i/src/widgets/kernel/qwidgetbackingstore.cpp
+@@ -64,6 +64,10 @@
  #  include <qpa/qplatformnativeinterface.h>
  #endif
  
@@ -565,7 +558,7 @@ index 4a94cd6..9ace73b 100644
  QT_BEGIN_NAMESPACE
  
  extern QRegion qt_dirtyRegion(QWidget *);
-@@ -79,6 +83,10 @@ static inline void qt_flush(QWidget *widget, const QRegion &region, QBackingStor
+@@ -86,6 +90,10 @@ void QWidgetBackingStore::qt_flush(QWidget *widget, const QRegion &region, QBack
      Q_ASSERT(backingStore);
      Q_ASSERT(tlw);
  
@@ -576,10 +569,10 @@ index 4a94cd6..9ace73b 100644
  #if !defined(QT_NO_PAINT_DEBUG)
      static int flushUpdate = qgetenv("QT_FLUSH_UPDATE").toInt();
      if (flushUpdate > 0)
-@@ -108,6 +116,10 @@ static inline void qt_flush(QWidget *widget, const QRegion &region, QBackingStor
-         backingStore->flush(region, widget->windowHandle(), tlwOffset + widget->mapTo(tlw, QPoint()));
+@@ -121,6 +129,10 @@ void QWidgetBackingStore::qt_flush(QWidget *widget, const QRegion &region, QBack
      else
-         backingStore->flush(region, widget->windowHandle(), tlwOffset);
+ #endif
+         backingStore->flush(region, widget->windowHandle(), offset);
 +
 +#ifdef ENABLE_SA_TRACE
 +    qt_tracepoint(Qt, qtFrameSync, 0);
@@ -587,11 +580,11 @@ index 4a94cd6..9ace73b 100644
  }
  
  #ifndef QT_NO_PAINT_DEBUG
-diff --git a/src/widgets/widgets.pro b/src/widgets/widgets.pro
-index e3222b4..2ce90e0 100644
---- a/src/widgets/widgets.pro
-+++ b/src/widgets/widgets.pro
-@@ -30,6 +30,7 @@ include(util/util.pri)
+diff --git c/src/widgets/widgets.pro i/src/widgets/widgets.pro
+index b12e283..183a03e 100644
+--- c/src/widgets/widgets.pro
++++ i/src/widgets/widgets.pro
+@@ -32,6 +32,7 @@ include(util/util.pri)
  include(statemachine/statemachine.pri)
  include(effects/effects.pri)
  
@@ -599,10 +592,10 @@ index e3222b4..2ce90e0 100644
  
  QMAKE_LIBS += $$QMAKE_LIBS_GUI
  
-diff --git a/sync.profile b/sync.profile
-index 7bd10b4..b5f648a 100644
---- a/sync.profile
-+++ b/sync.profile
+diff --git c/sync.profile i/sync.profile
+index 690de60..cc2b9a9 100644
+--- c/sync.profile
++++ i/sync.profile
 @@ -16,6 +16,7 @@
      "QtANGLE/EGL" => "!$basedir/src/3rdparty/angle/include/EGL",
      "QtZlib" => "!$basedir/src/3rdparty/zlib",
