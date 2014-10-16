@@ -1,16 +1,16 @@
-diff --git c/src/qml/qml.pro i/src/qml/qml.pro
+diff --git a/src/qml/qml.pro b/src/qml/qml.pro
 index 17d35f8..6ef177b 100644
---- c/src/qml/qml.pro
-+++ i/src/qml/qml.pro
+--- a/src/qml/qml.pro
++++ b/src/qml/qml.pro
 @@ -40,3 +40,4 @@ include(qml/qml.pri)
  include(debugger/debugger.pri)
  include(animations/animations.pri)
  include(types/types.pri)
 +contains(QT_CONFIG,tracesupport):CONFIG += tracesupport
-diff --git c/src/qml/qml/qqmlbinding.cpp i/src/qml/qml/qqmlbinding.cpp
-index 571d783..e5e54c0 100644
---- c/src/qml/qml/qqmlbinding.cpp
-+++ i/src/qml/qml/qqmlbinding.cpp
+diff --git a/src/qml/qml/qqmlbinding.cpp b/src/qml/qml/qqmlbinding.cpp
+index 571d783..43b2047 100644
+--- a/src/qml/qml/qqmlbinding.cpp
++++ b/src/qml/qml/qqmlbinding.cpp
 @@ -56,6 +56,10 @@
  #include <QVariant>
  #include <QtCore/qdebug.h>
@@ -27,7 +27,7 @@ index 571d783..e5e54c0 100644
  
      if (!updatingFlag()) {
 +#ifdef ENABLE_SA_TRACE
-+        qt_tracepoint(Qt, qtQmlFrameBind, 1, qPrintable(m_url));
++        qt_tracepoint(Qt, qtQmlFrameBind, 1, qPrintable(url));
 +#endif // ENABLE_SA_TRACE
 +
          QQmlBindingProfiler prof(ep->profiler, url, lineNo, columnNo);
@@ -39,15 +39,15 @@ index 571d783..e5e54c0 100644
              setUpdatingFlag(false);
 +
 +#ifdef ENABLE_SA_TRACE
-+        qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(m_url));
++        qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(url));
 +#endif // ENABLE_SA_TRACE
      } else {
          QQmlProperty p = property();
          QQmlAbstractBinding::printBindingLoopError(p);
-diff --git c/src/qml/qml/qqmlcomponent.cpp i/src/qml/qml/qqmlcomponent.cpp
-index 89ab353..9b75123 100644
---- c/src/qml/qml/qqmlcomponent.cpp
-+++ i/src/qml/qml/qqmlcomponent.cpp
+diff --git a/src/qml/qml/qqmlcomponent.cpp b/src/qml/qml/qqmlcomponent.cpp
+index 39a7d89..51d17cc 100644
+--- a/src/qml/qml/qqmlcomponent.cpp
++++ b/src/qml/qml/qqmlcomponent.cpp
 @@ -85,6 +85,10 @@
              "} catch(e) {}"\
          "})"
@@ -59,7 +59,7 @@ index 89ab353..9b75123 100644
  
  namespace {
      QThreadStorage<int> creationDepth;
-@@ -878,6 +882,10 @@ QQmlComponentPrivate::beginCreate(QQmlContextData *context)
+@@ -874,6 +878,10 @@ QQmlComponentPrivate::beginCreate(QQmlContextData *context)
  
      QQmlEnginePrivate *enginePriv = QQmlEnginePrivate::get(engine);
  
@@ -70,7 +70,7 @@ index 89ab353..9b75123 100644
      enginePriv->inProgressCreations++;
      state.errors.clear();
      state.completePending = true;
-@@ -970,6 +978,10 @@ void QQmlComponentPrivate::completeCreate()
+@@ -966,6 +974,10 @@ void QQmlComponentPrivate::completeCreate()
      if (state.completePending) {
          QQmlEnginePrivate *ep = QQmlEnginePrivate::get(engine);
          complete(ep, &state);
@@ -81,10 +81,10 @@ index 89ab353..9b75123 100644
      }
  
      if (depthIncreased) {
-diff --git c/src/qml/qml/qqmlengine.cpp i/src/qml/qml/qqmlengine.cpp
-index 9bf983a..a6bee46 100644
---- c/src/qml/qml/qqmlengine.cpp
-+++ i/src/qml/qml/qqmlengine.cpp
+diff --git a/src/qml/qml/qqmlengine.cpp b/src/qml/qml/qqmlengine.cpp
+index 0424c57..6bf6854 100644
+--- a/src/qml/qml/qqmlengine.cpp
++++ b/src/qml/qml/qqmlengine.cpp
 @@ -113,6 +113,11 @@
  #endif
  #endif
@@ -121,10 +121,10 @@ index 9bf983a..a6bee46 100644
      }
  }
  
-diff --git c/src/qml/qml/qqmltypeloader.cpp i/src/qml/qml/qqmltypeloader.cpp
-index 4412f95..dcfd5cc 100644
---- c/src/qml/qml/qqmltypeloader.cpp
-+++ i/src/qml/qml/qqmltypeloader.cpp
+diff --git a/src/qml/qml/qqmltypeloader.cpp b/src/qml/qml/qqmltypeloader.cpp
+index 7fc08bd..401430a 100644
+--- a/src/qml/qml/qqmltypeloader.cpp
++++ b/src/qml/qml/qqmltypeloader.cpp
 @@ -64,6 +64,10 @@
  #include <QtCore/qwaitcondition.h>
  #include <QtQml/qqmlextensioninterface.h>
@@ -136,7 +136,7 @@ index 4412f95..dcfd5cc 100644
  #if defined (Q_OS_UNIX)
  #include <sys/types.h>
  #include <sys/stat.h>
-@@ -934,6 +938,10 @@ void QQmlDataLoader::load(QQmlDataBlob *blob, Mode mode)
+@@ -927,6 +931,10 @@ void QQmlDataLoader::load(QQmlDataBlob *blob, Mode mode)
  #endif
      blob->startLoading(this);
  
@@ -147,7 +147,7 @@ index 4412f95..dcfd5cc 100644
      if (m_thread->isThisThread()) {
          unlock();
          loadThread(blob);
-@@ -1058,6 +1066,9 @@ void QQmlDataLoader::loadThread(QQmlDataBlob *blob)
+@@ -1045,6 +1053,9 @@ void QQmlDataLoader::loadThread(QQmlDataBlob *blob)
                  if (blob->m_data.isAsync())
                      m_thread->callDownloadProgressChanged(blob, 1.);
                  setData(blob, debugCache.value(url, QByteArray()));
@@ -157,7 +157,7 @@ index 4412f95..dcfd5cc 100644
                  return;
              }
          }
-@@ -1080,6 +1091,9 @@ void QQmlDataLoader::loadThread(QQmlDataBlob *blob)
+@@ -1067,6 +1078,9 @@ void QQmlDataLoader::loadThread(QQmlDataBlob *blob)
  
          setData(blob, &file);
  
@@ -167,7 +167,7 @@ index 4412f95..dcfd5cc 100644
      } else {
  
          QNetworkReply *reply = m_thread->networkAccessManager()->get(QNetworkRequest(blob->m_url));
-@@ -1141,6 +1155,10 @@ void QQmlDataLoader::networkReplyFinished(QNetworkReply *reply)
+@@ -1128,6 +1142,10 @@ void QQmlDataLoader::networkReplyFinished(QNetworkReply *reply)
          setData(blob, data);
      }
  
@@ -178,7 +178,7 @@ index 4412f95..dcfd5cc 100644
      blob->release();
  }
  
-@@ -2107,6 +2125,10 @@ void QQmlTypeData::unregisterCallback(TypeDataCallback *callback)
+@@ -2094,6 +2112,10 @@ void QQmlTypeData::unregisterCallback(TypeDataCallback *callback)
  
  void QQmlTypeData::done()
  {
@@ -189,7 +189,7 @@ index 4412f95..dcfd5cc 100644
      // Check all script dependencies for errors
      for (int ii = 0; !isError() && ii < m_scripts.count(); ++ii) {
          const ScriptReference &script = m_scripts.at(ii);
-@@ -2344,6 +2366,10 @@ void QQmlTypeData::compile()
+@@ -2331,6 +2353,10 @@ void QQmlTypeData::compile()
  {
      Q_ASSERT(m_compiledData == 0);
  
@@ -200,9 +200,9 @@ index 4412f95..dcfd5cc 100644
      m_compiledData = new QQmlCompiledData(typeLoader()->engine());
      m_compiledData->url = finalUrl();
      m_compiledData->name = finalUrlString();
-@@ -2823,6 +2849,10 @@ void QQmlScriptBlob::initializeFromCompilationUnit(QV4::CompiledData::Compilatio
-             return;
-         }
+@@ -2343,6 +2369,10 @@ void QQmlTypeData::compile()
+         m_compiledData->release();
+         m_compiledData = 0;
      }
 +
 +#ifdef ENABLE_SA_TRACE
@@ -210,11 +210,11 @@ index 4412f95..dcfd5cc 100644
 +#endif // ENABLE_SA_TRACE
  }
  
- QQmlQmldirData::QQmlQmldirData(const QUrl &url, QQmlTypeLoader *loader)
-diff --git c/src/quick/items/qquickwindow.cpp i/src/quick/items/qquickwindow.cpp
-index 17b8440..39ddd3d 100644
---- c/src/quick/items/qquickwindow.cpp
-+++ i/src/quick/items/qquickwindow.cpp
+ void QQmlTypeData::resolveTypes()
+diff --git a/src/quick/items/qquickwindow.cpp b/src/quick/items/qquickwindow.cpp
+index e78f914..5f5a5b4 100644
+--- a/src/quick/items/qquickwindow.cpp
++++ b/src/quick/items/qquickwindow.cpp
 @@ -73,6 +73,11 @@
  #include <private/qqmlprofilerservice_p.h>
  #include <private/qqmlmemoryprofiler_p.h>
@@ -227,7 +227,7 @@ index 17b8440..39ddd3d 100644
  QT_BEGIN_NAMESPACE
  
  extern Q_GUI_EXPORT QImage qt_gl_read_framebuffer(const QSize &size, bool alpha_format, bool include_alpha);
-@@ -1291,6 +1296,11 @@ bool QQuickWindow::event(QEvent *e)
+@@ -1290,6 +1295,11 @@ bool QQuickWindow::event(QEvent *e)
  {
      Q_D(QQuickWindow);
  
@@ -239,29 +239,18 @@ index 17b8440..39ddd3d 100644
      switch (e->type()) {
  
      case QEvent::TouchBegin:
-@@ -1354,6 +1364,10 @@ void QQuickWindow::keyPressEvent(QKeyEvent *e)
- {
-     Q_D(QQuickWindow);
-     d->deliverKeyEvent(e);
+@@ -1389,6 +1399,10 @@ void QQuickWindowPrivate::deliverKeyEvent(QKeyEvent *e)
+             QGuiApplication::sendEvent(focusWindow, e);
+     }
+ #endif
 +
 +#ifdef ENABLE_SA_TRACE
 +    qt_tracepoint(Qt, qtKeyEventConsumed, e->type(), e->key(), e->modifiers());
 +#endif // ENABLE_SA_TRACE
  }
  
- /*! \reimp */
-@@ -1361,6 +1375,10 @@ void QQuickWindow::keyReleaseEvent(QKeyEvent *e)
- {
-     Q_D(QQuickWindow);
-     d->deliverKeyEvent(e);
-+
-+#ifdef ENABLE_SA_TRACE
-+    qt_tracepoint(Qt, qtKeyEventConsumed, e->type(), e->key(), e->modifiers());
-+#endif // ENABLE_SA_TRACE
- }
- 
- void QQuickWindowPrivate::deliverKeyEvent(QKeyEvent *e)
-@@ -1458,6 +1476,11 @@ bool QQuickWindowPrivate::deliverMouseEvent(QMouseEvent *event)
+ QMouseEvent *QQuickWindowPrivate::cloneMouseEvent(QMouseEvent *event, QPointF *transformedLocalPos)
+@@ -1457,6 +1471,11 @@ bool QQuickWindowPrivate::deliverMouseEvent(QMouseEvent *event)
              event->accept();
          else
              event->ignore();
@@ -273,7 +262,7 @@ index 17b8440..39ddd3d 100644
          return event->isAccepted();
      }
  
-@@ -1467,10 +1490,19 @@ bool QQuickWindowPrivate::deliverMouseEvent(QMouseEvent *event)
+@@ -1466,10 +1485,19 @@ bool QQuickWindowPrivate::deliverMouseEvent(QMouseEvent *event)
          me->accept();
          q->sendEvent(mouseGrabberItem, me.data());
          event->setAccepted(me->isAccepted());
@@ -294,7 +283,7 @@ index 17b8440..39ddd3d 100644
      return false;
  }
  
-@@ -1507,6 +1539,10 @@ void QQuickWindow::mouseReleaseEvent(QMouseEvent *event)
+@@ -1506,6 +1534,10 @@ void QQuickWindow::mouseReleaseEvent(QMouseEvent *event)
  
      if (!d->mouseGrabberItem) {
          QWindow::mouseReleaseEvent(event);
@@ -305,7 +294,7 @@ index 17b8440..39ddd3d 100644
          return;
      }
  
-@@ -1534,6 +1570,10 @@ void QQuickWindow::mouseDoubleClickEvent(QMouseEvent *event)
+@@ -1533,6 +1565,10 @@ void QQuickWindow::mouseDoubleClickEvent(QMouseEvent *event)
              event->accept();
          else
              event->ignore();
@@ -316,7 +305,7 @@ index 17b8440..39ddd3d 100644
          return;
      }
  
-@@ -1587,6 +1627,10 @@ void QQuickWindow::mouseMoveEvent(QMouseEvent *event)
+@@ -1586,6 +1622,10 @@ void QQuickWindow::mouseMoveEvent(QMouseEvent *event)
              accepted = d->clearHover();
          }
          event->setAccepted(accepted);
@@ -327,10 +316,10 @@ index 17b8440..39ddd3d 100644
          return;
      }
  
-diff --git c/src/quick/quick.pro i/src/quick/quick.pro
+diff --git a/src/quick/quick.pro b/src/quick/quick.pro
 index 38e743c..0bdba7c 100644
---- c/src/quick/quick.pro
-+++ i/src/quick/quick.pro
+--- a/src/quick/quick.pro
++++ b/src/quick/quick.pro
 @@ -29,6 +29,7 @@ include(util/util.pri)
  include(scenegraph/scenegraph.pri)
  include(items/items.pri)
@@ -339,10 +328,10 @@ index 38e743c..0bdba7c 100644
  
  HEADERS += \
      qtquickglobal.h \
-diff --git c/src/quick/scenegraph/coreapi/qsgrenderer.cpp i/src/quick/scenegraph/coreapi/qsgrenderer.cpp
+diff --git a/src/quick/scenegraph/coreapi/qsgrenderer.cpp b/src/quick/scenegraph/coreapi/qsgrenderer.cpp
 index a4e122e..2135734 100644
---- c/src/quick/scenegraph/coreapi/qsgrenderer.cpp
-+++ i/src/quick/scenegraph/coreapi/qsgrenderer.cpp
+--- a/src/quick/scenegraph/coreapi/qsgrenderer.cpp
++++ b/src/quick/scenegraph/coreapi/qsgrenderer.cpp
 @@ -56,6 +56,10 @@
  
  #include <private/qquickprofiler_p.h>

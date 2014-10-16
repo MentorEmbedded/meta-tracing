@@ -1,8 +1,8 @@
 diff --git a/src/declarative/declarative.pro b/src/declarative/declarative.pro
-index 476ef8d..9e2d2da 100644
+index 70bfd35..f2db3b5 100644
 --- a/src/declarative/declarative.pro
 +++ b/src/declarative/declarative.pro
-@@ -25,6 +25,7 @@ include(qml/qml.pri)
+@@ -27,6 +27,7 @@ include(qml/qml.pri)
  include(util/util.pri)
  include(graphicsitems/graphicsitems.pri)
  include(debugger/debugger.pri)
@@ -156,7 +156,7 @@ index 5546a5e..0f3fd14 100644
  
  namespace {
 diff --git a/src/declarative/qml/qdeclarativecomponent.cpp b/src/declarative/qml/qdeclarativecomponent.cpp
-index f2596cc..518ade8 100644
+index cbf23fa..226473c 100644
 --- a/src/declarative/qml/qdeclarativecomponent.cpp
 +++ b/src/declarative/qml/qdeclarativecomponent.cpp
 @@ -62,6 +62,10 @@
@@ -193,7 +193,7 @@ index f2596cc..518ade8 100644
  }
  
 diff --git a/src/declarative/qml/qdeclarativeengine.cpp b/src/declarative/qml/qdeclarativeengine.cpp
-index a42c6a0..a1ad339 100644
+index c7fc386..2f6ba37 100644
 --- a/src/declarative/qml/qdeclarativeengine.cpp
 +++ b/src/declarative/qml/qdeclarativeengine.cpp
 @@ -113,6 +113,11 @@
