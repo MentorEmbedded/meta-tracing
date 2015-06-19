@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/qtbase-${PV}:"
+FILESEXTRAPATHS_prepend := "${THISDIR}/qtbase:"
 
 SRC_URI += " \
 	file://0001-add_tracepoint_layer.patch \
