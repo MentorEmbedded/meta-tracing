@@ -1,0 +1,102 @@
+From f4f3d270fc81bd3f8c44cbd272f91701d9d9e0f7 Mon Sep 17 00:00:00 2001
+From: Yasir-Khan <yasir_khan@mentor.com>
+Date: Thu, 20 Aug 2015 04:32:06 +0500
+Subject: [PATCH] lttng-modules: add support for memf tracepoints
+
+Signed-off-by: Yasir-Khan <yasir_khan@mentor.com>
+---
+ instrumentation/events/lttng-module/memf.h |   36 ++++++++++++++++++++++++++++
+ probes/Makefile                            |    4 ++++
+ probes/lttng-probe-memf.c                  |   22 +++++++++++++++++
+ 3 files changed, 62 insertions(+)
+ create mode 100644 instrumentation/events/lttng-module/memf.h
+ create mode 100644 probes/lttng-probe-memf.c
+
+diff --git a/instrumentation/events/lttng-module/memf.h b/instrumentation/events/lttng-module/memf.h
+new file mode 100644
+index 0000000..224ea06
+--- /dev/null
++++ b/instrumentation/events/lttng-module/memf.h
+@@ -0,0 +1,36 @@
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM memf
++
++#if !defined(_TRACE_MEMF_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _TRACE_MEMF_H
++
++#include <linux/tracepoint.h>
++
++LTTNG_TRACEPOINT_EVENT(
++    /* format identical to mainline version for those */
++    memf_dbg,
++    TP_PROTO(char* msg),
++    TP_ARGS(msg),
++
++    /* possible differences */
++    TP_STRUCT__entry(
++        __string(log, msg)
++    ),
++
++    /* notice the use of tp_assign()/tp_strcpy() and no semicolons */
++    TP_fast_assign(
++        tp_strcpy(log, msg)
++    ),
++
++    /* This one is actually not used by LTTng either, but must be
++     * present for the moment.
++     */
++    TP_printk("", 0)
++
++/* no semicolon after this either */
++)
++
++#endif
++
++/* other difference: do NOT include <trace/define_trace.h> */
++#include "../../../probes/define_trace.h"
+diff --git a/probes/Makefile b/probes/Makefile
+index f0325c8..014e74a 100644
+--- a/probes/Makefile
++++ b/probes/Makefile
+@@ -225,6 +225,10 @@ obj-m += $(shell \
+ 		echo "lttng-probe-v4l2.o" ; fi;)
+ endif
+ 
++ifneq ($(CONFIG_MEMF),)
++obj-m += lttng-probe-memf.o
++endif
++
+ obj-m += lttng-probe-workqueue.o
+ 
+ ifneq ($(CONFIG_KALLSYMS_ALL),)
+diff --git a/probes/lttng-probe-memf.c b/probes/lttng-probe-memf.c
+new file mode 100644
+index 0000000..97de30c
+--- /dev/null
++++ b/probes/lttng-probe-memf.c
+@@ -0,0 +1,22 @@
++#include <linux/module.h>
++#include "../lttng-tracer.h"
++
++/* Build time verification of mismatch between mainline TRACE_EVENT()
++ * arguments and LTTng adaptation layer LTTNG_TRACEPOINT_EVENT() arguments.
++ */
++#include <trace/events/memf.h>
++
++/* create LTTng tracepoint probes */
++#define LTTNG_PACKAGE_BUILD
++#define CREATE_TRACE_POINTS
++#define TRACE_INCLUDE_PATH ../instrumentation/events/lttng-module
++
++#include "../instrumentation/events/lttng-module/memf.h"
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Yasir Khan <yasir_khan@mentor.com>");
++MODULE_DESCRIPTION("LTTng probe for MEMF tracing");
++MODULE_VERSION(__stringify(LTTNG_MODULES_MAJOR_VERSION) "."
++    __stringify(LTTNG_MODULES_MINOR_VERSION) "."
++    __stringify(LTTNG_MODULES_PATCHLEVEL_VERSION)
++    LTTNG_MODULES_EXTRAVERSION);
+-- 
+1.7.9.5
+
