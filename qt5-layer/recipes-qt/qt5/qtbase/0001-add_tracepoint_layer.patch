@@ -307,9 +307,9 @@ Index: qtbase-opensource-src-5.4.0/src/gui/kernel/qguiapplication.cpp
 +    }
 +#endif // ENABLE_SA_TRACE
 +
- #ifndef QT_NO_SHORTCUT
-     if (event->type() == QEvent::KeyPress) {
-         // Try looking for a Shortcut before sending key events
+     if (object->isWindowType())
+         QGuiApplicationPrivate::sendQWindowEventToQPlatformWindow(static_cast<QWindow *>(object), event);
+     return QCoreApplication::notify(object, event);
 Index: qtbase-opensource-src-5.4.0/src/src.pro
 ===================================================================
 --- qtbase-opensource-src-5.4.0.orig/src/src.pro	2014-12-05 09:24:31.000000000 -0700
@@ -323,9 +323,9 @@ Index: qtbase-opensource-src-5.4.0/src/src.pro
 +
  # this order is important
 +contains(QT_CONFIG, tracesupport): SUBDIRS += src_tracesupport
- SUBDIRS += src_tools_bootstrap src_tools_moc src_tools_rcc src_corelib src_tools_qlalr
- TOOLS = src_tools_moc src_tools_rcc src_tools_qlalr
- win32:SUBDIRS += src_winmain
+ SUBDIRS += src_tools_bootstrap src_tools_moc src_tools_rcc
+ !contains(QT_DISABLED_FEATURES, regularexpression):pcre {
+     SUBDIRS += src_3rdparty_pcre
 Index: qtbase-opensource-src-5.4.0/src/tracesupport/qt_tracepoints.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
