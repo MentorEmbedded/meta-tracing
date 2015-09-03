@@ -20,21 +20,21 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlbinding.cpp
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
- 
+
  // Used in qqmlabstractbinding.cpp
 @@ -194,6 +198,10 @@
-     trace.addDetail("Column", columnNo);
- 
+     Q_ASSERT(f);
+
      if (!updatingFlag()) {
 +#ifdef ENABLE_SA_TRACE
 +        qt_tracepoint(Qt, qtQmlFrameBind, 1, qPrintable(url));
 +#endif // ENABLE_SA_TRACE
 +
-         QQmlBindingProfiler prof(ep->profiler, url, lineNo, columnNo);
+         QQmlBindingProfiler prof(ep->profiler, f);
          setUpdatingFlag(true);
- 
+
 @@ -241,6 +249,10 @@
- 
+
          if (!watcher.wasDeleted())
              setUpdatingFlag(false);
 +
@@ -352,12 +352,12 @@ Index: qtdeclarative-opensource-src-5.4.0/src/quick/scenegraph/coreapi/qsgrender
 +#endif // ENABLE_SA_TRACE
 +
      m_is_rendering = true;
- 
- 
+
+
 @@ -225,6 +233,9 @@
-             bindTime - updatePassTime,
-             renderTime - bindTime));
- 
+             int((updatePassTime - preprocessTime) / 1000000),
+             int((bindTime - updatePassTime) / 1000000),
+             int((renderTime - bindTime) / 1000000));
 +#ifdef ENABLE_SA_TRACE
 +    qt_tracepoint(Qt, qtFrameSync, 0);
 +#endif // ENABLE_SA_TRACE
