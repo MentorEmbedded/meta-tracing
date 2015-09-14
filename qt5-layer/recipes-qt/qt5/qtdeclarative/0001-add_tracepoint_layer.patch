@@ -22,11 +22,13 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlbinding.cpp
  QT_BEGIN_NAMESPACE
 
  // Used in qqmlabstractbinding.cpp
-@@ -194,6 +198,10 @@
+@@ -194,6 +198,12 @@
      Q_ASSERT(f);
 
      if (!updatingFlag()) {
 +#ifdef ENABLE_SA_TRACE
++        QQmlSourceLocation loc = f->sourceLocation();
++        QString url = loc.sourceFile;
 +        qt_tracepoint(Qt, qtQmlFrameBind, 1, qPrintable(url));
 +#endif // ENABLE_SA_TRACE
 +
@@ -103,7 +105,7 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlengine.cpp
      if (data && data->deferredData && !data->wasDeleted(object)) {
 +#ifdef ENABLE_SA_TRACE
 +        if (data->outerContext)
-+            qt_tracepoint(Qt, qtQmlFrameCreate, 1, qPrintable(data->outerContext->url.toString()));
++            qt_tracepoint(Qt, qtQmlFrameCreate, 1, qPrintable(data->outerContext->urlString()));
 +#endif // ENABLE_SA_TRACE
 +
          QQmlEnginePrivate *ep = QQmlEnginePrivate::get(data->context->engine);
@@ -116,7 +118,7 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlengine.cpp
 +
 +#ifdef ENABLE_SA_TRACE
 +        if (data->outerContext)
-+            qt_tracepoint(Qt, qtQmlFrameCreate, 0, qPrintable(data->outerContext->url.toString()));
++            qt_tracepoint(Qt, qtQmlFrameCreate, 0, qPrintable(data->outerContext->urlString()));
 +#endif // ENABLE_SA_TRACE
      }
  }
