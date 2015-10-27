@@ -1,0 +1,69 @@
+From 78df9da4ca71dbbc9733b3c31b31b84feb9e7f2a Mon Sep 17 00:00:00 2001
+From: Alexander Barabash <alexander_barabash@mentor.com>
+Date: Tue, 6 Oct 2015 17:02:07 +0300
+Subject: [PATCH 5/6] Support for gst_flow_event LLTng tracepoints.
+
+---
+ gst/gst_tracepoints.h | 11 +++++++++++
+ gst/gstpad.c          |  1 +
+ 2 files changed, 12 insertions(+)
+
+diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
+index 5267af4..15d85f5 100644
+--- a/gst/gst_tracepoints.h
++++ b/gst/gst_tracepoints.h
+@@ -59,6 +59,7 @@ typedef enum GstFlowTracepointDataType {
+ #define ctf_gst_tracepoint_type_field(name, type) ctf_integer (guint8, name, (guint8) (type))
+ #define ctf_gst_tracepoint_kind_field(name, kind) ctf_integer (guint8, name, (guint8) (kind))
+ #define ctf_gst_data_type_field(name, type) ctf_integer (guint8, name, (guint8) (type))
++#define ctf_gst_event_type_field(name, event) ctf_integer (gint, name, (gint) (event->type))
+ 
+ #endif /* _GST_TRACEPOINTS_H */
+ 
+@@ -96,6 +97,12 @@ GST_TRACEPOINT_EVENT (gst_flow_data,
+                                  ctf_gst_thread_id_field (thread_id)
+                                  ctf_gst_data_type_field (data_type, ((trace_is_on ? (*trace_is_on = 1) : 0), data_type))))
+ 
++GST_TRACEPOINT_EVENT (gst_flow_event,
++                      TP_ARGS (GstEvent *, event),
++                      TP_FIELDS (ctf_gst_data_field (event, event)
++                                 ctf_gst_thread_id_field (thread_id)
++                                 ctf_gst_event_type_field (event_type, event)))
++
+ #endif /* _GST_TRACEPOINTS_H */
+ 
+ #include <lttng/tracepoint-event.h>
+@@ -139,6 +146,9 @@ GST_TRACEPOINT_EVENT (gst_flow_data,
+ #define GST_FLOW_TRACEPOINT_BUFFER(buffer) \
+   GST_TRACEPOINT (gst_flow_data, buffer, GST_TRACEPOINT_DATA_TYPE_BUFFER, NULL)
+ 
++#define GST_FLOW_TRACEPOINT_EVENT(event) \
++  GST_TRACEPOINT (gst_flow_event, event)
++
+ #define GST_FLOW_TRACEPOINT_DATA(data, is_buffer)                       \
+     do {                                                                \
+       int trace_is_on = 0;                                              \
+@@ -174,6 +184,7 @@ GST_TRACEPOINT_EVENT (gst_flow_data,
+ #define GST_FLOW_TRACEPOINT_SEND_EVENT_ERROR(pad)
+ #define GST_FLOW_TRACEPOINT_SEND_EVENT_DROPPED(pad)
+ #define GST_FLOW_TRACEPOINT_BUFFER(buffer)
++#define GST_FLOW_TRACEPOINT_EVENT(event)
+ #define GST_FLOW_TRACEPOINT_DATA(data, is_buffer)
+ #define GST_FLOW_TRACEPOINT_BUFFER_LIST(list)
+ 
+diff --git a/gst/gstpad.c b/gst/gstpad.c
+index fc43094..41544f1 100644
+--- a/gst/gstpad.c
++++ b/gst/gstpad.c
+@@ -4770,7 +4770,8 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
+   GST_OBJECT_LOCK (pad);
+ 
+   event = apply_pad_offset (pad, event, GST_PAD_IS_SRC (pad));
+
++  GST_FLOW_TRACEPOINT_EVENT (event);
+   GST_FLOW_TRACEPOINT_SEND_EVENT_ENTER (pad, event);
+   if (GST_PAD_IS_SINK (pad))
+     serialized = GST_EVENT_IS_SERIALIZED (event);
+-- 
+1.9.1
+

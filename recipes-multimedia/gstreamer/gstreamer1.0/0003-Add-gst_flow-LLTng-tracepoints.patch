@@ -1,0 +1,614 @@
+From c46d0b88f98b8e6f7108093c812b4dd24f607eb6 Mon Sep 17 00:00:00 2001
+From: Alexander Barabash <alexander_barabash@mentor.com>
+Date: Tue, 6 Oct 2015 17:00:20 +0300
+Subject: [PATCH 3/6] Add gst_flow LLTng tracepoints.
+
+---
+ gst/gst_tracepoints.c         | 56 ++++++++++++++++++++++++++
+ gst/gst_tracepoints.h         | 92 +++++++++++++++++++++++++++++++++++++++++--
+ gst/gstghostpad.c             |  2 +
+ gst/gstghostpad_tracepoints.h | 29 ++++++++++++++
+ gst/gstpad.c                  | 49 +++++++++++++++++++++++
+ 5 files changed, 225 insertions(+), 3 deletions(-)
+ create mode 100644 gst/gstghostpad_tracepoints.h
+
+diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
+index 326472a..9a51a90 100644
+--- a/gst/gst_tracepoints.c
++++ b/gst/gst_tracepoints.c
+@@ -26,10 +26,66 @@
+ #include "config.h"
+ 
+ #ifdef GST_ENABLE_LTTNG_TRACEPOINTS
++#include "glib.h"
++#include "gstpad.h"
++#include "gstelement.h"
++
++enum GstFlowTracepointType;
++static const gchar *gst_tracepoints_get_pad_element_name_if_needed (GstPad *
++    pad, enum GstFlowTracepointType tracepoint_type);
++static guint16 gst_tracepoints_get_thread_id (void);
+ 
+ #define GST_TRACEPOINTS_CREATE_PROBES
+ #define TRACEPOINT_CREATE_PROBES
+ #define TRACEPOINT_DEFINE
+ #include "gst_tracepoints.h"
++static const gchar *
++gst_tracepoints_get_pad_element_name (GstPad * pad)
++{
++  const gchar *name = "";
++
++  if (pad != NULL) {
++    if (GST_IS_GHOST_PAD (pad)) {
++      name =
++          gst_tracepoints_get_pad_element_name (_priv_gst_ghostpad_get_target
++          (GST_GHOST_PAD (pad)));
++    } else if (GST_IS_PROXY_PAD (pad)) {
++      name =
++          gst_tracepoints_get_pad_element_name (GST_PAD_PEER (GST_PROXY_PAD
++              (pad)));
++    } else if (GST_PAD_PARENT (pad)) {
++      name = GST_ELEMENT_NAME (GST_PAD_PARENT (pad));
++    }
++  }
++
++  return name;
++}
++
++static const gchar *
++gst_tracepoints_get_pad_element_name_if_needed (GstPad * pad,
++    enum GstFlowTracepointType tracepoint_type)
++{
++  if (tracepoint_type == GST_TRACEPOINT_FLAG_ENTER) {
++    return gst_tracepoints_get_pad_element_name (pad);
++  } else {
++    return "";
++  }
++}
++
++static guint16
++gst_tracepoints_get_thread_id (void)
++{
++  static gint thread_counter;
++  static GPrivate key;
++  gintptr thread_id = (gintptr) g_private_get (&key);
++  if (G_UNLIKELY (thread_id == 0)) {
++    do {
++      thread_id = g_atomic_int_add (&thread_counter, 1) + 1;
++      thread_id = thread_id & 0xFFFF;   /* Leave 16 bits. */
++    } while (thread_id == 0);
++    g_private_set (&key, (gpointer) thread_id);
++  }
++  return thread_id;
++}
+ 
+ #endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
+diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
+index 579acf5..5cfb6f2 100644
+--- a/gst/gst_tracepoints.h
++++ b/gst/gst_tracepoints.h
+@@ -22,11 +22,37 @@
+ 
+ #ifndef _GST_TRACEPOINTS_H
+ 
++#include "gstpad.h"
++#include "gstghostpad.h"
++#include "gstbufferlist.h"
++
++extern GstPad *_priv_gst_ghostpad_get_target (GstGhostPad *gpad);
++
++enum GstFlowTracepointType {
++  GST_TRACEPOINT_FLAG_ENTER = 0,
++  GST_TRACEPOINT_FLAG_EXIT = 1,
++  GST_TRACEPOINT_FLAG_ERROR = 2,
++  GST_TRACEPOINT_FLAG_DROPPED = 3,
++};
++
++enum GstFlowTracepointKind {
++  GST_TRACEPOINT_FLAG_PUSH = 0,
++  GST_TRACEPOINT_FLAG_PULL = 1,
++  GST_TRACEPOINT_FLAG_SEND_EVENT = 2,
++};
++
+ #define GST_TRACEPOINT_HELPER2(...) __VA_ARGS__
+ #define GST_TRACEPOINT_HELPER(...) GST_TRACEPOINT_HELPER2 (__VA_ARGS__)
+ #define GST_TRACEPOINT_EVENT(name, args, fields) \
+     TRACEPOINT_EVENT (TRACEPOINT_PROVIDER, name, GST_TRACEPOINT_HELPER (args), GST_TRACEPOINT_HELPER (fields))
+ 
++#define ctf_gst_pad_field(name, ptr) ctf_integer_hex (gintptr, name, (gintptr) (ptr))
++#define ctf_gst_data_field(name, ptr) ctf_integer_hex (gintptr, name, (gintptr) (ptr))
++#define ctf_gst_flow_return_field(name, value) ctf_integer_hex (gint, name, (gint) (value))
++#define ctf_gst_thread_id_field(name) ctf_integer (guint16, name, gst_tracepoints_get_thread_id ())
++#define ctf_gst_tracepoint_type_field(name, type) ctf_integer (guint8, name, (guint8) (type))
++#define ctf_gst_tracepoint_kind_field(name, kind) ctf_integer (guint8, name, (guint8) (kind))
++
+ #endif /* _GST_TRACEPOINTS_H */
+ 
+ #ifdef GST_ENABLE_LTTNG_TRACEPOINTS
+@@ -42,18 +68,78 @@
+ 
+ #include <lttng/tracepoint.h>
+ 
+-GST_TRACEPOINT_EVENT (gst_sample_event,
+-                      TP_ARGS (int, event_argument),
+-                      TP_FIELDS (ctf_integer(int, event_argument, event_argument)))
++GST_TRACEPOINT_EVENT (gst_flow,
++                      TP_ARGS (GstPad *, pad,
++                               void *, data,
++                               GstFlowReturn, result,
++                               enum GstFlowTracepointKind, tracepoint_kind,
++                               enum GstFlowTracepointType, tracepoint_type),
++                      TP_FIELDS (ctf_gst_pad_field (pad, pad)
++                                 ctf_gst_data_field (data, data)
++                                 ctf_gst_flow_return_field (flow_return, result)
++                                 ctf_gst_thread_id_field (thread_id)
++                                 ctf_gst_tracepoint_type_field (tracepoint_type, tracepoint_type)
++                                 ctf_gst_tracepoint_kind_field (tracepoint_kind, tracepoint_kind)
++                                 ctf_string (element_name,
++                                             gst_tracepoints_get_pad_element_name_if_needed (pad, tracepoint_type))))
+ 
+ #endif /* _GST_TRACEPOINTS_H */
+ 
+ #include <lttng/tracepoint-event.h>
+ 
++#define GST_FLOW_TRACEPOINT_PUSH_ENTER(pad, data) \
++    GST_TRACEPOINT (gst_flow, pad, data, GST_FLOW_OK, GST_TRACEPOINT_FLAG_PUSH, GST_TRACEPOINT_FLAG_ENTER)
++
++#define GST_FLOW_TRACEPOINT_PUSH_EXIT(pad, ret) \
++    GST_TRACEPOINT (gst_flow, pad, NULL, ret, GST_TRACEPOINT_FLAG_PUSH, GST_TRACEPOINT_FLAG_EXIT)
++
++#define GST_FLOW_TRACEPOINT_PUSH_ERROR(pad, ret) \
++    GST_TRACEPOINT (gst_flow, pad, NULL, ret, GST_TRACEPOINT_FLAG_PUSH, GST_TRACEPOINT_FLAG_ERROR)
++
++#define GST_FLOW_TRACEPOINT_PUSH_DROPPED(pad) \
++    GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_PUSH, GST_TRACEPOINT_FLAG_DROPPED)
++
++#define GST_FLOW_TRACEPOINT_PULL_ENTER(pad) \
++    GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_PULL, GST_TRACEPOINT_FLAG_ENTER)
++
++#define GST_FLOW_TRACEPOINT_PULL_EXIT(pad, data, ret) \
++    GST_TRACEPOINT (gst_flow, pad, data, ret, GST_TRACEPOINT_FLAG_PULL, GST_TRACEPOINT_FLAG_EXIT)
++
++#define GST_FLOW_TRACEPOINT_PULL_ERROR(pad, ret) \
++    GST_TRACEPOINT (gst_flow, pad, NULL, ret, GST_TRACEPOINT_FLAG_PULL, GST_TRACEPOINT_FLAG_ERROR)
++
++#define GST_FLOW_TRACEPOINT_PULL_DROPPED(pad) \
++    GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_PULL, GST_TRACEPOINT_FLAG_DROPPED)
++
++#define GST_FLOW_TRACEPOINT_SEND_EVENT_ENTER(pad, event)                \
++    GST_TRACEPOINT (gst_flow, pad, event, GST_FLOW_OK, GST_TRACEPOINT_FLAG_SEND_EVENT, GST_TRACEPOINT_FLAG_ENTER)
++
++#define GST_FLOW_TRACEPOINT_SEND_EVENT_EXIT(pad, ret) \
++  GST_TRACEPOINT (gst_flow, pad, NULL, (ret) ? GST_FLOW_OK : GST_FLOW_ERROR, GST_TRACEPOINT_FLAG_SEND_EVENT, GST_TRACEPOINT_FLAG_EXIT)
++
++#define GST_FLOW_TRACEPOINT_SEND_EVENT_ERROR(pad) \
++    GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_ERROR, GST_TRACEPOINT_FLAG_SEND_EVENT, GST_TRACEPOINT_FLAG_ERROR)
++
++#define GST_FLOW_TRACEPOINT_SEND_EVENT_DROPPED(pad) \
++    GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_SEND_EVENT, GST_TRACEPOINT_FLAG_DROPPED)
++
+ #define GST_TRACEPOINT(...) tracepoint (Gst, __VA_ARGS__)
+ 
+ #else /* !GST_ENABLE_LTTNG_TRACEPOINTS */
+ 
+++#define GST_FLOW_TRACEPOINT_PUSH_ENTER(pad, data)
++#define GST_FLOW_TRACEPOINT_PUSH_EXIT(pad, ret)
++#define GST_FLOW_TRACEPOINT_PUSH_ERROR(pad, ret)
++#define GST_FLOW_TRACEPOINT_PUSH_DROPPED(pad)
++#define GST_FLOW_TRACEPOINT_PULL_ENTER(pad)
++#define GST_FLOW_TRACEPOINT_PULL_EXIT(pad, data, ret)
++#define GST_FLOW_TRACEPOINT_PULL_ERROR(pad, ret)
++#define GST_FLOW_TRACEPOINT_PULL_DROPPED(pad)
++#define GST_FLOW_TRACEPOINT_SEND_EVENT_ENTER(pad, event)
++#define GST_FLOW_TRACEPOINT_SEND_EVENT_EXIT(pad, ret)
++#define GST_FLOW_TRACEPOINT_SEND_EVENT_ERROR(pad)
++#define GST_FLOW_TRACEPOINT_SEND_EVENT_DROPPED(pad)
++
+ #define GST_TRACEPOINT(...)
+ 
+ #endif /* !GST_ENABLE_LTTNG_TRACEPOINTS */
+diff --git a/gst/gstghostpad.c b/gst/gstghostpad.c
+index 081594f..4783407 100644
+--- a/gst/gstghostpad.c
++++ b/gst/gstghostpad.c
+@@ -874,3 +874,5 @@ link_failed:
+     return FALSE;
+   }
+ }
++
++#include "gstghostpad_tracepoints.h"
+diff --git a/gst/gstghostpad_tracepoints.h b/gst/gstghostpad_tracepoints.h
+new file mode 100644
+index 0000000..be5a08c
+--- /dev/null
++++ b/gst/gstghostpad_tracepoints.h
+@@ -0,0 +1,29 @@
++/* -*- mode: c; c-basic-offset: 2; -*- */
++/* GStreamer
++ * Copyright (C) 2013 Mentor Graphics, Inc.
++ *
++ * gstghostpad_tracepoints.h: Support for tracing events on GstGhostPads.
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Library General Public
++ * License as published by the Free Software Foundation; either
++ * version 2 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Library General Public License for more details.
++ *
++ * You should have received a copy of the GNU Library General Public
++ * License along with this library; if not, write to the
++ * Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
++ * Boston, MA 02110-1301, USA.
++ */
++
++#include "gst_tracepoints.h"
++
++#ifdef GST_ENABLE_LTTNG_TRACEPOINTS
++GstPad *_priv_gst_ghostpad_get_target (GstGhostPad *gpad) {
++  return GST_PROXY_PAD_TARGET (gpad);
++}
++#endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
+diff --git a/gst/gstpad.c b/gst/gstpad.c
+index 4b1181f..e061faa 100644
+--- a/gst/gstpad.c
++++ b/gst/gstpad.c
+@@ -98,6 +98,7 @@
+ #include "gsterror.h"
+ #include "gstvalue.h"
+ #include "glib-compat-private.h"
++#include "gst_tracepoints.h"
+ 
+ GST_DEBUG_CATEGORY_STATIC (debug_dataflow);
+ #define GST_CAT_DEFAULT GST_CAT_PADS
+@@ -3621,6 +3622,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
+   GST_PAD_STREAM_LOCK (pad);
+ 
+   GST_OBJECT_LOCK (pad);
++  GST_FLOW_TRACEPOINT_PUSH_ENTER (pad, data);
+   if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
+     goto flushing;
+ 
+@@ -3674,6 +3676,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
+         GST_DEBUG_FUNCPTR_NAME (chainlistfunc), gst_flow_get_name (ret));
+   }
+ 
++  GST_FLOW_TRACEPOINT_PUSH_EXIT (pad, ret);
+   GST_PAD_STREAM_UNLOCK (pad);
+ 
+   return ret;
+@@ -3681,6 +3684,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
+   /* ERRORS */
+ flushing:
+   {
++    GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, GST_FLOW_FLUSHING);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
+         "chaining, but pad was flushing");
+     GST_OBJECT_UNLOCK (pad);
+@@ -3690,6 +3694,7 @@ flushing:
+   }
+ eos:
+   {
++    GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, GST_FLOW_EOS);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad, "chaining, but pad was EOS");
+     GST_OBJECT_UNLOCK (pad);
+     GST_PAD_STREAM_UNLOCK (pad);
+@@ -3698,6 +3703,7 @@ eos:
+   }
+ wrong_mode:
+   {
++    GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, GST_FLOW_ERROR);
+     g_critical ("chain on pad %s:%s but it was not in push mode",
+         GST_DEBUG_PAD_NAME (pad));
+     GST_OBJECT_UNLOCK (pad);
+@@ -3713,10 +3719,12 @@ probe_stopped:
+ 
+     switch (ret) {
+       case GST_FLOW_CUSTOM_SUCCESS:
++        GST_FLOW_TRACEPOINT_PUSH_DROPPED (pad);
+         GST_DEBUG_OBJECT (pad, "dropped buffer");
+         ret = GST_FLOW_OK;
+         break;
+       default:
++        GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, ret);
+         GST_DEBUG_OBJECT (pad, "an error occurred %s", gst_flow_get_name (ret));
+         break;
+     }
+@@ -3724,6 +3732,7 @@ probe_stopped:
+   }
+ no_function:
+   {
++    GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, GST_FLOW_NOT_SUPPORTED);
+     gst_mini_object_unref (GST_MINI_OBJECT_CAST (data));
+     g_critical ("chain on pad %s:%s but it has no chainfunction",
+         GST_DEBUG_PAD_NAME (pad));
+@@ -3839,6 +3848,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
+   GstFlowReturn ret;
+ 
+   GST_OBJECT_LOCK (pad);
++  GST_FLOW_TRACEPOINT_PUSH_ENTER (pad, data);
+   if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
+     goto flushing;
+ 
+@@ -3880,6 +3890,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
+     PROBE_NO_DATA (pad, GST_PAD_PROBE_TYPE_PUSH | GST_PAD_PROBE_TYPE_IDLE,
+         probe_stopped, ret);
+   }
++  GST_FLOW_TRACEPOINT_PUSH_EXIT (pad, ret);
+   GST_OBJECT_UNLOCK (pad);
+ 
+   return ret;
+@@ -3888,6 +3899,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
+   /* ERRORS */
+ flushing:
+   {
++    GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, GST_FLOW_FLUSHING);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
+         "pushing, but pad was flushing");
+     GST_OBJECT_UNLOCK (pad);
+@@ -3896,6 +3908,7 @@ flushing:
+   }
+ eos:
+   {
++    GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, GST_FLOW_EOS);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad, "pushing, but pad was EOS");
+     GST_OBJECT_UNLOCK (pad);
+     gst_mini_object_unref (GST_MINI_OBJECT_CAST (data));
+@@ -3903,6 +3916,7 @@ eos:
+   }
+ wrong_mode:
+   {
++    GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, GST_FLOW_ERROR);
+     g_critical ("pushing on pad %s:%s but it was not activated in push mode",
+         GST_DEBUG_PAD_NAME (pad));
+     GST_OBJECT_UNLOCK (pad);
+@@ -3911,6 +3925,7 @@ wrong_mode:
+   }
+ events_error:
+   {
++    GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, ret);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
+         "error pushing events, return %s", gst_flow_get_name (ret));
+     GST_OBJECT_UNLOCK (pad);
+@@ -3924,10 +3939,12 @@ probe_stopped:
+ 
+     switch (ret) {
+       case GST_FLOW_CUSTOM_SUCCESS:
++        GST_FLOW_TRACEPOINT_PUSH_DROPPED (pad);
+         GST_DEBUG_OBJECT (pad, "dropped buffer");
+         ret = GST_FLOW_OK;
+         break;
+       default:
++        GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, ret);
+         GST_DEBUG_OBJECT (pad, "an error occurred %s", gst_flow_get_name (ret));
+         break;
+     }
+@@ -3935,6 +3952,7 @@ probe_stopped:
+   }
+ not_linked:
+   {
++    GST_FLOW_TRACEPOINT_PUSH_ERROR (pad, GST_FLOW_NOT_LINKED);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
+         "pushing, but it was not linked");
+     GST_OBJECT_UNLOCK (pad);
+@@ -4023,6 +4041,7 @@ gst_pad_get_range_unchecked (GstPad * pad, guint64 offset, guint size,
+   GST_PAD_STREAM_LOCK (pad);
+ 
+   GST_OBJECT_LOCK (pad);
++  GST_FLOW_TRACEPOINT_PULL_ENTER (pad);
+   if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
+     goto flushing;
+ 
+@@ -4073,11 +4092,13 @@ probed_data:
+ 
+   *buffer = res_buf;
+ 
++  GST_FLOW_TRACEPOINT_PULL_EXIT (pad, *buffer, ret);
+   return ret;
+ 
+   /* ERRORS */
+ flushing:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, GST_FLOW_FLUSHING);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
+         "getrange, but pad was flushing");
+     GST_OBJECT_UNLOCK (pad);
+@@ -4086,6 +4107,7 @@ flushing:
+   }
+ wrong_mode:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, GST_FLOW_ERROR);
+     g_critical ("getrange on pad %s:%s but it was not activated in pull mode",
+         GST_DEBUG_PAD_NAME (pad));
+     GST_OBJECT_UNLOCK (pad);
+@@ -4094,6 +4116,7 @@ wrong_mode:
+   }
+ events_error:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad, "error pushing events");
+     GST_OBJECT_UNLOCK (pad);
+     GST_PAD_STREAM_UNLOCK (pad);
+@@ -4101,6 +4124,7 @@ events_error:
+   }
+ no_parent:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, GST_FLOW_FLUSHING);
+     GST_DEBUG_OBJECT (pad, "no parent");
+     pad->ABI.abi.last_flowret = GST_FLOW_FLUSHING;
+     GST_OBJECT_UNLOCK (pad);
+@@ -4108,6 +4132,7 @@ no_parent:
+   }
+ no_function:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, GST_FLOW_NOT_SUPPORTED);
+     g_critical ("getrange on pad %s:%s but it has no getrangefunction",
+         GST_DEBUG_PAD_NAME (pad));
+     RELEASE_PARENT (parent);
+@@ -4131,6 +4156,7 @@ probe_stopped:
+         ret = GST_FLOW_EOS;
+       }
+     }
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
+     pad->ABI.abi.last_flowret = ret;
+     GST_OBJECT_UNLOCK (pad);
+ 
+@@ -4138,11 +4164,13 @@ probe_stopped:
+   }
+ probe_stopped_unref:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
+         "probe returned %s", gst_flow_get_name (ret));
+     /* if we drop here, it signals EOS */
+     if (ret == GST_FLOW_CUSTOM_SUCCESS)
+       ret = GST_FLOW_EOS;
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
+     pad->ABI.abi.last_flowret = ret;
+     GST_OBJECT_UNLOCK (pad);
+     GST_PAD_STREAM_UNLOCK (pad);
+@@ -4151,6 +4179,7 @@ probe_stopped_unref:
+   }
+ get_range_failed:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
+     pad->ABI.abi.last_flowret = ret;
+     GST_OBJECT_UNLOCK (pad);
+     GST_PAD_STREAM_UNLOCK (pad);
+@@ -4264,6 +4293,9 @@ gst_pad_pull_range (GstPad * pad, guint64 offset, guint size,
+       || GST_IS_BUFFER (*buffer), GST_FLOW_ERROR);
+ 
+   GST_OBJECT_LOCK (pad);
++
++  GST_FLOW_TRACEPOINT_PULL_ENTER (pad);
++
+   if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
+     goto flushing;
+ 
+@@ -4308,11 +4340,13 @@ probed_data:
+ 
+   *buffer = res_buf;
+ 
++  GST_FLOW_TRACEPOINT_PULL_EXIT (pad, *buffer, ret);
+   return ret;
+ 
+   /* ERROR recovery here */
+ flushing:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, GST_FLOW_FLUSHING);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
+         "pullrange, but pad was flushing");
+     GST_OBJECT_UNLOCK (pad);
+@@ -4320,6 +4354,7 @@ flushing:
+   }
+ wrong_mode:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, GST_FLOW_ERROR);
+     g_critical ("pullrange on pad %s:%s but it was not activated in pull mode",
+         GST_DEBUG_PAD_NAME (pad));
+     GST_OBJECT_UNLOCK (pad);
+@@ -4342,12 +4377,14 @@ probe_stopped:
+         ret = GST_FLOW_EOS;
+       }
+     }
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
+     pad->ABI.abi.last_flowret = ret;
+     GST_OBJECT_UNLOCK (pad);
+     return ret;
+   }
+ not_linked:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, GST_FLOW_NOT_LINKED);
+     GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
+         "pulling range, but it was not linked");
+     pad->ABI.abi.last_flowret = GST_FLOW_NOT_LINKED;
+@@ -4354,6 +4391,7 @@ not_linked:
+   }
+ pull_range_failed:
+   {
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
+     pad->ABI.abi.last_flowret = ret;
+     GST_OBJECT_UNLOCK (pad);
+     GST_CAT_LEVEL_LOG (GST_CAT_SCHEDULING,
+@@ -4368,6 +4406,7 @@ probe_stopped_unref:
+     /* if we drop here, it signals EOS */
+     if (ret == GST_FLOW_CUSTOM_SUCCESS)
+       ret = GST_FLOW_EOS;
+
++    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
+     pad->ABI.abi.last_flowret = ret;
+     GST_OBJECT_UNLOCK (pad);
+@@ -4727,6 +4766,7 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
+   GST_OBJECT_LOCK (pad);
+ 
+   event = apply_pad_offset (pad, event, GST_PAD_IS_SRC (pad));
+ 
++  GST_FLOW_TRACEPOINT_SEND_EVENT_ENTER (pad, event);
+   if (GST_PAD_IS_SINK (pad))
+     serialized = GST_EVENT_IS_SERIALIZED (event);
+@@ -4862,11 +4902,14 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
+   if (need_unlock)
+     GST_PAD_STREAM_UNLOCK (pad);
+ 
++  GST_FLOW_TRACEPOINT_SEND_EVENT_EXIT (pad, ret == GST_FLOW_OK);
++
+   return ret;
+ 
+   /* ERROR handling */
+ flushing:
+   {
++    GST_FLOW_TRACEPOINT_SEND_EVENT_ERROR (pad);
+     GST_OBJECT_UNLOCK (pad);
+     if (need_unlock)
+       GST_PAD_STREAM_UNLOCK (pad);
+@@ -4877,6 +4920,7 @@ flushing:
+   }
+ eos:
+   {
++    GST_FLOW_TRACEPOINT_SEND_EVENT_ERROR (pad);
+     GST_OBJECT_UNLOCK (pad);
+     if (need_unlock)
+       GST_PAD_STREAM_UNLOCK (pad);
+@@ -4894,10 +4938,12 @@ probe_stopped:
+ 
+     switch (ret) {
+       case GST_FLOW_CUSTOM_SUCCESS:
++        GST_FLOW_TRACEPOINT_SEND_EVENT_DROPPED (pad);
+         GST_DEBUG_OBJECT (pad, "dropped event");
+         ret = GST_FLOW_OK;
+         break;
+       default:
++        GST_FLOW_TRACEPOINT_SEND_EVENT_ERROR (pad);
+         GST_DEBUG_OBJECT (pad, "an error occurred %s", gst_flow_get_name (ret));
+         break;
+     }
+@@ -4905,6 +4951,7 @@ probe_stopped:
+   }
+ no_function:
+   {
++    GST_FLOW_TRACEPOINT_SEND_EVENT_ERROR (pad);
+     g_warning ("pad %s:%s has no event handler, file a bug.",
+         GST_DEBUG_PAD_NAME (pad));
+     GST_OBJECT_UNLOCK (pad);
+@@ -4915,6 +4962,7 @@ no_function:
+   }
+ no_parent:
+   {
++    GST_FLOW_TRACEPOINT_SEND_EVENT_ERROR (pad);
+     GST_DEBUG_OBJECT (pad, "no parent");
+     GST_OBJECT_UNLOCK (pad);
+     if (need_unlock)
+@@ -4924,6 +4972,7 @@ no_parent:
+   }
+ precheck_failed:
+   {
++    GST_FLOW_TRACEPOINT_SEND_EVENT_ERROR (pad);
+     GST_DEBUG_OBJECT (pad, "pre event check failed");
+     RELEASE_PARENT (parent);
+     if (need_unlock)
+-- 
+1.9.1
+
