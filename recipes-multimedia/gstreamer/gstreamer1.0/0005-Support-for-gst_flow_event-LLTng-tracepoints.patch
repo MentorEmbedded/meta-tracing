@@ -1,8 +1,24 @@
-From 78df9da4ca71dbbc9733b3c31b31b84feb9e7f2a Mon Sep 17 00:00:00 2001
+From 826f0c4c8b14f5ffbdc25e34496991a64ccc7ffa Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 6 Oct 2015 17:02:07 +0300
-Subject: [PATCH 5/6] Support for gst_flow_event LLTng tracepoints.
+Date: Tue, 8 Dec 2015 15:09:23 +0200
+Subject: [PATCH 05/11] Support for gst_flow_event LLTng tracepoints.
 
+The gst_flow_event tracepoints trace the properties of events sent through the gstreamer pipeline.
+This replaces gst_flow_data tracepoints for event data.
+
+The initial support for this kind of tracepoints includes calling appropriate primitives
+when the data is passed through the pipeline elements, in the following APIs:
+
+   gst_pad_push_event()
+   gst_pad_send_event()
+
+The tracepoints are invoked just before the gst_flow tracepoints.
+
+At this stage, only minimal data is stored for each tracepoint:
+
+    -- a unique integer ID of the invoking thread;
+    -- the value of the pointer to the event.
+    -- the type of event.
 ---
  gst/gst_tracepoints.h | 11 +++++++++++
  gst/gstpad.c          |  1 +
@@ -52,18 +68,17 @@ index 5267af4..15d85f5 100644
  #define GST_FLOW_TRACEPOINT_BUFFER_LIST(list)
  
 diff --git a/gst/gstpad.c b/gst/gstpad.c
-index fc43094..41544f1 100644
+index 2f04595..cbbdd07 100644
 --- a/gst/gstpad.c
 +++ b/gst/gstpad.c
-@@ -4770,7 +4770,8 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
-   GST_OBJECT_LOCK (pad);
+@@ -5086,6 +5086,7 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
+   GstObject *parent;
  
-   event = apply_pad_offset (pad, event, GST_PAD_IS_SRC (pad));
-
+   GST_OBJECT_LOCK (pad);
 +  GST_FLOW_TRACEPOINT_EVENT (event);
    GST_FLOW_TRACEPOINT_SEND_EVENT_ENTER (pad, event);
-   if (GST_PAD_IS_SINK (pad))
-     serialized = GST_EVENT_IS_SERIALIZED (event);
+ 
+   event = apply_pad_offset (pad, event, GST_PAD_IS_SRC (pad));
 -- 
 1.9.1
 

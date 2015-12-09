@@ -1,0 +1,60 @@
+From b8025570b3b0bd34f97c42f57773c3b4279e02fc Mon Sep 17 00:00:00 2001
+From: Alexander Barabash <alexander_barabash@mentor.com>
+Date: Tue, 8 Dec 2015 15:11:36 +0200
+Subject: [PATCH 08/11] Added support for gst_flow_event_caps LTTng tracepoint.
+
+The gst_flow_event_caps tracepoints output the flags and text fields of the GST_EVENT_CAPS event.
+This tracepoint immediately follows the gst_flow_event tracepoint and precedes
+the gst_flow tracepoint on the same thread.
+---
+ gst/gst_tracepoints.h | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
+index 85b962c..c175afc 100644
+--- a/gst/gst_tracepoints.h
++++ b/gst/gst_tracepoints.h
+@@ -26,6 +26,7 @@
+ #include "gstghostpad.h"
+ #include "gstbufferlist.h"
+ #include "gstevent.h"
++#include "gstcaps.h"
+ 
+ extern GstPad *_priv_gst_ghostpad_get_target (GstGhostPad *gpad);
+ extern void _priv_gst_tracepoints_trace_buffer_list (GstBufferList *list);
+@@ -126,6 +127,12 @@ GST_TRACEPOINT_EVENT (gst_flow_event_qos,
+                                  ctf_gst_time_field (diff, gst_tracepoints_extract_qos_event_diff (event, event_data))
+                                  ctf_float (gdouble, proportion, gst_tracepoints_extract_qos_event_proportion (event, event_data))))
+ 
++GST_TRACEPOINT_EVENT (gst_flow_event_caps,
++                      TP_ARGS (GstCaps *, caps, char const *, str),
++                      TP_FIELDS (ctf_gst_thread_id_field (thread_id)
++                                 ctf_integer (unsigned long, flags, GST_CAPS_FLAGS (caps))
++                                 ctf_string (text, str)))
++
+ #endif /* _GST_TRACEPOINTS_H */
+ 
+ #include <lttng/tracepoint-event.h>
+@@ -184,6 +191,19 @@ GST_TRACEPOINT_EVENT (gst_flow_event_qos,
+                     GST_TRACEPOINT (gst_flow_event_qos, event, &event_data); \
+                 }                                                       \
+                 break;                                                  \
++            case GST_EVENT_CAPS:                                        \
++                {                                                       \
++                    GstCaps *caps = NULL;                               \
++                    gst_event_parse_caps(event, &caps);                 \
++                    if(caps) {                                          \
++                        gchar *str = gst_caps_to_string(caps);          \
++                        if(str) {                                       \
++                            GST_TRACEPOINT(gst_flow_event_caps, caps, str); \
++                            g_free(str);                                \
++                        }                                               \
++                    }                                                   \
++                }                                                       \
++                break;                                                  \
+             default:                                                    \
+                 break;                                                  \
+             }                                                           \
+-- 
+1.9.1
+

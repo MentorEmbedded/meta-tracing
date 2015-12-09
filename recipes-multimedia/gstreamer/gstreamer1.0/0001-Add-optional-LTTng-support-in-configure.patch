@@ -1,19 +1,19 @@
-From db75f6904227c0670c1a4a5e307b576d976a7739 Mon Sep 17 00:00:00 2001
+From 33a5a7ea5959357ef375e21a91da7a4eb8db6449 Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 6 Oct 2015 16:53:55 +0300
-Subject: [PATCH 1/6] Add optional LTTng support in configure.
+Date: Tue, 8 Dec 2015 14:06:40 +0200
+Subject: [PATCH 01/11] Add optional LTTng support in configure.
 
 ---
  configure.ac | 21 +++++++++++++++++++++
  1 file changed, 21 insertions(+)
 
 diff --git a/configure.ac b/configure.ac
-index df169de..f043afa 100644
+index 53c1afe..d01fb33 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -562,6 +562,26 @@ AC_CHECK_LIB(dl, dladdr,
-    LIBS="$LIBS -ldl")
- CFLAGS="$save_cflags"
+@@ -572,6 +572,26 @@ if test "x${GST_DISABLE_GST_DEBUG}" != "xyes"; then
+   AC_TYPE_SIZE_T
+ fi
  
 +dnl lttng tracepoints
 +AC_ARG_ENABLE(lttng-tracepoints,
@@ -38,7 +38,7 @@ index df169de..f043afa 100644
  dnl *** checks for dependency libraries ***
  
  dnl GLib
-@@ -889,6 +909,7 @@ Configuration
+@@ -900,6 +920,7 @@ Configuration
  	Unit testing support       : ${BUILD_CHECK}
  
  	Debug                      : ${USE_DEBUG}
