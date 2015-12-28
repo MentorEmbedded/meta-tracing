@@ -1,0 +1,102 @@
+From 65a7125b81c7bf3fdedcdab16424d9d8b1d0a0c2 Mon Sep 17 00:00:00 2001
+From: Alexander Barabash <alexander_barabash@mentor.com>
+Date: Tue, 8 Dec 2015 15:10:51 +0200
+Subject: [PATCH 07/11] Added GST_TRACEPOINT_ENABLED() macro.
+
+GST_TRACEPOINT_ENABLED(name) is true iff the tracepoint Gst:name is enabled.
+---
+ gst/gst_tracepoints.c |  3 +--
+ gst/gst_tracepoints.h | 28 ++++++++++++++--------------
+ 2 files changed, 15 insertions(+), 16 deletions(-)
+
+diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
+index 9864790..4be57c0 100644
+--- a/gst/gst_tracepoints.c
++++ b/gst/gst_tracepoints.c
+@@ -111,8 +111,7 @@ gst_tracepoints_trace_buffer_list_item (GstBuffer ** buffer,
+     guint idx, gpointer user_data)
+ {
+   if (*buffer != NULL) {
+-    GST_TRACEPOINT (gst_flow_data, *buffer,
+-        GST_TRACEPOINT_DATA_TYPE_BUFFER, NULL);
++    GST_TRACEPOINT (gst_flow_data, *buffer, GST_TRACEPOINT_DATA_TYPE_BUFFER);
+   }
+ 
+   return TRUE;
+diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
+index 25bd3b0..85b962c 100644
+--- a/gst/gst_tracepoints.h
++++ b/gst/gst_tracepoints.h
+@@ -86,6 +86,9 @@ typedef struct GstFlowTracepointQOSEventData {
+ 
+ #include <lttng/tracepoint.h>
+ 
++/* This ought to be defined in LTTNG */
++#define GST_TRACEPOINT_ENABLED(name) __tracepoint_Gst##___##name.state
++
+ GST_TRACEPOINT_EVENT (gst_flow,
+                       TP_ARGS (GstPad *, pad,
+                                void *, data,
+@@ -102,15 +105,15 @@ GST_TRACEPOINT_EVENT (gst_flow,
+                                              gst_tracepoints_get_pad_element_name_if_needed (pad, tracepoint_type))))
+ 
+ GST_TRACEPOINT_EVENT (gst_flow_data,
+-                      TP_ARGS (void *, data, GstFlowTracepointDataType, data_type, int *, trace_is_on),
++                      TP_ARGS (void *, data, GstFlowTracepointDataType, data_type),
+                       TP_FIELDS (ctf_integer (guint, size, (data_type == GST_TRACEPOINT_DATA_TYPE_BUFFER) ? gst_buffer_get_size((GstBuffer *) (data)) : 0)
+                                  ctf_gst_thread_id_field (thread_id)
+-                                 ctf_gst_data_type_field (data_type, ((trace_is_on ? (*trace_is_on = 1) : 0), data_type))))
++                                 ctf_gst_data_type_field (data_type, data_type)))
+ 
+ GST_TRACEPOINT_EVENT (gst_flow_event,
+-                      TP_ARGS (GstEvent *, event, int *, trace_is_on),
++                      TP_ARGS (GstEvent *, event),
+                       TP_FIELDS (ctf_gst_thread_id_field (thread_id)
+-                                 ctf_gst_event_type_field (event_type, ((trace_is_on ? (*trace_is_on = 1) : 0), event))))
++                                 ctf_gst_event_type_field (event_type, event)))
+ 
+ GST_TRACEPOINT_EVENT (gst_flow_event_latency,
+                       TP_ARGS (GstEvent *, event),
+@@ -164,13 +167,12 @@ GST_TRACEPOINT_EVENT (gst_flow_event_qos,
+     GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_SEND_EVENT, GST_TRACEPOINT_FLAG_DROPPED)
+ 
+ #define GST_FLOW_TRACEPOINT_BUFFER(buffer) \
+-  GST_TRACEPOINT (gst_flow_data, buffer, GST_TRACEPOINT_DATA_TYPE_BUFFER, NULL)
++  GST_TRACEPOINT (gst_flow_data, buffer, GST_TRACEPOINT_DATA_TYPE_BUFFER)
+ 
+ #define GST_FLOW_TRACEPOINT_EVENT(event)                                \
+     do {                                                                \
+-        int trace_is_on = 0;                                            \
+-        GST_TRACEPOINT (gst_flow_event, event, &trace_is_on);           \
+-        if (trace_is_on) {                                              \
++        GST_TRACEPOINT (gst_flow_event, event);                         \
++        if (GST_TRACEPOINT_ENABLED(gst_flow_event)) {                   \
+             switch(event->type) {                                       \
+             case GST_EVENT_LATENCY:                                     \
+                 GST_TRACEPOINT (gst_flow_event_latency, event);         \
+@@ -190,18 +192,16 @@ GST_TRACEPOINT_EVENT (gst_flow_event_qos,
+ 
+ #define GST_FLOW_TRACEPOINT_DATA(data, is_buffer)                       \
+     do {                                                                \
+-      int trace_is_on = 0;                                              \
+-      GST_TRACEPOINT (gst_flow_data, data, G_LIKELY (is_buffer) ? GST_TRACEPOINT_DATA_TYPE_BUFFER : GST_TRACEPOINT_DATA_TYPE_BUFFER_LIST, &trace_is_on); \
+-      if (trace_is_on && G_UNLIKELY (!is_buffer)) {                     \
++      GST_TRACEPOINT (gst_flow_data, data, G_LIKELY (is_buffer) ? GST_TRACEPOINT_DATA_TYPE_BUFFER : GST_TRACEPOINT_DATA_TYPE_BUFFER_LIST); \
++      if (GST_TRACEPOINT_ENABLED(gst_flow_data) && G_UNLIKELY (!is_buffer)) { \
+           _priv_gst_tracepoints_trace_buffer_list (data);               \
+       }                                                                 \
+   } while (0)
+ 
+ #define GST_FLOW_TRACEPOINT_BUFFER_LIST(list)                           \
+   do {                                                                  \
+-    int trace_is_on = 0;                                                \
+-    GST_TRACEPOINT (gst_flow_data, list, GST_TRACEPOINT_DATA_TYPE_BUFFER_LIST, &trace_is_on); \
+-    if (trace_is_on) {                                                  \
++    GST_TRACEPOINT (gst_flow_data, list, GST_TRACEPOINT_DATA_TYPE_BUFFER_LIST); \
++    if (GST_TRACEPOINT_ENABLED(gst_flow_data)) {                        \
+       _priv_gst_tracepoints_trace_buffer_list (list);                   \
+     }                                                                   \
+   } while (0)
+-- 
+1.9.1
+
