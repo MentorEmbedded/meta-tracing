@@ -1,8 +1,33 @@
-From 3977766269dc9e9c797d936d17afd778495a2171 Mon Sep 17 00:00:00 2001
+From 8d7deb7228e23b39131f234ef6ca73c8b9dee007 Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 6 Oct 2015 17:01:15 +0300
-Subject: [PATCH 4/6] gst_flow_data LLTng tracepoints.
+Date: Tue, 8 Dec 2015 15:07:56 +0200
+Subject: [PATCH 04/11] gst_flow_data LLTng tracepoints.
 
+The gst_flow_data tracepoints trace the properties of data flowing through the gstreamer pipeline.
+They can be used to observe throughput of the pipeline and its elements.
+
+The initial support for this kind of tracepoints includes calling appropriate primitives
+when the data is passed through the pipeline elements:
+
+1. At entry points of Push APIs:
+    gst_pad_chain()
+    gst_pad_chain_list()
+    gst_pad_push()
+    gst_pad_push_list()
+
+2. At successful exit points of Pull APIs:
+    gst_pad_get_range()
+    gst_pad_pull_range()
+
+The tracepoints are invoked just before the gst_flow tracepoints.
+
+At this stage, only minimal data is stored for each tracepoint:
+
+    -- a unique integer ID of the invoking thread;
+    -- the value of the pointer to the data.
+    -- the type of data: buffer or buffer list.
+
+For buffer lists, every buffer in the list is also traced.
 ---
  gst/gst_tracepoints.c | 19 +++++++++++++++++++
  gst/gst_tracepoints.h | 39 ++++++++++++++++++++++++++++++++++++++-
@@ -134,10 +159,10 @@ index 5cfb6f2..5267af4 100644
  #define GST_TRACEPOINT(...)
  
 diff --git a/gst/gstpad.c b/gst/gstpad.c
-index e061faa..fc43094 100644
+index 90a44b2..2f04595 100644
 --- a/gst/gstpad.c
 +++ b/gst/gstpad.c
-@@ -3622,6 +3622,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
+@@ -3781,6 +3781,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
    GST_PAD_STREAM_LOCK (pad);
  
    GST_OBJECT_LOCK (pad);
@@ -145,7 +170,7 @@ index e061faa..fc43094 100644
    GST_FLOW_TRACEPOINT_PUSH_ENTER (pad, data);
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
-@@ -3848,6 +3849,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
+@@ -4023,6 +4024,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
    GstFlowReturn ret;
  
    GST_OBJECT_LOCK (pad);
@@ -153,7 +178,7 @@ index e061faa..fc43094 100644
    GST_FLOW_TRACEPOINT_PUSH_ENTER (pad, data);
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
-@@ -4092,6 +4094,7 @@ probed_data:
+@@ -4292,6 +4294,7 @@ probed_data:
  
    *buffer = res_buf;
  
@@ -161,7 +186,7 @@ index e061faa..fc43094 100644
    GST_FLOW_TRACEPOINT_PULL_EXIT (pad, *buffer, ret);
    return ret;
  
-@@ -4340,6 +4343,7 @@ probed_data:
+@@ -4549,6 +4552,7 @@ probed_data:
  
    *buffer = res_buf;
  

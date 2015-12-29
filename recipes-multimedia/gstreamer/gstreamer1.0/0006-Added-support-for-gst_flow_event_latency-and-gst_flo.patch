@@ -1,9 +1,16 @@
-From 4961d959779af1dd07c9ec8f4af37985ec1dcb5e Mon Sep 17 00:00:00 2001
+From fb2f783e36a09623f26a267df45d2aad253b217b Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 6 Oct 2015 17:03:11 +0300
-Subject: [PATCH 6/6] Added support for gst_flow_event_latency and
+Date: Tue, 8 Dec 2015 15:10:11 +0200
+Subject: [PATCH 06/11] Added support for gst_flow_event_latency and
  gst_flow_event_qos LTTng tracepoints.
 
+The gst_flow_event_latency tracepoints output the latency field of the GST_EVENT_LATENCY event.
+This tracepoint immediately follows the gst_flow_event tracepoint and precedes
+the gst_flow tracepoint on the same thread.
+
+The gst_flow_event_qos tracepoints output the proportion and diff fields of the GST_EVENT_QOS event.
+This tracepoint immediately follows the gst_flow_event tracepoint and precedes
+the gst_flow tracepoint on the same thread.
 ---
  gst/gst_tracepoints.c | 44 ++++++++++++++++++++++++++++++++++++++++++++
  gst/gst_tracepoints.h | 49 ++++++++++++++++++++++++++++++++++++++++++++-----
