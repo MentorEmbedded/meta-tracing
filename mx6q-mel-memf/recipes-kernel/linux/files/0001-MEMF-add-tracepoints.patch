@@ -1,0 +1,54 @@
+From 9116200b7b4058eb9aa5859856123ca389660c33 Mon Sep 17 00:00:00 2001
+From: Yasir-Khan <yasir_khan@mentor.com>
+Date: Thu, 20 Aug 2015 20:41:47 +0500
+Subject: [PATCH] MEMF: add tracepoints
+
+Signed-off-by: Yasir-Khan <yasir_khan@mentor.com>
+---
+ include/trace/events/memf.h |   34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+ create mode 100644 include/trace/events/memf.h
+
+diff --git a/include/trace/events/memf.h b/include/trace/events/memf.h
+new file mode 100644
+index 0000000..dc716d0
+--- /dev/null
++++ b/include/trace/events/memf.h
+@@ -0,0 +1,34 @@
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM memf
++
++#if !defined(_TRACE_MEMF_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _TRACE_MEMF_H
++
++#include <linux/tracepoint.h>
++#include <linux/string.h>
++/*
++ * A simple tracepoint to log debug messages in the trace buffer
++ * Used in place of printk based debug calls due to the instrinsic
++ * delay involved in print calls
++ */
++TRACE_EVENT(memf_dbg,
++ TP_PROTO(char *msg),
++
++ TP_ARGS(msg),
++
++ TP_STRUCT__entry(
++ __string(log, msg)
++ ),
++
++ TP_fast_assign(
++ __assign_str(log, msg);
++ ),
++
++ TP_printk("%s", __get_str(log))
++);
++
++
++#endif /* if !defined(_TRACE_MEMF_H) || defined(TRACE_HEADER_MULTI_READ) */
++
++/* This part must be outside protection */
++#include <trace/define_trace.h>
+-- 
+1.7.9.5
+

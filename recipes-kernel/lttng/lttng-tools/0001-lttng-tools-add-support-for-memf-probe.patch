@@ -1,0 +1,27 @@
+From 34742ae8cded1bdb0c75016740400f92d12f3235 Mon Sep 17 00:00:00 2001
+From: Yasir-Khan <yasir_khan@mentor.com>
+Date: Thu, 20 Aug 2015 04:37:33 +0500
+Subject: [PATCH] lttng-tools: add support for memf probe
+
+Support insertion of this kernel module on start of the session.
+
+Signed-off-by: Yasir-Khan <yasir_khan@mentor.com>
+---
+ src/bin/lttng-sessiond/modprobe.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/bin/lttng-sessiond/modprobe.c b/src/bin/lttng-sessiond/modprobe.c
+index 66a4657..1b82c02 100644
+--- a/src/bin/lttng-sessiond/modprobe.c
++++ b/src/bin/lttng-sessiond/modprobe.c
+@@ -91,6 +91,7 @@ struct kern_modules_param kern_modules_probes_default[] = {
+ 	{ "lttng-probe-v4l2" },
+ 	{ "lttng-probe-workqueue" },
+ 	{ "lttng-probe-writeback" },
++	{ "lttng-probe-memf" },
+ };
+ 
+ /* dynamic probe modules list */
+-- 
+1.7.9.5
+
