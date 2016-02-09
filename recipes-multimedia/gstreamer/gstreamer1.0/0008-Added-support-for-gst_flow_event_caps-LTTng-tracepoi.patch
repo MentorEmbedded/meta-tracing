@@ -1,4 +1,4 @@
-From b8025570b3b0bd34f97c42f57773c3b4279e02fc Mon Sep 17 00:00:00 2001
+From c9b46bec5e0f786375871f9d063f8cbfd73aef2e Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
 Date: Tue, 8 Dec 2015 15:11:36 +0200
 Subject: [PATCH 08/11] Added support for gst_flow_event_caps LTTng tracepoint.
@@ -56,5 +56,5 @@ index 85b962c..c175afc 100644
                  break;                                                  \
              }                                                           \
 -- 
-1.9.1
+2.2.1
 

@@ -1,4 +1,4 @@
-From fb2f783e36a09623f26a267df45d2aad253b217b Mon Sep 17 00:00:00 2001
+From 9f4f2d0ebe125cd135dbbced53091d8fef74f573 Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
 Date: Tue, 8 Dec 2015 15:10:11 +0200
 Subject: [PATCH 06/11] Added support for gst_flow_event_latency and
@@ -172,5 +172,5 @@ index 15d85f5..25bd3b0 100644
  #define GST_FLOW_TRACEPOINT_DATA(data, is_buffer)                       \
      do {                                                                \
 -- 
-1.9.1
+2.2.1
 

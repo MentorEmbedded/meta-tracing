@@ -1,4 +1,4 @@
-From 6ddda15708aeff9cadc61191058c9a2b33de4eeb Mon Sep 17 00:00:00 2001
+From adf34d89c4a6f083e05e64e57988a536e0e08b6e Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
 Date: Tue, 8 Dec 2015 15:13:24 +0200
 Subject: [PATCH 10/11] Added gst_latency_measurement_start/end/passed events.
@@ -47,5 +47,5 @@ index 6c6580f..103c45c 100644
  
  #include <lttng/tracepoint-event.h>
 -- 
-1.9.1
+2.2.1
 

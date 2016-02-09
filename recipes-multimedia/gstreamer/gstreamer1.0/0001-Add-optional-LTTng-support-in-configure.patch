@@ -1,4 +1,4 @@
-From 33a5a7ea5959357ef375e21a91da7a4eb8db6449 Mon Sep 17 00:00:00 2001
+From efb6c3840a77467755f61d335b7745cc71b256cc Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
 Date: Tue, 8 Dec 2015 14:06:40 +0200
 Subject: [PATCH 01/11] Add optional LTTng support in configure.
@@ -8,10 +8,10 @@ Subject: [PATCH 01/11] Add optional LTTng support in configure.
  1 file changed, 21 insertions(+)
 
 diff --git a/configure.ac b/configure.ac
-index 53c1afe..d01fb33 100644
+index e366ff1..087f80a 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -572,6 +572,26 @@ if test "x${GST_DISABLE_GST_DEBUG}" != "xyes"; then
+@@ -765,6 +765,26 @@ if test "x${GST_DISABLE_GST_DEBUG}" != "xyes"; then
    AC_TYPE_SIZE_T
  fi
  
@@ -38,8 +38,8 @@ index 53c1afe..d01fb33 100644
  dnl *** checks for dependency libraries ***
  
  dnl GLib
-@@ -900,6 +920,7 @@ Configuration
- 	Unit testing support       : ${BUILD_CHECK}
+@@ -1100,6 +1120,7 @@ Configuration
+ 	PTP clock support          : ${HAVE_PTP}
  
  	Debug                      : ${USE_DEBUG}
 +	LTTng tracepoints          : ${enable_lttng_tracepoints}
@@ -47,5 +47,5 @@ index 53c1afe..d01fb33 100644
  
  	Building benchmarks        : ${BUILD_BENCHMARKS}
 -- 
-1.9.1
+2.2.1
 
