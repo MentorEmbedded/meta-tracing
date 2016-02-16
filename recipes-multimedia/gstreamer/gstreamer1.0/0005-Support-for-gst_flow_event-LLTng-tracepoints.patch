@@ -1,4 +1,4 @@
-From 826f0c4c8b14f5ffbdc25e34496991a64ccc7ffa Mon Sep 17 00:00:00 2001
+From 5fb22c3b5cd8c5b5eb38bd215b005ad9f2161831 Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
 Date: Tue, 8 Dec 2015 15:09:23 +0200
 Subject: [PATCH 05/11] Support for gst_flow_event LLTng tracepoints.
@@ -68,10 +68,10 @@ index 5267af4..15d85f5 100644
  #define GST_FLOW_TRACEPOINT_BUFFER_LIST(list)
  
 diff --git a/gst/gstpad.c b/gst/gstpad.c
-index 2f04595..cbbdd07 100644
+index 8916da5..579fb1c 100644
 --- a/gst/gstpad.c
 +++ b/gst/gstpad.c
-@@ -5086,6 +5086,7 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
+@@ -5388,6 +5388,7 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
    GstObject *parent;
  
    GST_OBJECT_LOCK (pad);
@@ -80,5 +80,5 @@ index 2f04595..cbbdd07 100644
  
    event = apply_pad_offset (pad, event, GST_PAD_IS_SRC (pad));
 -- 
-1.9.1
+2.2.1
 

@@ -1,4 +1,4 @@
-From 8d7deb7228e23b39131f234ef6ca73c8b9dee007 Mon Sep 17 00:00:00 2001
+From fd0adeb58d24e0f9e0bf35102950c474ba64ebe7 Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
 Date: Tue, 8 Dec 2015 15:07:56 +0200
 Subject: [PATCH 04/11] gst_flow_data LLTng tracepoints.
@@ -159,10 +159,10 @@ index 5cfb6f2..5267af4 100644
  #define GST_TRACEPOINT(...)
  
 diff --git a/gst/gstpad.c b/gst/gstpad.c
-index 90a44b2..2f04595 100644
+index 375cc7a..8916da5 100644
 --- a/gst/gstpad.c
 +++ b/gst/gstpad.c
-@@ -3781,6 +3781,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
+@@ -4036,6 +4036,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
    GST_PAD_STREAM_LOCK (pad);
  
    GST_OBJECT_LOCK (pad);
@@ -170,15 +170,15 @@ index 90a44b2..2f04595 100644
    GST_FLOW_TRACEPOINT_PUSH_ENTER (pad, data);
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
-@@ -4023,6 +4024,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
-   GstFlowReturn ret;
+@@ -4297,6 +4298,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
+   gboolean handled = FALSE;
  
    GST_OBJECT_LOCK (pad);
 +  GST_FLOW_TRACEPOINT_DATA (data, (type & GST_PAD_PROBE_TYPE_BUFFER) != 0);
    GST_FLOW_TRACEPOINT_PUSH_ENTER (pad, data);
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
-@@ -4292,6 +4294,7 @@ probed_data:
+@@ -4572,6 +4574,7 @@ probed_data:
  
    *buffer = res_buf;
  
@@ -186,7 +186,7 @@ index 90a44b2..2f04595 100644
    GST_FLOW_TRACEPOINT_PULL_EXIT (pad, *buffer, ret);
    return ret;
  
-@@ -4549,6 +4552,7 @@ probed_data:
+@@ -4829,6 +4832,7 @@ probed_data:
  
    *buffer = res_buf;
  
@@ -195,5 +195,5 @@ index 90a44b2..2f04595 100644
    return ret;
  
 -- 
-1.9.1
+2.2.1
 

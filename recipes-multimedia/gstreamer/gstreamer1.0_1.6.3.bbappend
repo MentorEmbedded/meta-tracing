@@ -1,5 +1,7 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
+PATCHTOOL = "git"
+
 SRC_URI += "file://0001-Add-optional-LTTng-support-in-configure.patch \
             file://0002-Add-basic-LTTng-tracepoints-infrastructure.patch \
             file://0003-Add-gst_flow-LLTng-tracepoints.patch \
