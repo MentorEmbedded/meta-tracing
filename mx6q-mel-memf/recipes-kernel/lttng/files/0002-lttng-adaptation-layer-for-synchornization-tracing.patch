@@ -1,0 +1,141 @@
+From b17c1b97e8b06bb77684f022b37177c28037001a Mon Sep 17 00:00:00 2001
+From: Abdur Rehman <abdur_rehman@mentor.com>
+Date: Wed, 30 Mar 2016 20:05:09 +0500
+Subject: [PATCH] lttng adaptation layer for synchornization tracing
+
+Signed-off-by: Abdur Rehman <abdur_rehman@mentor.com>
+---
+ .../events/lttng-module/Synchronization.h          |   77 ++++++++++++++++++++
+ probes/Makefile                                    |    1 +
+ probes/lttng-probe-Synchronization.c               |   23 ++++++
+ 3 files changed, 101 insertions(+)
+ create mode 100644 instrumentation/events/lttng-module/Synchronization.h
+ create mode 100644 probes/lttng-probe-Synchronization.c
+
+diff --git a/instrumentation/events/lttng-module/Synchronization.h b/instrumentation/events/lttng-module/Synchronization.h
+new file mode 100644
+index 0000000..ce6ef60
+--- /dev/null
++++ b/instrumentation/events/lttng-module/Synchronization.h
+@@ -0,0 +1,77 @@
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM Synchronization
++
++#if !defined(_LTTNG_SYNCHRONIZATION_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _LTTNG_SYNCHRONIZATION_H
++
++#include "../../../probes/lttng-tracepoint-event.h"
++#include <linux/tracepoint.h>
++
++LTTNG_TRACEPOINT_EVENT(
++    /* format identical to mainline version for those */
++    /* "Synchronization" is the subsystem name, "TriggerSend" is the event name */
++    Synchronization_TriggerSend,
++
++    /* tracepoint function prototype */
++    TP_PROTO(unsigned int Priority, unsigned int CorrelationId, const char *Name),
++
++    /* arguments for this tracepoint */
++    TP_ARGS(Priority, CorrelationId, Name),
++
++    /* possible differences */
++    TP_STRUCT__entry(
++        __field(unsigned int, Priority)
++        __field(unsigned int, CorrelationId)
++        __string(Name, Name)
++    ),
++
++    /* notice the use of tp_assign()/tp_strcpy() and no semicolons */
++    TP_fast_assign(
++        tp_assign(Priority, Priority)
++        tp_assign(CorrelationId, CorrelationId)
++        tp_strcpy(Name, Name)
++    ),
++
++    /* This one is actually not used by LTTng either, but must be
++     * present for the moment.
++     */
++    TP_printk("", 0)
++
++)
++
++LTTNG_TRACEPOINT_EVENT(
++    /* format identical to mainline version for those */
++    /* "Synchronization" is the subsystem name, "TriggerReceive" is the event name */
++    Synchronization_TriggerReceive,
++
++    /* tracepoint function prototype */
++    TP_PROTO(unsigned int Priority, unsigned int CorrelationId, const char *Name),
++
++    /* arguments for this tracepoint */
++    TP_ARGS(Priority, CorrelationId, Name),
++
++    /* possible differences */
++    TP_STRUCT__entry(
++        __field(unsigned int, Priority)
++        __field(unsigned int, CorrelationId)
++        __string(Name, Name)
++    ),
++
++    /* notice the use of tp_assign()/tp_strcpy() and no semicolons */
++    TP_fast_assign(
++        tp_assign(Priority, Priority)
++        tp_assign(CorrelationId, CorrelationId)
++        tp_strcpy(Name, Name)
++    ),
++
++    /* This one is actually not used by LTTng either, but must be
++     * present for the moment.
++     */
++    TP_printk("", 0)
++
++)
++
++#endif /* !defined(_LTTNG_SYNCHRONIZATION_H) || defined(TRACE_HEADER_MULTI_READ) */
++
++/* other difference: do NOT include <trace/define_trace.h> */
++#include "../../../probes/define_trace.h"
+diff --git a/probes/Makefile b/probes/Makefile
+index 3767d33..6b6925d 100644
+--- a/probes/Makefile
++++ b/probes/Makefile
+@@ -252,6 +252,7 @@ endif
+ 
+ ifneq ($(CONFIG_MEMF),)
+ obj-m += lttng-probe-memf.o
++obj-m += lttng-probe-Synchronization.o
+ endif
+ endif
+ 
+diff --git a/probes/lttng-probe-Synchronization.c b/probes/lttng-probe-Synchronization.c
+new file mode 100644
+index 0000000..e2bc97f
+--- /dev/null
++++ b/probes/lttng-probe-Synchronization.c
+@@ -0,0 +1,23 @@
++#include <linux/module.h>
++#include "../lttng-tracer.h"
++
++/*
++ * Build-time verification of mismatch between mainline TRACE_EVENT()
++ * arguments and LTTng adaptation layer LTTNG_TRACEPOINT_EVENT() arguments.
++ */
++#include <trace/events/Synchronization.h>
++
++/* create LTTng tracepoint probes */
++#define LTTNG_PACKAGE_BUILD
++#define CREATE_TRACE_POINTS
++#define TRACE_INCLUDE_PATH ../instrumentation/events/lttng-module
++
++#include "../instrumentation/events/lttng-module/Synchronization.h"
++
++MODULE_LICENSE("GPL and additional rights");
++MODULE_AUTHOR("Abdur Rehman <abdur_rehman@mentor.com>");
++MODULE_DESCRIPTION("LTTng Synchronization probes");
++MODULE_VERSION(__stringify(LTTNG_MODULES_MAJOR_VERSION) "."
++    __stringify(LTTNG_MODULES_MINOR_VERSION) "."
++    __stringify(LTTNG_MODULES_PATCHLEVEL_VERSION)
++    LTTNG_MODULES_EXTRAVERSION);
+-- 
+1.7.9.5
+

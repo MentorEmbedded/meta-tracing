@@ -1,0 +1,518 @@
+From 9efe52b79cb7045c8d8969f5989083b9ec649a7a Mon Sep 17 00:00:00 2001
+From: Fahad Arslan <Fahad_Arslan@mentor.com>
+Date: Thu, 24 Mar 2016 15:05:03 +0500
+Subject: [PATCH 1/1] lttng adaptation layer for memf tracing
+
+Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
+---
+ instrumentation/events/lttng-module/MEMF.h |  451 ++++++++++++++++++++++++++++
+ probes/Makefile                            |    3 +
+ probes/lttng-probe-memf.c                  |   24 ++
+ 3 files changed, 478 insertions(+)
+ create mode 100644 instrumentation/events/lttng-module/MEMF.h
+ create mode 100644 probes/lttng-probe-memf.c
+
+diff --git a/instrumentation/events/lttng-module/MEMF.h b/instrumentation/events/lttng-module/MEMF.h
+new file mode 100644
+index 0000000..db26633
+--- /dev/null
++++ b/instrumentation/events/lttng-module/MEMF.h
+@@ -0,0 +1,451 @@
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM MEMF 
++
++#if !defined(LTTNG_TRACE_MEMF_H) || defined(TRACE_HEADER_MULTI_READ)
++#define LTTNG_TRACE_MEMF_H
++
++#include "../../../probes/lttng-tracepoint-event.h"
++#include <linux/tracepoint.h>
++
++LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_Init,
++
++	TP_PROTO(unsigned int Control_Block_Address, char* Firmware_Name,  unsigned int CPU_ID, int Status),
++
++   	TP_ARGS(Control_Block_Address, Firmware_Name, CPU_ID, Status),
++
++	TP_STRUCT__entry(
++		__field(unsigned int, Control_Block_Address)
++		__string(Firmware_Name, Firmware_Name)
++		__field(unsigned int, CPU_ID)
++		__field(int, Status)
++	),
++
++	TP_fast_assign(
++		tp_assign(Control_Block_Address, Control_Block_Address)
++		tp_strcpy(Firmware_Name, Firmware_Name)
++		tp_assign(CPU_ID, CPU_ID)
++		tp_assign(Status, Status)
++	),
++
++	TP_printk("Control_Block_Address=%p Firmware_Name=%s CPU_ID=%d Status=%d",
++		__entry->Control_Block_Address, 
++		__entry->Firmware_Name,
++		__entry->CPU_ID, 
++		__entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_State,
++
++        TP_PROTO(unsigned int Control_Block_Address, unsigned int State, int Status),
++
++        TP_ARGS(Control_Block_Address, State, Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, Control_Block_Address)
++                __field(unsigned int, State)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(Control_Block_Address, Control_Block_Address)
++                tp_assign(State, State)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("Control_Block_Address=%p State=%d Status=%d",
++		__entry->Control_Block_Address, 
++		__entry->State, 
++		__entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_DeInit,
++
++        TP_PROTO(unsigned int Control_Block_Address, int Status),
++
++        TP_ARGS(Control_Block_Address, Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, Control_Block_Address)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(Control_Block_Address, Control_Block_Address)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("Control_Block_Address=%p Status=%d",
++                __entry->Control_Block_Address, 
++		__entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_Rsc_Init,
++
++        TP_PROTO(unsigned int Control_Block_Address, unsigned int CPU_ID, int Status),
++
++        TP_ARGS(Control_Block_Address, CPU_ID, Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, Control_Block_Address)
++		__field(unsigned int, CPU_ID)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(Control_Block_Address, Control_Block_Address)
++		tp_assign(CPU_ID, CPU_ID)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("Control_Block_Address=%p CPU_ID=%d Status=%d",
++                __entry->Control_Block_Address, 
++		__entry->CPU_ID, 
++		__entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_Rsc_DeInit,
++
++        TP_PROTO(unsigned int Control_Block_Address, int Status),
++
++        TP_ARGS(Control_Block_Address, Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, Control_Block_Address)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(Control_Block_Address, Control_Block_Address)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("Control_Block_Address=%p Status=%d",
++                __entry->Control_Block_Address, 
++		__entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Init,
++
++        TP_PROTO(unsigned int RPMsg_Control_Block_Address, unsigned int CPU_ID, unsigned int Role, int Status),
++
++        TP_ARGS(RPMsg_Control_Block_Address, CPU_ID, Role, Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, RPMsg_Control_Block_Address)
++                __field(unsigned int, CPU_ID)
++                __field(unsigned int, Role)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++		tp_assign(CPU_ID, CPU_ID)
++		tp_assign(Role, Role)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("RPMsg_Control_Block_Address=%p CPU_ID=%d Role=%d Status=%d",
++                __entry->RPMsg_Control_Block_Address, 
++		__entry->CPU_ID, 
++		__entry->Role, 
++		__entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_DeInit,
++
++        TP_PROTO(unsigned int RPMsg_Control_Block_Address, int Status),
++
++        TP_ARGS(RPMsg_Control_Block_Address, Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, RPMsg_Control_Block_Address)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("RPMsg_Control_Block_Address=%p Status=%d",
++                __entry->RPMsg_Control_Block_Address,
++                __entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Channel_Create,
++
++        TP_PROTO(unsigned int RPMsg_Control_Block_Address, 
++		unsigned int Channel_Control_Block_Address, 
++		char *Name,
++		unsigned int Source_Address,
++		unsigned int Destination_Address,
++		int Status),
++
++        TP_ARGS(RPMsg_Control_Block_Address, 
++		Channel_Control_Block_Address, 
++		Name, 
++		Source_Address, 
++		Destination_Address, 
++		Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, RPMsg_Control_Block_Address)
++                __field(unsigned int, Channel_Control_Block_Address)
++                __string(Name, Name)
++                __field(unsigned int, Source_Address)
++                __field(unsigned int, Destination_Address)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++                tp_assign(Channel_Control_Block_Address, Channel_Control_Block_Address)
++                tp_strcpy(Name, Name)
++                tp_assign(Source_Address, Source_Address)
++                tp_assign(Destination_Address, Destination_Address)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("RPMsg_Control_Block_Address=%p Channel_Control_Block_Address=%p Name=%s Source_Address=%d Destination_Address=%d Status=%d",
++                __entry->RPMsg_Control_Block_Address,
++                __entry->Channel_Control_Block_Address,
++                __entry->Name,
++                __entry->Source_Address,
++                __entry->Destination_Address,
++                __entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Channel_Delete,
++
++        TP_PROTO(unsigned int Channel_Control_Block_Address,
++                int Status),
++
++        TP_ARGS(Channel_Control_Block_Address,
++                Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, Channel_Control_Block_Address)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(Channel_Control_Block_Address, Channel_Control_Block_Address)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("Channel_Control_Block_Address=%p Status=%d",
++                __entry->Channel_Control_Block_Address,
++                __entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Ept_Create,
++
++        TP_PROTO(unsigned int RPMsg_Control_Block_Address,
++                unsigned int EPT_Control_Block_Address,
++                unsigned int Address,
++                int Status),
++
++        TP_ARGS(RPMsg_Control_Block_Address,
++                EPT_Control_Block_Address,
++                Address,
++                Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, RPMsg_Control_Block_Address)
++                __field(unsigned int, EPT_Control_Block_Address)
++                __field(unsigned int, Address)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++                tp_assign(EPT_Control_Block_Address, EPT_Control_Block_Address)
++                tp_assign(Address, Address)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("RPMsg_Control_Block_Address=%p EPT_Control_Block_Address=%p Address=%d Status=%d",
++                __entry->RPMsg_Control_Block_Address,
++                __entry->EPT_Control_Block_Address,
++                __entry->Address,
++                __entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Ept_Delete,
++
++        TP_PROTO(unsigned int EPT_Control_Block_Address,
++                int Status),
++
++        TP_ARGS(EPT_Control_Block_Address,
++                Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, EPT_Control_Block_Address)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(EPT_Control_Block_Address, EPT_Control_Block_Address)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("EPT_Control_Block_Address=%p Status=%d",
++                __entry->EPT_Control_Block_Address,
++                __entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Tx_Start,
++
++        TP_PROTO(unsigned int Channel_Control_Block_Address,
++                unsigned int Source_Address,
++                unsigned int Destination_Address,
++                unsigned int Size,
++                int Status),
++
++        TP_ARGS(Channel_Control_Block_Address,
++                Source_Address,
++                Destination_Address,
++		Size,
++                Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, Channel_Control_Block_Address)
++                __field(unsigned int, Source_Address)
++                __field(unsigned int, Destination_Address)
++                __field(unsigned int, Size)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(Channel_Control_Block_Address, Channel_Control_Block_Address)
++                tp_assign(Source_Address, Source_Address)
++                tp_assign(Destination_Address, Destination_Address)
++                tp_assign(Size, Size)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("Channel_Control_Block_Address=%p Source_Address=%d Destination_Address=%d Size=%d Status=%d",
++                __entry->Channel_Control_Block_Address,
++                __entry->Source_Address,
++                __entry->Destination_Address,
++                __entry->Size,
++                __entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Tx_Stop,
++
++        TP_PROTO(unsigned int Channel_Control_Block_Address,
++                unsigned int Source_Address,
++                unsigned int Destination_Address,
++                unsigned int Size,
++                int Status),
++
++        TP_ARGS(Channel_Control_Block_Address,
++                Source_Address,
++                Destination_Address,
++                Size,               
++                Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, Channel_Control_Block_Address)
++                __field(unsigned int, Source_Address)
++                __field(unsigned int, Destination_Address)
++                __field(unsigned int, Size)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(Channel_Control_Block_Address, Channel_Control_Block_Address)
++                tp_assign(Source_Address, Source_Address)
++                tp_assign(Destination_Address, Destination_Address)
++                tp_assign(Size, Size)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("Channel_Control_Block_Address=%p Source_Address=%d Destination_Address=%d Size=%d Status=%d",
++                __entry->Channel_Control_Block_Address,
++                __entry->Source_Address,
++                __entry->Destination_Address,
++                __entry->Size
++                __entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Rx_Start,
++
++        TP_PROTO(unsigned int RPMsg_Control_Block_Address,
++                unsigned int Source_Address,
++                unsigned int Destination_Address,
++                unsigned int Size,
++                int Status),
++
++        TP_ARGS(RPMsg_Control_Block_Address,
++                Source_Address,
++                Destination_Address,
++                Size,
++                Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, RPMsg_Control_Block_Address)
++                __field(unsigned int, Source_Address)
++                __field(unsigned int, Destination_Address)
++                __field(unsigned int, Size)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++                tp_assign(Source_Address, Source_Address)
++                tp_assign(Destination_Address, Destination_Address)
++                tp_assign(Size, Size)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("RPMsg_Control_Block_Address=%p Source_Address=%d Destination_Address=%d Size=%d Status=%d",
++                __entry->RPMsg_Control_Block_Address,
++                __entry->Source_Address,
++                __entry->Destination_Address,
++                __entry->Size
++                __entry->Status)
++)
++
++LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Rx_Stop,
++
++        TP_PROTO(unsigned int RPMsg_Control_Block_Address,
++                unsigned int Source_Address,
++                unsigned int Destination_Address,
++                unsigned int Size,
++                int Status),
++
++        TP_ARGS(RPMsg_Control_Block_Address,
++                Source_Address,
++                Destination_Address,
++                Size,
++                Status),
++
++        TP_STRUCT__entry(
++                __field(unsigned int, RPMsg_Control_Block_Address)
++                __field(unsigned int, Source_Address)
++                __field(unsigned int, Destination_Address)
++                __field(unsigned int, Size)
++                __field(int, Status)
++        ),
++
++        TP_fast_assign(
++                tp_assign(RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++                tp_assign(Source_Address, Source_Address)
++                tp_assign(Destination_Address, Destination_Address)
++                tp_assign(Size, Size)
++                tp_assign(Status, Status)
++        ),
++
++        TP_printk("RPMsg_Control_Block_Address=%p Source_Address=%d Destination_Address=%d Size=%d Status=%d",
++                __entry->RPMsg_Control_Block_Address,
++                __entry->Source_Address,
++                __entry->Destination_Address,
++                __entry->Size
++                __entry->Status)
++)
++#endif /* LTTNG_TRACE_MEMF_H */
++
++/* This part must be outside protection */
++#include "../../../probes/define_trace.h"
+diff --git a/probes/Makefile b/probes/Makefile
+index f0325c8..3767d33 100644
+--- a/probes/Makefile
++++ b/probes/Makefile
+@@ -250,6 +250,9 @@ ifneq ($(CONFIG_DYNAMIC_FTRACE),)
+ obj-m += lttng-ftrace.o
+ endif
+ 
++ifneq ($(CONFIG_MEMF),)
++obj-m += lttng-probe-memf.o
++endif
+ endif
+ 
+ else
+diff --git a/probes/lttng-probe-memf.c b/probes/lttng-probe-memf.c
+new file mode 100644
+index 0000000..8c639ee
+--- /dev/null
++++ b/probes/lttng-probe-memf.c
+@@ -0,0 +1,24 @@
++#include <linux/module.h>
++#include "../lttng-tracer.h"
++
++/* Build time verification of mismatch between mainline TRACE_EVENT()
++ * arguments and LTTng adaptation layer LTTNG_TRACEPOINT_EVENT() arguments.
++ */
++#include <trace/events/MEMF.h>
++
++/* create LTTng tracepoint probes */
++#define LTTNG_PACKAGE_BUILD
++#define CREATE_TRACE_POINTS
++#define TRACE_INCLUDE_PATH ../instrumentation/events/lttng-module
++
++#include "../instrumentation/events/lttng-module/MEMF.h"
++
++MODULE_LICENSE("GPL and additional rights");
++MODULE_AUTHOR("Fahad Arslan <fahad_arslan@mentor.com>");
++MODULE_DESCRIPTION("LTTng memf probes");
++MODULE_VERSION(__stringify(LTTNG_MODULES_MAJOR_VERSION) "."
++    __stringify(LTTNG_MODULES_MINOR_VERSION) "."
++    __stringify(LTTNG_MODULES_PATCHLEVEL_VERSION)
++    LTTNG_MODULES_EXTRAVERSION);
++
++
+-- 
+1.7.9.5
+

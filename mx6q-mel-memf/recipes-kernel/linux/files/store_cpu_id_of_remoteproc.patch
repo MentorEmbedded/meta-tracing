@@ -1,0 +1,31 @@
+--- a/drivers/remoteproc/remoteproc_virtio.c
++++ b/drivers/remoteproc/remoteproc_virtio.c
+@@ -333,6 +333,9 @@ int rproc_add_virtio_dev(struct rproc_vdev *rvdev, int id)
+ 	 */
+ 	get_device(&rproc->dev);
+ 
++	/* store cpu id of remote proc to pass it to rpmsg framework */
++	vdev->priv = &rproc->cpu;
++
+ 	ret = register_virtio_device(vdev);
+ 	if (ret) {
+ 		put_device(&rproc->dev);
+
+--- a/include/linux/remoteproc.h
++++ b/include/linux/remoteproc.h
+@@ -404,6 +404,7 @@ enum rproc_crash_type {
+  * @table_ptr: pointer to the resource table in effect
+  * @cached_table: copy of the resource table
+  * @table_csum: checksum of the resource table
++ * @cpu: cpu id for remote firmware
+  */
+ struct rproc {
+ 	struct klist_node node;
+@@ -435,6 +436,7 @@ struct rproc {
+ 	struct resource_table *table_ptr;
+ 	struct resource_table *cached_table;
+ 	u32 table_csum;
++	u32 cpu;
+ };
+ 
+ /* we currently support only two vrings per rvdev */
