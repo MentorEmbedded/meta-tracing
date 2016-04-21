@@ -20,8 +20,8 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +#undef TRACE_SYSTEM
 +#define TRACE_SYSTEM MEMF 
 +
-+#if !defined(LTTNG_TRACE_MEMF_H) || defined(TRACE_HEADER_MULTI_READ)
-+#define LTTNG_TRACE_MEMF_H
++#if !defined(_LTTNG_TRACE_MEMF_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _LTTNG_TRACE_MEMF_H
 +
 +#include "../../../probes/lttng-tracepoint-event.h"
 +#include <linux/tracepoint.h>
