@@ -76,7 +76,7 @@
 +
 +TRACE_EVENT(
 +    /* "MEMF" is the subsystem name, "" is the event name */
-+    MEMF_Remoteproc_Rsc_DeInit,
++    MEMF_Remoteproc_Rsc_Deinit,
 +
 +    /* tracepoint function prototype */
 +    TP_PROTO(unsigned int Control_Block_Address, int Status),
