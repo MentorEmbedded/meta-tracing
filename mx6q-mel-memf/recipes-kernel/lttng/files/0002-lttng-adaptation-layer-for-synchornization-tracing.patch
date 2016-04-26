@@ -102,7 +102,7 @@ index 3767d33..6b6925d 100644
 @@ -252,6 +252,7 @@ endif
  
  ifneq ($(CONFIG_MEMF),)
- obj-m += lttng-probe-memf.o
+ obj-m += lttng-probe-MEMF.o
 +obj-m += lttng-probe-Synchronization.o
  endif
  endif
