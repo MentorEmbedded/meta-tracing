@@ -9,7 +9,8 @@ python () {
 
     d.setVar("MEMF_MASTER", "file://place-memf-master-tracepoints.patch")
     d.setVar("MEMF_REMOTE", "file://place-memf-remote-tracepoints.patch \
-                             file://0001-store-master-cpu-id.patch")
+                             file://0001-store-master-cpu-id.patch \
+                             file://0001-use-smp_processor_id-instead-of-using-hardcoded-cpu-.patch")
     d.setVar("MEMF_COMMON", "file://define-memf-tracepoints.patch \
 			     file://store_cpu_id_of_remoteproc.patch \
 			     file://place-memf-common-tracepoints.patch")
