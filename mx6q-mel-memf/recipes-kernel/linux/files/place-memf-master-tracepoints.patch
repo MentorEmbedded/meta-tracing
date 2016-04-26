@@ -310,7 +310,7 @@ index 7a238d7..876530b 100644
  	clear_ipi_handler(local->vring0);
  	clear_irq(pdev);
  
-+	trace_MEMF_Remoteproc_Rsc_DeInit(local->rproc, RPROC_SUCCESS);
++	trace_MEMF_Remoteproc_Rsc_Deinit(local->rproc, RPROC_SUCCESS);
 +	trace_MEMF_Remoteproc_DeInit(local->rproc, RPROC_SUCCESS);
 +
  	rproc_del(local->rproc);
