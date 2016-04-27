@@ -50,7 +50,7 @@ index 1a55602..664eac5 100644
  
 +	if (!executed) {
 +		executed = true;
-+		trace_Synchronization_TriggerReceive(50, 0, "Trigger");
++		trace_Synchronization_TriggerSend(100, 0, "Trigger");
 +	}
 +
  	return true;
