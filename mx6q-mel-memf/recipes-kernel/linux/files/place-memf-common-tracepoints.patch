@@ -122,7 +122,7 @@ index a37f7c1..9dfa07e 100644
 @@ -876,6 +906,8 @@ static int rpmsg_recv_large(struct virtproc_info *vrp, struct device *dev,
  	print_hex_dump(KERN_DEBUG, "rpmsg_virtio RX: ", DUMP_PREFIX_NONE, 16, 1,
  					msg, sizeof(*msg) + msg->len, true);
- 
+ #endif
 +	trace_MEMF_RPMsg_Rx_Start(vrp, msg->src, msg->dst, msg->len, RPMSG_SUCCESS);
 +
  	/* use the dst addr to fetch the callback of the appropriate user */
