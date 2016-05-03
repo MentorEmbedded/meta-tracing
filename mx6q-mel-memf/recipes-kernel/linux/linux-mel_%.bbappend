@@ -13,7 +13,8 @@ python () {
                              file://0001-use-smp_processor_id-instead-of-using-hardcoded-cpu-.patch")
     d.setVar("MEMF_COMMON", "file://define-memf-tracepoints.patch \
 			     file://store_cpu_id_of_remoteproc.patch \
-			     file://place-memf-common-tracepoints.patch")
+			     file://place-memf-common-tracepoints.patch \
+			     file://0001-workaround-for-warning-during-tracing.patch")
 }
 
 SRC_URI_append_mx6q += "${MEMF_MASTER}"

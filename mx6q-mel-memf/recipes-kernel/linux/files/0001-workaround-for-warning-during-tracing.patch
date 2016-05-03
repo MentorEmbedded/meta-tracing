@@ -1,0 +1,26 @@
+From 5fcaebde92011d6a77eab394da86cb9bc52f6d4a Mon Sep 17 00:00:00 2001
+From: Fahad Arslan <Fahad_Arslan@mentor.com>
+Date: Tue, 3 May 2016 23:39:37 +0500
+Subject: [PATCH 1/1] workaround for warning during tracing
+
+Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
+---
+ kernel/trace/trace_events.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/kernel/trace/trace_events.c b/kernel/trace/trace_events.c
+index c6646a5..1e774d0 100644
+--- a/kernel/trace/trace_events.c
++++ b/kernel/trace/trace_events.c
+@@ -1513,6 +1513,8 @@ event_create_dir(struct dentry *parent, struct ftrace_event_file *file)
+ 
+ 	file->dir = debugfs_create_dir(call->name, d_events);
+ 	if (!file->dir) {
++		if (!strncmp(call->name,"MEMF_",5))
++			return -1;
+ 		pr_warning("Could not create debugfs '%s' directory\n",
+ 			   call->name);
+ 		return -1;
+-- 
+2.8.1
+
