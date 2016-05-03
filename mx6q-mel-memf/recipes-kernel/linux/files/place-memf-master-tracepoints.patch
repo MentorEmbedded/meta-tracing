@@ -1,15 +1,15 @@
-From 77bfeef226c644b4b1791a831a3bd70a181cb13d Mon Sep 17 00:00:00 2001
+From 3aaee69f51c0ab47293190316ec0fe36a2c3a701 Mon Sep 17 00:00:00 2001
 From: Fahad Arslan <Fahad_Arslan@mentor.com>
-Date: Fri, 1 Apr 2016 22:43:50 +0500
+Date: Tue, 26 Apr 2016 18:23:01 +0500
 Subject: [PATCH 1/1] place memf master tracepoints
 
 Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
 ---
- drivers/remoteproc/imx6q_remoteproc.c |   92 +++++++++++++++++++++++++++++++--
- 1 file changed, 89 insertions(+), 3 deletions(-)
+ drivers/remoteproc/imx6q_remoteproc.c | 73 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 70 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/remoteproc/imx6q_remoteproc.c b/drivers/remoteproc/imx6q_remoteproc.c
-index 7a238d7..876530b 100644
+index 7a238d7..e592870 100644
 --- a/drivers/remoteproc/imx6q_remoteproc.c
 +++ b/drivers/remoteproc/imx6q_remoteproc.c
 @@ -23,6 +23,10 @@
@@ -145,34 +145,31 @@ index 7a238d7..876530b 100644
  	/* FIXME missing reset option */
  	return 0;
  }
-@@ -326,8 +369,11 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -326,8 +369,10 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
  
  	local = devm_kzalloc(&pdev->dev, sizeof(struct imx6q_rproc_pdata),
  			     GFP_KERNEL);
 -	if (!local)
 +	if (!local) {
 +		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
-+		trace_MEMF_Remoteproc_Rsc_Init(NULL, NULL, RPROC_FAILURE);
  		return -ENOMEM;
 +	}
  
  	platform_set_drvdata(pdev, local);
  
-@@ -335,6 +381,8 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -335,6 +380,7 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	if (!res) {
  		dev_err(&pdev->dev, "invalid address\n");
 +		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
-+		trace_MEMF_Remoteproc_Rsc_Init(NULL, NULL, RPROC_FAILURE);
  		return -ENODEV;
  	}
  
-@@ -351,12 +399,16 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -351,12 +397,14 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
  	if (!ret) {
  		dev_err(&pdev->dev, "dma_declare_coherent_memory failed\n");
  		ret = -ENOMEM;
 +		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
-+		trace_MEMF_Remoteproc_Rsc_Init(NULL, NULL, RPROC_FAILURE);
  		goto dma_fault;
  	}
  
@@ -180,113 +177,100 @@ index 7a238d7..876530b 100644
  	if (ret) {
  		dev_err(&pdev->dev, "dma_set_coherent_mask: %d\n", ret);
 +		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
-+		trace_MEMF_Remoteproc_Rsc_Init(NULL, NULL, RPROC_FAILURE);
  		goto dma_mask_fault;
  	}
  
-@@ -375,6 +427,8 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -375,6 +423,7 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
  		if (!tmp) {
  			dev_err(&pdev->dev, "Unable to alloc irq list\n");
  			ret = -ENOMEM;
 +			trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
-+			trace_MEMF_Remoteproc_Rsc_Init(NULL, NULL, RPROC_FAILURE);
  			goto irq_fault;
  		}
  
-@@ -389,6 +443,8 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -389,6 +438,7 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
  		if (ret) {
  			dev_err(&pdev->dev, "IRQ %d already allocated\n",
  								tmp->irq);
 +			trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
-+			trace_MEMF_Remoteproc_Rsc_Init(NULL, NULL, RPROC_FAILURE);
  			goto irq_fault;
  		}
  
-@@ -406,6 +462,8 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -406,6 +456,7 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
  	ret = of_property_read_u32(pdev->dev.of_node, "vring0_intr_num", &local->vring0);
  	if (ret < 0) {
  		dev_err(&pdev->dev, "unable to read property");
 +		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
-+		trace_MEMF_Remoteproc_Rsc_Init(NULL, NULL, RPROC_FAILURE);
  		goto irq_fault;
  	}
  
-@@ -413,6 +471,8 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -413,6 +464,7 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
  	ret = of_property_read_u32(pdev->dev.of_node, "vring1_intr_num", &local->vring1);
  	if (ret < 0) {
  		dev_err(&pdev->dev, "unable to read property");
 +		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
-+		trace_MEMF_Remoteproc_Rsc_Init(NULL, NULL, RPROC_FAILURE);
  		goto irq_fault;
  	}
  
-@@ -420,6 +480,8 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -420,6 +472,7 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
          ret = of_property_read_u32(pdev->dev.of_node, "cpu", &local->cpu);
          if (ret < 0) {
                  dev_err(&pdev->dev, "unable to read cpu property");
 +		trace_MEMF_Remoteproc_Init(NULL, NULL, local->cpu, RPROC_FAILURE);
-+		trace_MEMF_Remoteproc_Rsc_Init(NULL, local->cpu, RPROC_FAILURE);
                  goto irq_fault;
          }
  
-@@ -427,6 +489,8 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -427,6 +480,7 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
          ret = of_property_read_u32(pdev->dev.of_node, "remote_id", &local->remote_id);
          if (ret < 0) {
                  dev_err(&pdev->dev, "unable to read remote_id property");
 +		trace_MEMF_Remoteproc_Init(NULL, NULL, local->cpu, RPROC_FAILURE);
-+		trace_MEMF_Remoteproc_Rsc_Init(NULL, local->cpu, RPROC_FAILURE);
                  goto irq_fault;
          }
  
-@@ -443,11 +507,15 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -443,11 +497,13 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
                  break;
  	default:
  		dev_err(&pdev->dev, "Invalid remote_id specified\n");
 +		trace_MEMF_Remoteproc_Init(NULL, NULL, local->cpu, RPROC_FAILURE);
-+		trace_MEMF_Remoteproc_Rsc_Init(NULL, local->cpu, RPROC_FAILURE);
  		goto irq_fault;
          }
  
  	if (ret) {
                  dev_err(&pdev->dev, "IPI handler already registered\n");
 +                trace_MEMF_Remoteproc_Init(NULL, NULL, local->cpu, RPROC_FAILURE);
-+                trace_MEMF_Remoteproc_Rsc_Init(NULL, local->cpu, RPROC_FAILURE);
                  goto irq_fault;
          }
  
-@@ -466,6 +534,8 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -466,6 +522,7 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
                  if (!tmp) {
                          dev_err(&pdev->dev, "Unable to alloc irq list\n");
                          ret = -ENOMEM;
 +                        trace_MEMF_Remoteproc_Init(NULL, NULL, local->cpu, RPROC_FAILURE);
-+                        trace_MEMF_Remoteproc_Rsc_Init(NULL, local->cpu, RPROC_FAILURE);
                          goto ipi_fault;
                  }
  
-@@ -480,6 +550,8 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -480,6 +537,7 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
                  if (ret) {
                          dev_err(&pdev->dev, "IRQ %d already allocated\n",
                                                                  tmp->irq);
 +                        trace_MEMF_Remoteproc_Init(NULL, NULL, local->cpu, RPROC_FAILURE);
-+                        trace_MEMF_Remoteproc_Rsc_Init(NULL, local->cpu, RPROC_FAILURE);
                          goto ipi_fault;
                  }
  
-@@ -516,6 +588,8 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -516,6 +574,7 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
                  break;
          default:
                  dev_err(&pdev->dev, "Invalid remote_id specified\n");
 +                trace_MEMF_Remoteproc_Init(NULL, prop, local->cpu, RPROC_FAILURE);
-+                trace_MEMF_Remoteproc_Rsc_Init(NULL, local->cpu, RPROC_FAILURE);
                  goto ipi_fault;
          }
  
-@@ -528,15 +602,24 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
+@@ -528,15 +587,21 @@ static int imx6q_remoteproc_probe(struct platform_device *pdev)
  				&imx6q_rproc_ops, prop, sizeof(struct rproc));
  		if (!local->rproc) {
  			dev_err(&pdev->dev, "rproc allocation failed\n");
 +			trace_MEMF_Remoteproc_Init(local->rproc, prop, local->cpu, RPROC_FAILURE);
-+			trace_MEMF_Remoteproc_Rsc_Init(local->rproc, local->cpu, RPROC_FAILURE);
  			goto ipi_fault;
  		}
  
@@ -296,27 +280,24 @@ index 7a238d7..876530b 100644
  		if (ret) {
  			dev_err(&pdev->dev, "rproc registration failed\n");
 +			trace_MEMF_Remoteproc_Init(local->rproc, prop, local->cpu, RPROC_FAILURE);
-+			trace_MEMF_Remoteproc_Rsc_Init(local->rproc, local->cpu, RPROC_FAILURE);
  			goto rproc_fault;
  		}
  
 +		trace_MEMF_Remoteproc_Init(local->rproc, prop, local->cpu, ret);
-+		trace_MEMF_Remoteproc_Rsc_Init(local->rproc, local->cpu, ret);
 +
  		return ret;
  	} else
  		ret = -ENODEV;
-@@ -569,6 +652,9 @@ static int imx6q_remoteproc_remove(struct platform_device *pdev)
+@@ -569,6 +634,8 @@ static int imx6q_remoteproc_remove(struct platform_device *pdev)
  	clear_ipi_handler(local->vring0);
  	clear_irq(pdev);
  
-+	trace_MEMF_Remoteproc_Rsc_DeInit(local->rproc, RPROC_SUCCESS);
 +	trace_MEMF_Remoteproc_DeInit(local->rproc, RPROC_SUCCESS);
 +
  	rproc_del(local->rproc);
  	rproc_put(local->rproc);
  
-@@ -578,7 +664,7 @@ static int imx6q_remoteproc_remove(struct platform_device *pdev)
+@@ -578,7 +645,7 @@ static int imx6q_remoteproc_remove(struct platform_device *pdev)
  		if (ret)
  			dev_err(&pdev->dev, "Can't power on cpu%d\n", local->cpu);
  	}
@@ -326,5 +307,5 @@ index 7a238d7..876530b 100644
  	return 0;
  }
 -- 
-1.7.9.5
+2.8.1
 
