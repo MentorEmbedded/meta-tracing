@@ -20,8 +20,6 @@ Subject: [PATCH 11/11] Added latency probe tracepoint event.
  gst/gstpad.c          | 80 +++++++++++++++++++++++---------------------
  3 files changed, 161 insertions(+), 48 deletions(-)
 
-diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
-index 6c91a2f..1d894f9 100644
 --- a/gst/gst_tracepoints.c
 +++ b/gst/gst_tracepoints.c
 @@ -31,12 +31,25 @@
@@ -33,7 +31,7 @@ index 6c91a2f..1d894f9 100644
  enum GstFlowTracepointType;
  static const gchar *gst_tracepoints_get_pad_element_name (GstPad * pad);
  static const gchar *gst_tracepoints_get_pad_element_name_if_needed (GstPad *
-     pad, enum GstFlowTracepointType tracepoint_type);
+    pad, enum GstFlowTracepointType tracepoint_type);
  static guint16 gst_tracepoints_get_thread_id (void);
 +static GstElement *get_real_pad_parent (GstPad * pad);
 +
@@ -50,7 +48,7 @@ index 6c91a2f..1d894f9 100644
  
  static inline GstClockTime
  gst_tracepoints_extract_event_latency (GstEvent * event)
-@@ -162,4 +175,83 @@ gst_tracepoints_extract_qos_event_type (GstEvent * event,
+@@ -162,4 +175,82 @@
    return event_data->type;
  }
  
@@ -123,7 +121,6 @@ index 6c91a2f..1d894f9 100644
 +    return NULL;
 +
 +  parent = GST_OBJECT_PARENT (pad);
-+
 +  /* if parent of pad is a ghost-pad, then pad is a proxy_pad */
 +  if (parent && GST_IS_GHOST_PAD (parent)) {
 +    pad = GST_PAD_CAST (parent);
@@ -134,8 +131,6 @@ index 6c91a2f..1d894f9 100644
 +
 +
  #endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
-diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
-index 103c45c..534246c 100644
 --- a/gst/gst_tracepoints.h
 +++ b/gst/gst_tracepoints.h
 @@ -30,6 +30,9 @@
@@ -148,7 +143,7 @@ index 103c45c..534246c 100644
  
  enum GstFlowTracepointType {
    GST_TRACEPOINT_FLAG_ENTER = 0,
-@@ -135,29 +138,37 @@ GST_TRACEPOINT_EVENT (gst_flow_event_caps,
+@@ -135,29 +138,37 @@
                                   ctf_string (text, str)))
  
  GST_TRACEPOINT_EVENT (gst_latency_measurement_start,
@@ -194,7 +189,7 @@ index 103c45c..534246c 100644
  
  #define GST_FLOW_TRACEPOINT_PUSH_ERROR(pad, ret) \
      GST_TRACEPOINT (gst_flow, pad, NULL, ret, GST_TRACEPOINT_FLAG_PUSH, GST_TRACEPOINT_FLAG_ERROR)
-@@ -166,7 +177,10 @@ GST_TRACEPOINT_EVENT (gst_latency_measurement_passed,
+@@ -166,7 +177,10 @@
      GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_PUSH, GST_TRACEPOINT_FLAG_DROPPED)
  
  #define GST_FLOW_TRACEPOINT_PULL_ENTER(pad) \
@@ -206,7 +201,7 @@ index 103c45c..534246c 100644
  
  #define GST_FLOW_TRACEPOINT_PULL_EXIT(pad, data, ret) \
      GST_TRACEPOINT (gst_flow, pad, data, ret, GST_TRACEPOINT_FLAG_PULL, GST_TRACEPOINT_FLAG_EXIT)
-@@ -178,7 +192,10 @@ GST_TRACEPOINT_EVENT (gst_latency_measurement_passed,
+@@ -178,7 +192,10 @@
      GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_PULL, GST_TRACEPOINT_FLAG_DROPPED)
  
  #define GST_FLOW_TRACEPOINT_SEND_EVENT_ENTER(pad, event)                \
@@ -218,11 +213,9 @@ index 103c45c..534246c 100644
  
  #define GST_FLOW_TRACEPOINT_SEND_EVENT_EXIT(pad, ret) \
    GST_TRACEPOINT (gst_flow, pad, NULL, (ret) ? GST_FLOW_OK : GST_FLOW_ERROR, GST_TRACEPOINT_FLAG_SEND_EVENT, GST_TRACEPOINT_FLAG_EXIT)
-diff --git a/gst/gstpad.c b/gst/gstpad.c
-index 579fb1c..7d8d5e1 100644
 --- a/gst/gstpad.c
 +++ b/gst/gstpad.c
-@@ -4032,12 +4032,14 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
+@@ -4122,12 +4122,14 @@
    GstFlowReturn ret;
    GstObject *parent;
    gboolean handled = FALSE;
@@ -239,7 +232,7 @@ index 579fb1c..7d8d5e1 100644
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -4110,39 +4112,39 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
+@@ -4200,39 +4202,40 @@
  
    RELEASE_PARENT (parent);
  
@@ -247,6 +240,7 @@ index 579fb1c..7d8d5e1 100644
    GST_PAD_STREAM_UNLOCK (pad);
  
 +  GST_FLOW_TRACEPOINT_PUSH_EXIT (pad, ret);
++
    return ret;
  
    /* ERRORS */
@@ -283,7 +277,7 @@ index 579fb1c..7d8d5e1 100644
      return GST_FLOW_ERROR;
    }
  probe_handled:
-@@ -4181,11 +4183,11 @@ no_parent:
+@@ -4271,11 +4274,11 @@
  no_function:
    {
      RELEASE_PARENT (parent);
@@ -296,7 +290,7 @@ index 579fb1c..7d8d5e1 100644
      return GST_FLOW_NOT_SUPPORTED;
    }
  }
-@@ -4296,10 +4298,12 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
+@@ -4386,10 +4389,11 @@
    GstPad *peer;
    GstFlowReturn ret;
    gboolean handled = FALSE;
@@ -305,12 +299,11 @@ index 579fb1c..7d8d5e1 100644
 -  GST_OBJECT_LOCK (pad);
    GST_FLOW_TRACEPOINT_DATA (data, (type & GST_PAD_PROBE_TYPE_BUFFER) != 0);
    GST_FLOW_TRACEPOINT_PUSH_ENTER (pad, data);
-+
 +  GST_OBJECT_LOCK (pad);
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -4360,50 +4364,50 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
+@@ -4450,50 +4454,50 @@
      PROBE_NO_DATA (pad, GST_PAD_PROBE_TYPE_PUSH | GST_PAD_PROBE_TYPE_IDLE,
          probe_stopped, ret);
    }
@@ -366,7 +359,7 @@ index 579fb1c..7d8d5e1 100644
      return ret;
    }
  probe_handled:
-@@ -4432,12 +4436,12 @@ probe_stopped:
+@@ -4522,12 +4526,12 @@
    }
  not_linked:
    {
@@ -380,7 +373,7 @@ index 579fb1c..7d8d5e1 100644
      return GST_FLOW_NOT_LINKED;
    }
  }
-@@ -4519,10 +4523,11 @@ gst_pad_get_range_unchecked (GstPad * pad, guint64 offset, guint size,
+@@ -4619,10 +4623,11 @@
    GstObject *parent;
    GstBuffer *res_buf;
  
@@ -393,7 +386,7 @@ index 579fb1c..7d8d5e1 100644
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -4581,49 +4586,49 @@ probed_data:
+@@ -4681,49 +4686,49 @@
    /* ERRORS */
  flushing:
    {
@@ -448,7 +441,7 @@ index 579fb1c..7d8d5e1 100644
      return GST_FLOW_NOT_SUPPORTED;
    }
  probe_stopped:
-@@ -4644,37 +4649,36 @@ probe_stopped:
+@@ -4744,37 +4749,36 @@
        }
      }
      pad->ABI.abi.last_flowret = ret;
@@ -489,9 +482,9 @@ index 579fb1c..7d8d5e1 100644
      return ret;
    }
  }
-@@ -4783,10 +4787,10 @@ gst_pad_pull_range (GstPad * pad, guint64 offset, guint size,
-   g_return_val_if_fail (*buffer == NULL || (GST_IS_BUFFER (*buffer)
-           && gst_buffer_get_size (*buffer) >= size), GST_FLOW_ERROR);
+@@ -4885,10 +4889,10 @@
+ 
+   GST_TRACER_PAD_PULL_RANGE_PRE (pad, offset, size);
  
 -  GST_OBJECT_LOCK (pad);
 -
@@ -502,7 +495,7 @@ index 579fb1c..7d8d5e1 100644
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -4839,20 +4843,20 @@ probed_data:
+@@ -4943,21 +4947,21 @@
    /* ERROR recovery here */
  flushing:
    {
@@ -512,7 +505,8 @@ index 579fb1c..7d8d5e1 100644
      pad->ABI.abi.last_flowret = GST_FLOW_FLUSHING;
      GST_OBJECT_UNLOCK (pad);
 +    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, GST_FLOW_FLUSHING);
-     return GST_FLOW_FLUSHING;
+     ret = GST_FLOW_FLUSHING;
+     goto done;
    }
  wrong_mode:
    {
@@ -522,17 +516,17 @@ index 579fb1c..7d8d5e1 100644
      pad->ABI.abi.last_flowret = GST_FLOW_ERROR;
      GST_OBJECT_UNLOCK (pad);
 +    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, GST_FLOW_ERROR);
-     return GST_FLOW_ERROR;
+     ret = GST_FLOW_ERROR;
+     goto done;
    }
- probe_stopped:
-@@ -4873,27 +4877,27 @@ probe_stopped:
+@@ -4979,28 +4983,28 @@
        }
      }
      pad->ABI.abi.last_flowret = ret;
 -    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
      GST_OBJECT_UNLOCK (pad);
 +    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
-     return ret;
+     goto done;
    }
  not_linked:
    {
@@ -542,7 +536,8 @@ index 579fb1c..7d8d5e1 100644
      pad->ABI.abi.last_flowret = GST_FLOW_NOT_LINKED;
      GST_OBJECT_UNLOCK (pad);
 +    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, GST_FLOW_NOT_LINKED);
-     return GST_FLOW_NOT_LINKED;
+     ret = GST_FLOW_NOT_LINKED;
+     goto done;
    }
  pull_range_failed:
    {
@@ -553,10 +548,10 @@ index 579fb1c..7d8d5e1 100644
          (ret >= GST_FLOW_EOS) ? GST_LEVEL_INFO : GST_LEVEL_WARNING,
          pad, "pullrange failed, flow: %s", gst_flow_get_name (ret));
 +    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
-     return ret;
+     goto done;
    }
  probe_stopped_unref:
-@@ -4908,9 +4912,9 @@ probe_stopped_unref:
+@@ -5015,9 +5019,9 @@
      pad->ABI.abi.last_flowret = ret;
      GST_OBJECT_UNLOCK (pad);
  
@@ -564,11 +559,11 @@ index 579fb1c..7d8d5e1 100644
      if (*buffer == NULL)
        gst_buffer_unref (res_buf);
 +    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
-     return ret;
+     goto done;
    }
- }
-@@ -5387,10 +5391,10 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
-   GstPadEventFunction eventfunc;
+ done:
+@@ -5504,10 +5508,10 @@
+   GstPadEventFullFunction eventfullfunc = NULL;
    GstObject *parent;
  
 -  GST_OBJECT_LOCK (pad);
@@ -579,7 +574,7 @@ index 579fb1c..7d8d5e1 100644
    event = apply_pad_offset (pad, event, GST_PAD_IS_SRC (pad));
  
    if (GST_PAD_IS_SINK (pad))
-@@ -5542,13 +5546,13 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
+@@ -5663,13 +5667,13 @@
    /* ERROR handling */
  flushing:
    {
@@ -594,7 +589,7 @@ index 579fb1c..7d8d5e1 100644
      return GST_FLOW_FLUSHING;
    }
  inactive:
-@@ -5563,13 +5567,13 @@ inactive:
+@@ -5684,13 +5688,13 @@
    }
  eos:
    {
@@ -609,7 +604,7 @@ index 579fb1c..7d8d5e1 100644
      return GST_FLOW_EOS;
    }
  probe_stopped:
-@@ -5597,33 +5601,33 @@ probe_stopped:
+@@ -5718,33 +5722,33 @@
    }
  no_function:
    {
@@ -646,6 +641,3 @@ index 579fb1c..7d8d5e1 100644
      return ret;
    }
  }
--- 
-2.2.1
-
