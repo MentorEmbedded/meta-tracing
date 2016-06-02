@@ -16,8 +16,6 @@ the gst_flow tracepoint on the same thread.
  gst/gst_tracepoints.h | 49 ++++++++++++++++++++++++++++++++++++++++++++-----
  2 files changed, 88 insertions(+), 5 deletions(-)
 
-diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
-index bc434d8..9864790 100644
 --- a/gst/gst_tracepoints.c
 +++ b/gst/gst_tracepoints.c
 @@ -30,12 +30,29 @@
@@ -28,7 +26,7 @@ index bc434d8..9864790 100644
  
  enum GstFlowTracepointType;
  static const gchar *gst_tracepoints_get_pad_element_name_if_needed (GstPad *
-     pad, enum GstFlowTracepointType tracepoint_type);
+    pad, enum GstFlowTracepointType tracepoint_type);
  static guint16 gst_tracepoints_get_thread_id (void);
  
 +static inline GstClockTime
@@ -50,7 +48,7 @@ index bc434d8..9864790 100644
  #define GST_TRACEPOINTS_CREATE_PROBES
  #define TRACEPOINT_CREATE_PROBES
  #define TRACEPOINT_DEFINE
-@@ -107,4 +124,31 @@ _priv_gst_tracepoints_trace_buffer_list (GstBufferList * list)
+@@ -107,4 +124,31 @@
    gst_buffer_list_foreach (list, gst_tracepoints_trace_buffer_list_item, NULL);
  }
  
@@ -82,8 +80,6 @@ index bc434d8..9864790 100644
 +}
 +
  #endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
-diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
-index 15d85f5..25bd3b0 100644
 --- a/gst/gst_tracepoints.h
 +++ b/gst/gst_tracepoints.h
 @@ -25,6 +25,7 @@
@@ -94,7 +90,7 @@ index 15d85f5..25bd3b0 100644
  
  extern GstPad *_priv_gst_ghostpad_get_target (GstGhostPad *gpad);
  extern void _priv_gst_tracepoints_trace_buffer_list (GstBufferList *list);
-@@ -47,6 +48,14 @@ typedef enum GstFlowTracepointDataType {
+@@ -47,6 +48,14 @@
    GST_TRACEPOINT_DATA_TYPE_BUFFER_LIST = 1,
  } GstFlowTracepointDataType;
  
@@ -109,7 +105,7 @@ index 15d85f5..25bd3b0 100644
  #define GST_TRACEPOINT_HELPER2(...) __VA_ARGS__
  #define GST_TRACEPOINT_HELPER(...) GST_TRACEPOINT_HELPER2 (__VA_ARGS__)
  #define GST_TRACEPOINT_EVENT(name, args, fields) \
-@@ -60,6 +69,7 @@ typedef enum GstFlowTracepointDataType {
+@@ -60,6 +69,7 @@
  #define ctf_gst_tracepoint_kind_field(name, kind) ctf_integer (guint8, name, (guint8) (kind))
  #define ctf_gst_data_type_field(name, type) ctf_integer (guint8, name, (guint8) (type))
  #define ctf_gst_event_type_field(name, event) ctf_integer (gint, name, (gint) (event->type))
@@ -117,7 +113,7 @@ index 15d85f5..25bd3b0 100644
  
  #endif /* _GST_TRACEPOINTS_H */
  
-@@ -98,10 +108,20 @@ GST_TRACEPOINT_EVENT (gst_flow_data,
+@@ -98,10 +108,20 @@
                                   ctf_gst_data_type_field (data_type, ((trace_is_on ? (*trace_is_on = 1) : 0), data_type))))
  
  GST_TRACEPOINT_EVENT (gst_flow_event,
@@ -141,7 +137,7 @@ index 15d85f5..25bd3b0 100644
  
  #endif /* _GST_TRACEPOINTS_H */
  
-@@ -146,8 +166,27 @@ GST_TRACEPOINT_EVENT (gst_flow_event,
+@@ -146,8 +166,28 @@
  #define GST_FLOW_TRACEPOINT_BUFFER(buffer) \
    GST_TRACEPOINT (gst_flow_data, buffer, GST_TRACEPOINT_DATA_TYPE_BUFFER, NULL)
  
@@ -168,9 +164,7 @@ index 15d85f5..25bd3b0 100644
 +            }                                                           \
 +        }                                                               \
 +    } while (0)
++
  
  #define GST_FLOW_TRACEPOINT_DATA(data, is_buffer)                       \
      do {                                                                \
--- 
-2.2.1
-
