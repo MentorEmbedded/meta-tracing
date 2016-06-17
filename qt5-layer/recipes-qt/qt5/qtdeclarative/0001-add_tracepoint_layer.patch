@@ -1,67 +1,70 @@
-Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml.pro
+Index: git/src/qml/qml.pro
 ===================================================================
---- qtdeclarative-opensource-src-5.4.0.orig/src/qml/qml.pro	2014-12-05 09:25:11.000000000 -0700
-+++ qtdeclarative-opensource-src-5.4.0/src/qml/qml.pro	2014-12-30 14:14:08.392510682 -0700
-@@ -42,3 +42,4 @@
+--- git.orig/src/qml/qml.pro
++++ git/src/qml/qml.pro
+@@ -41,6 +41,7 @@ include(qml/qml.pri)
  include(debugger/debugger.pri)
  include(animations/animations.pri)
  include(types/types.pri)
-+contains(QT_CONFIG,tracesupport):CONFIG += tracesupport
-Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlbinding.cpp
++contains(QT_CONFIG,sa-trace):CONFIG += sa-trace
+ 
+ MODULE_PLUGIN_TYPES = \
+     qmltooling
+Index: git/src/qml/qml/qqmlbinding.cpp
 ===================================================================
---- qtdeclarative-opensource-src-5.4.0.orig/src/qml/qml/qqmlbinding.cpp	2014-12-05 09:25:11.000000000 -0700
-+++ qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlbinding.cpp	2014-12-30 14:14:08.392510682 -0700
-@@ -48,6 +48,10 @@
+--- git.orig/src/qml/qml/qqmlbinding.cpp
++++ git/src/qml/qml/qqmlbinding.cpp
+@@ -49,6 +49,10 @@
  #include <QVariant>
  #include <QtCore/qdebug.h>
  
 +#ifdef ENABLE_SA_TRACE
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
-
- // Used in qqmlabstractbinding.cpp
-@@ -194,6 +198,12 @@
-     Q_ASSERT(f);
-
-     if (!updatingFlag()) {
+ 
+ QQmlBinding::QQmlBinding(const QString &str, QObject *obj, QQmlContext *ctxt)
+@@ -162,6 +166,12 @@ void QQmlBinding::update(QQmlPropertyPri
+         return;
+     }
+ 
 +#ifdef ENABLE_SA_TRACE
 +        QQmlSourceLocation loc = f->sourceLocation();
 +        QString url = loc.sourceFile;
 +        qt_tracepoint(Qt, qtQmlFrameBind, 1, qPrintable(url));
 +#endif // ENABLE_SA_TRACE
 +
-         QQmlBindingProfiler prof(ep->profiler, f);
-         setUpdatingFlag(true);
-
-@@ -241,6 +249,10 @@
-
-         if (!watcher.wasDeleted())
-             setUpdatingFlag(false);
+     QQmlBindingProfiler prof(ep->profiler, f);
+     setUpdatingFlag(true);
+ 
+@@ -210,6 +220,10 @@ void QQmlBinding::update(QQmlPropertyPri
+ 
+     if (!watcher.wasDeleted())
+         setUpdatingFlag(false);
 +
 +#ifdef ENABLE_SA_TRACE
 +        qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(url));
 +#endif // ENABLE_SA_TRACE
-     } else {
-         QQmlProperty p = property();
-         QQmlAbstractBinding::printBindingLoopError(p);
-Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlcomponent.cpp
+ }
+ 
+ // Returns true if successful, false if an error description was set on expression
+Index: git/src/qml/qml/qqmlcomponent.cpp
 ===================================================================
---- qtdeclarative-opensource-src-5.4.0.orig/src/qml/qml/qqmlcomponent.cpp	2014-12-05 09:25:11.000000000 -0700
-+++ qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlcomponent.cpp	2014-12-30 14:14:08.396510680 -0700
-@@ -77,6 +77,10 @@
-             "} catch(e) {}"\
-         "})"
+--- git.orig/src/qml/qml/qqmlcomponent.cpp
++++ git/src/qml/qml/qqmlcomponent.cpp
+@@ -62,6 +62,10 @@
+ #include <qqmlinfo.h>
+ #include "qqmlmemoryprofiler_p.h"
  
 +#ifdef ENABLE_SA_TRACE
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h> 
 +#endif // ENABLE_SA_TRACE
 +
- 
  namespace {
      QThreadStorage<int> creationDepth;
-@@ -870,6 +874,10 @@
+ }
+@@ -860,6 +864,10 @@ QQmlComponentPrivate::beginCreate(QQmlCo
  
      QQmlEnginePrivate *enginePriv = QQmlEnginePrivate::get(engine);
  
@@ -72,7 +75,7 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlcomponent.cpp
      enginePriv->inProgressCreations++;
      state.errors.clear();
      state.completePending = true;
-@@ -962,6 +970,10 @@
+@@ -953,6 +961,10 @@ void QQmlComponentPrivate::completeCreat
      if (state.completePending) {
          QQmlEnginePrivate *ep = QQmlEnginePrivate::get(engine);
          complete(ep, &state);
@@ -83,23 +86,23 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlcomponent.cpp
      }
  
      if (depthIncreased) {
-Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlengine.cpp
+Index: git/src/qml/qml/qqmlengine.cpp
 ===================================================================
---- qtdeclarative-opensource-src-5.4.0.orig/src/qml/qml/qqmlengine.cpp	2014-12-05 09:25:11.000000000 -0700
-+++ qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlengine.cpp	2014-12-30 14:14:08.404510679 -0700
-@@ -105,6 +105,11 @@
+--- git.orig/src/qml/qml/qqmlengine.cpp
++++ git/src/qml/qml/qqmlengine.cpp
+@@ -100,6 +100,11 @@
  #endif
  #endif
  
 +#ifdef ENABLE_SA_TRACE
 +    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  Q_DECLARE_METATYPE(QQmlProperty)
  
  QT_BEGIN_NAMESPACE
-@@ -1345,6 +1350,11 @@
+@@ -1397,6 +1402,11 @@ void qmlExecuteDeferred(QObject *object)
      QQmlData *data = QQmlData::get(object);
  
      if (data && data->deferredData && !data->wasDeleted(object)) {
@@ -111,7 +114,7 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlengine.cpp
          QQmlEnginePrivate *ep = QQmlEnginePrivate::get(data->context->engine);
  
          QQmlComponentPrivate::ConstructionState state;
-@@ -1356,6 +1366,11 @@
+@@ -1408,6 +1418,11 @@ void qmlExecuteDeferred(QObject *object)
          data->deferredData = 0;
  
          QQmlComponentPrivate::complete(ep, &state);
@@ -123,24 +126,24 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmlengine.cpp
      }
  }
  
-Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmltypeloader.cpp
+Index: git/src/qml/qml/qqmltypeloader.cpp
 ===================================================================
---- qtdeclarative-opensource-src-5.4.0.orig/src/qml/qml/qqmltypeloader.cpp	2014-12-05 09:25:11.000000000 -0700
-+++ qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmltypeloader.cpp	2014-12-30 14:14:08.408510681 -0700
+--- git.orig/src/qml/qml/qqmltypeloader.cpp
++++ git/src/qml/qml/qqmltypeloader.cpp
 @@ -56,6 +56,10 @@
  #include <QtCore/qwaitcondition.h>
  #include <QtQml/qqmlextensioninterface.h>
  
 +#ifdef ENABLE_SA_TRACE
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  #if defined (Q_OS_UNIX)
  #include <sys/types.h>
  #include <sys/stat.h>
-@@ -937,6 +941,10 @@
+@@ -971,6 +975,10 @@ void QQmlTypeLoader::doLoad(const Loader
  #endif
-     blob->startLoading(this);
+     blob->startLoading();
  
 +#ifdef ENABLE_SA_TRACE
 +    if (blob) qt_tracepoint(Qt, qtQmlResourceLoad, 1, qPrintable(blob->url().toString()));
@@ -148,8 +151,8 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmltypeloader.cpp
 +
      if (m_thread->isThisThread()) {
          unlock();
-         loadThread(blob);
-@@ -1061,6 +1069,9 @@
+         loader.loadThread(this, blob);
+@@ -1067,6 +1075,9 @@ void QQmlTypeLoader::loadThread(QQmlData
                  if (blob->m_data.isAsync())
                      m_thread->callDownloadProgressChanged(blob, 1.);
                  setData(blob, debugCache.value(url, QByteArray()));
@@ -159,17 +162,18 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmltypeloader.cpp
                  return;
              }
          }
-@@ -1083,6 +1094,9 @@
+@@ -1089,6 +1100,10 @@ void QQmlTypeLoader::loadThread(QQmlData
  
          setData(blob, &file);
  
 +#ifdef ENABLE_SA_TRACE
 +        if (blob) qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->url().toString()));
 +#endif // ENABLE_SA_TRACE
++
      } else {
  
          QNetworkReply *reply = m_thread->networkAccessManager()->get(QNetworkRequest(blob->m_url));
-@@ -1144,6 +1158,10 @@
+@@ -1151,6 +1166,10 @@ void QQmlTypeLoader::networkReplyFinishe
          setData(blob, data);
      }
  
@@ -180,18 +184,18 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmltypeloader.cpp
      blob->release();
  }
  
-@@ -2114,6 +2132,10 @@
+@@ -2060,6 +2079,10 @@ void QQmlTypeData::unregisterCallback(Ty
  
  void QQmlTypeData::done()
  {
 +#ifdef ENABLE_SA_TRACE
-+	qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(url().toString()));
++       qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(url().toString()));
 +#endif // ENABLE_SA_TRACE
 +
      // Check all script dependencies for errors
      for (int ii = 0; !isError() && ii < m_scripts.count(); ++ii) {
          const ScriptReference &script = m_scripts.at(ii);
-@@ -2351,6 +2373,10 @@
+@@ -2294,6 +2317,10 @@ void QQmlTypeData::compile()
  {
      Q_ASSERT(m_compiledData == 0);
  
@@ -201,8 +205,8 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmltypeloader.cpp
 +
      m_compiledData = new QQmlCompiledData(typeLoader()->engine());
  
-     QQmlCompilingProfiler prof(QQmlEnginePrivate::get(typeLoader()->engine())->profiler, finalUrlString());
-@@ -2361,6 +2387,10 @@
+     QQmlTypeCompiler compiler(QQmlEnginePrivate::get(typeLoader()->engine()), m_compiledData, this, m_document.data());
+@@ -2302,6 +2329,10 @@ void QQmlTypeData::compile()
          m_compiledData->release();
          m_compiledData = 0;
      }
@@ -213,23 +217,23 @@ Index: qtdeclarative-opensource-src-5.4.0/src/qml/qml/qqmltypeloader.cpp
  }
  
  void QQmlTypeData::resolveTypes()
-Index: qtdeclarative-opensource-src-5.4.0/src/quick/items/qquickwindow.cpp
+Index: git/src/quick/items/qquickwindow.cpp
 ===================================================================
---- qtdeclarative-opensource-src-5.4.0.orig/src/quick/items/qquickwindow.cpp	2014-12-05 09:25:12.000000000 -0700
-+++ qtdeclarative-opensource-src-5.4.0/src/quick/items/qquickwindow.cpp	2014-12-30 14:14:08.412510682 -0700
-@@ -69,6 +69,11 @@
+--- git.orig/src/quick/items/qquickwindow.cpp
++++ git/src/quick/items/qquickwindow.cpp
+@@ -68,6 +68,11 @@
  
  #include <private/qopenglvertexarrayobject_p.h>
  
 +#ifdef ENABLE_SA_TRACE
 +    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
  
  Q_LOGGING_CATEGORY(DBG_TOUCH, "qt.quick.touch");
-@@ -1334,6 +1339,11 @@
+@@ -1398,6 +1403,11 @@ bool QQuickWindow::event(QEvent *e)
  {
      Q_D(QQuickWindow);
  
@@ -241,10 +245,10 @@ Index: qtdeclarative-opensource-src-5.4.0/src/quick/items/qquickwindow.cpp
      switch (e->type()) {
  
      case QEvent::TouchBegin:
-@@ -1433,6 +1443,10 @@
-             QGuiApplication::sendEvent(focusWindow, e);
-     }
- #endif
+@@ -1493,6 +1503,10 @@ void QQuickWindowPrivate::deliverKeyEven
+ 
+     if (activeFocusItem)
+         q->sendEvent(activeFocusItem, e);
 +
 +#ifdef ENABLE_SA_TRACE
 +    qt_tracepoint(Qt, qtKeyEventConsumed, e->type(), e->key(), e->modifiers());
@@ -252,7 +256,7 @@ Index: qtdeclarative-opensource-src-5.4.0/src/quick/items/qquickwindow.cpp
  }
  
  QMouseEvent *QQuickWindowPrivate::cloneMouseEvent(QMouseEvent *event, QPointF *transformedLocalPos)
-@@ -1501,6 +1515,11 @@
+@@ -1561,6 +1575,11 @@ bool QQuickWindowPrivate::deliverMouseEv
              event->accept();
          else
              event->ignore();
@@ -264,7 +268,7 @@ Index: qtdeclarative-opensource-src-5.4.0/src/quick/items/qquickwindow.cpp
          return event->isAccepted();
      }
  
-@@ -1510,10 +1529,19 @@
+@@ -1570,10 +1589,19 @@ bool QQuickWindowPrivate::deliverMouseEv
          me->accept();
          q->sendEvent(mouseGrabberItem, me.data());
          event->setAccepted(me->isAccepted());
@@ -275,7 +279,7 @@ Index: qtdeclarative-opensource-src-5.4.0/src/quick/items/qquickwindow.cpp
 +#endif // ENABLE_SA_TRACE
 +
              return true;
-+        }
++	  }
      }
  
 +#ifdef ENABLE_SA_TRACE
@@ -285,7 +289,7 @@ Index: qtdeclarative-opensource-src-5.4.0/src/quick/items/qquickwindow.cpp
      return false;
  }
  
-@@ -1545,6 +1573,10 @@
+@@ -1605,6 +1633,10 @@ void QQuickWindow::mouseReleaseEvent(QMo
  
      if (!d->mouseGrabberItem) {
          QWindow::mouseReleaseEvent(event);
@@ -296,7 +300,7 @@ Index: qtdeclarative-opensource-src-5.4.0/src/quick/items/qquickwindow.cpp
          return;
      }
  
-@@ -1570,6 +1602,10 @@
+@@ -1630,6 +1662,10 @@ void QQuickWindow::mouseDoubleClickEvent
              event->accept();
          else
              event->ignore();
@@ -307,7 +311,7 @@ Index: qtdeclarative-opensource-src-5.4.0/src/quick/items/qquickwindow.cpp
          return;
      }
  
-@@ -1621,6 +1657,10 @@
+@@ -1686,6 +1722,10 @@ void QQuickWindow::mouseMoveEvent(QMouse
              accepted = d->clearHover();
          }
          event->setAccepted(accepted);
@@ -318,34 +322,34 @@ Index: qtdeclarative-opensource-src-5.4.0/src/quick/items/qquickwindow.cpp
          return;
      }
  
-Index: qtdeclarative-opensource-src-5.4.0/src/quick/quick.pro
+Index: git/src/quick/quick.pro
 ===================================================================
---- qtdeclarative-opensource-src-5.4.0.orig/src/quick/quick.pro	2014-12-05 09:25:12.000000000 -0700
-+++ qtdeclarative-opensource-src-5.4.0/src/quick/quick.pro	2014-12-30 14:15:30.684509883 -0700
-@@ -30,6 +30,7 @@
+--- git.orig/src/quick/quick.pro
++++ git/src/quick/quick.pro
+@@ -28,6 +28,7 @@ include(util/util.pri)
  include(scenegraph/scenegraph.pri)
  include(items/items.pri)
- include(designer/designer.pri)
-+contains(QT_CONFIG,tracesupport):CONFIG += tracesupport
+ !wince:include(designer/designer.pri)
++contains(QT_CONFIG,sa-trace):CONFIG += sa-trace
  contains(QT_CONFIG, accessibility) {
      include(accessible/accessible.pri)
  }
-Index: qtdeclarative-opensource-src-5.4.0/src/quick/scenegraph/coreapi/qsgrenderer.cpp
+Index: git/src/quick/scenegraph/coreapi/qsgrenderer.cpp
 ===================================================================
---- qtdeclarative-opensource-src-5.4.0.orig/src/quick/scenegraph/coreapi/qsgrenderer.cpp	2014-12-05 09:25:12.000000000 -0700
-+++ qtdeclarative-opensource-src-5.4.0/src/quick/scenegraph/coreapi/qsgrenderer.cpp	2014-12-30 14:15:11.552510180 -0700
+--- git.orig/src/quick/scenegraph/coreapi/qsgrenderer.cpp
++++ git/src/quick/scenegraph/coreapi/qsgrenderer.cpp
 @@ -38,6 +38,10 @@
  
  #include <private/qquickprofiler_p.h>
  
 +#ifdef ENABLE_SA_TRACE
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
  
- static bool qsg_sanity_check = qgetenv("QSG_SANITY_CHECK").toInt();
-@@ -173,6 +177,10 @@
+ static const bool qsg_sanity_check = qEnvironmentVariableIntValue("QSG_SANITY_CHECK");
+@@ -182,6 +186,10 @@ void QSGRenderer::renderScene(const QSGB
      if (!rootNode())
          return;
  
@@ -354,9 +358,9 @@ Index: qtdeclarative-opensource-src-5.4.0/src/quick/scenegraph/coreapi/qsgrender
 +#endif // ENABLE_SA_TRACE
 +
      m_is_rendering = true;
-
-
-@@ -225,6 +233,9 @@
+ 
+ 
+@@ -230,6 +238,9 @@ void QSGRenderer::renderScene(const QSGB
              int((updatePassTime - preprocessTime) / 1000000),
              int((bindTime - updatePassTime) / 1000000),
              int((renderTime - bindTime) / 1000000));
