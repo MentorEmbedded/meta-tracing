@@ -6,7 +6,7 @@ index 70bfd35..f2db3b5 100644
  include(util/util.pri)
  include(graphicsitems/graphicsitems.pri)
  include(debugger/debugger.pri)
-+contains(QT_CONFIG,tracesupport):CONFIG += tracesupport
++contains(QT_CONFIG,sa-trace):CONFIG += sa-trace
  
  HEADERS += \
      qtdeclarativeglobal.h \
@@ -19,7 +19,7 @@ index cdfb5ce..5b1e16c 100644
  #include <QtCore/qdebug.h>
  
 +#ifdef ENABLE_SA_TRACE
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
@@ -115,7 +115,7 @@ index 5546a5e..0f3fd14 100644
  #include <private/qdeclarativedebugtrace_p.h>
  
 +#ifdef ENABLE_SA_TRACE
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
@@ -164,7 +164,7 @@ index cbf23fa..226473c 100644
  #include <qdeclarativeinfo.h>
  
 +#ifdef ENABLE_SA_TRACE
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
@@ -202,7 +202,7 @@ index c7fc386..2f6ba37 100644
  
 +#ifdef ENABLE_SA_TRACE
 +    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  Q_DECLARE_METATYPE(QDeclarativeProperty)
@@ -239,7 +239,7 @@ index 42847ea..09ea93b 100644
  #include <QtCore/qfile.h>
  
 +#ifdef ENABLE_SA_TRACE
-+    #include <QtTraceSupport/qt_tracepoints.h>
++    #include <sa-trace/qt_tracepoints.h>
 +#endif // ENABLE_SA_TRACE
 +
  QT_BEGIN_NAMESPACE
