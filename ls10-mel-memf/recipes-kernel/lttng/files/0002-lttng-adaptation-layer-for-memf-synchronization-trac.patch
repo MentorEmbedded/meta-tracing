@@ -1,0 +1,116 @@
+From 3ff4f13178307d909820d0ce3c7d82af0e606566 Mon Sep 17 00:00:00 2001
+From: Fahad Arslan <Fahad_Arslan@mentor.com>
+Date: Thu, 23 Jun 2016 12:52:51 +0500
+Subject: [PATCH 2/2] lttng adaptation layer for memf synchronization
+ tracepoints
+
+Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
+---
+ .../events/lttng-module/Synchronization.h          | 51 ++++++++++++++++++++++
+ probes/Makefile                                    |  1 +
+ probes/lttng-probe-Synchronization.c               | 23 ++++++++++
+ 3 files changed, 75 insertions(+)
+ create mode 100644 instrumentation/events/lttng-module/Synchronization.h
+ create mode 100644 probes/lttng-probe-Synchronization.c
+
+diff --git a/instrumentation/events/lttng-module/Synchronization.h b/instrumentation/events/lttng-module/Synchronization.h
+new file mode 100644
+index 0000000..4983f75
+--- /dev/null
++++ b/instrumentation/events/lttng-module/Synchronization.h
+@@ -0,0 +1,51 @@
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM Synchronization
++
++#if !defined(_LTTNG_SYNCHRONIZATION_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _LTTNG_SYNCHRONIZATION_H
++
++#include "../../../probes/lttng-tracepoint-event.h"
++#include <linux/tracepoint.h>
++
++LTTNG_TRACEPOINT_EVENT(
++    /* format identical to mainline version for those */
++    /* "Synchronization" is the subsystem name, "TriggerSend" is the event name */
++    Synchronization_TriggerSend,
++
++    /* tracepoint function prototype */
++    TP_PROTO(unsigned int Priority, unsigned int CorrelationId, const char *Name),
++
++    /* arguments for this tracepoint */
++    TP_ARGS(Priority, CorrelationId, Name),
++
++    /* notice the use of ctf_integer()/tp_strcpy() and no semicolons */
++    TP_FIELDS(
++        ctf_integer(unsigned int, Priority, Priority)
++        ctf_integer(unsigned int, CorrelationId, CorrelationId)
++        ctf_string(Name, Name)
++    )
++)
++
++LTTNG_TRACEPOINT_EVENT(
++    /* format identical to mainline version for those */
++    /* "Synchronization" is the subsystem name, "TriggerReceive" is the event name */
++    Synchronization_TriggerReceive,
++
++    /* tracepoint function prototype */
++    TP_PROTO(unsigned int Priority, unsigned int CorrelationId, const char *Name),
++
++    /* arguments for this tracepoint */
++    TP_ARGS(Priority, CorrelationId, Name),
++
++    /* notice the use of ctf_integer()/tp_strcpy() and no semicolons */
++    TP_FIELDS(
++        ctf_integer(unsigned int, Priority, Priority)
++        ctf_integer(unsigned int, CorrelationId, CorrelationId)
++        ctf_string(Name, Name)
++    )
++)
++
++#endif /* !defined(_LTTNG_SYNCHRONIZATION_H) || defined(TRACE_HEADER_MULTI_READ) */
++
++/* other difference: do NOT include <trace/define_trace.h> */
++#include "../../../probes/define_trace.h"
+diff --git a/probes/Makefile b/probes/Makefile
+index 489fa06..820c4cc 100644
+--- a/probes/Makefile
++++ b/probes/Makefile
+@@ -258,6 +258,7 @@ endif
+
+ ifneq ($(CONFIG_MEMF),)
+ obj-m += lttng-probe-MEMF.o
++obj-m += lttng-probe-Synchronization.o
+ endif
+ endif
+
+diff --git a/probes/lttng-probe-Synchronization.c b/probes/lttng-probe-Synchronization.c
+new file mode 100644
+index 0000000..e2bc97f
+--- /dev/null
++++ b/probes/lttng-probe-Synchronization.c
+@@ -0,0 +1,23 @@
++#include <linux/module.h>
++#include "../lttng-tracer.h"
++
++/*
++ * Build-time verification of mismatch between mainline TRACE_EVENT()
++ * arguments and LTTng adaptation layer LTTNG_TRACEPOINT_EVENT() arguments.
++ */
++#include <trace/events/Synchronization.h>
++
++/* create LTTng tracepoint probes */
++#define LTTNG_PACKAGE_BUILD
++#define CREATE_TRACE_POINTS
++#define TRACE_INCLUDE_PATH ../instrumentation/events/lttng-module
++
++#include "../instrumentation/events/lttng-module/Synchronization.h"
++
++MODULE_LICENSE("GPL and additional rights");
++MODULE_AUTHOR("Abdur Rehman <abdur_rehman@mentor.com>");
++MODULE_DESCRIPTION("LTTng Synchronization probes");
++MODULE_VERSION(__stringify(LTTNG_MODULES_MAJOR_VERSION) "."
++    __stringify(LTTNG_MODULES_MINOR_VERSION) "."
++    __stringify(LTTNG_MODULES_PATCHLEVEL_VERSION)
++    LTTNG_MODULES_EXTRAVERSION);
+--
+2.8.1
+
