@@ -1,0 +1,224 @@
+From ef0285aaf3b891fcc9cacf8850daad70ac0b749a Mon Sep 17 00:00:00 2001
+From: Fahad Arslan <Fahad_Arslan@mentor.com>
+Date: Tue, 28 Jun 2016 12:47:31 +0500
+Subject: [PATCH 1/1] place memf master tracepoints
+
+Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
+---
+ drivers/remoteproc/ls10_remoteproc.c | 54 ++++++++++++++++++++++++++++++++++--
+ 1 file changed, 51 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/remoteproc/ls10_remoteproc.c b/drivers/remoteproc/ls10_remoteproc.c
+index 109dceb..f80e904 100644
+--- a/drivers/remoteproc/ls10_remoteproc.c
++++ b/drivers/remoteproc/ls10_remoteproc.c
+@@ -27,6 +27,10 @@
+  * GNU General Public License for more details.
+  */
+
++#include <trace/events/MEMF.h>
++#define CREATE_TRACE_POINTS
++#include <trace/events/Synchronization.h>
++
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/err.h>
+@@ -64,6 +68,12 @@
+                                ((x << 8)  & (0x00FF0000)) |  \
+                                ((x << 24) & (0xFF000000))
+
++#define 	RPROC_SUCCESS				0
++#define 	RPROC_FAILURE				1
++#define 	REMOTEPROC_BOOT				0
++#define 	REMOTEPROC_SHUTDOWN			1
++#define 	REMOTEPROC_ACTIVE			2
++
+ DEFINE_MUTEX(iomem_lock);
+
+ /* Module parameters */
+@@ -156,12 +166,19 @@ unmap_io:
+ static void handle_event_0(struct work_struct *work)
+ {
+	struct ls10_rproc_pdata *rproc_private = platform_get_drvdata(remoteprocdev[0]);
++	static bool initialized = false;
+
+	flush_cache_all();
+	outer_flush_range(rproc_private->mem_start, rproc_private->mem_end);
+
+	if (rproc_vq_interrupt(rproc_private->rproc, 0) == IRQ_NONE)
+		dev_dbg(&remoteprocdev[0]->dev, "no message found in vqid 0\n");
++	else {
++		if (!initialized) {
++			initialized = true;
++			trace_MEMF_Remoteproc_State(rproc_private->rproc, REMOTEPROC_ACTIVE, RPROC_SUCCESS);
++		}
++	}
+ }
+
+ static void ipi_kick_remoteproc(void)
+@@ -187,14 +204,17 @@ static int ls10_rproc_start(struct rproc *rproc)
+
+	default:
+		dev_err(&pdev->dev, "invalid remote_id\n");
+-		return -EINVAL;	
+-	}	
++		trace_MEMF_Remoteproc_State(rproc, REMOTEPROC_BOOT, RPROC_FAILURE);
++		return -EINVAL;
++	}
+
+	flush_cache_all();
+	outer_flush_range(rproc_private->mem_start, rproc_private->mem_end);
+
+	ret = cpu_start(rproc_private->cpu, rproc_private->remote_id, rproc->bootaddr);
+
++	trace_MEMF_Remoteproc_State(rproc, REMOTEPROC_BOOT, ret);
++
+	return ret;
+ }
+
+@@ -204,6 +224,7 @@ static void ls10_rproc_kick(struct rproc *rproc, int vqid)
+	struct device *dev = rproc->dev.parent;
+	struct platform_device *pdev = to_platform_device(dev);
+	struct ls10_rproc_pdata *rproc_private = platform_get_drvdata(pdev);
++	static bool initialized = false;
+
+	dev_dbg(dev, "KICK Firmware to start send messages vqid %d\n", vqid);
+
+@@ -216,6 +237,12 @@ static void ls10_rproc_kick(struct rproc *rproc, int vqid)
+		gic_raise_softirq_unicore(rproc_private->cpu, rproc_private->vring1);
+		dev_dbg(dev, "KICK Firmware - softirq %d for vring1\n", rproc_private->vring1);
+	}
++
++	if (!initialized) {
++		initialized = true;
++		trace_Synchronization_TriggerSend(100, 0, "Trigger");
++	}
++
+ }
+
+ /* power off the remote processor */
+@@ -223,6 +250,8 @@ static int ls10_rproc_stop(struct rproc *rproc)
+ {
+	dev_dbg(rproc->dev.parent, "%s\n", __func__);
+
++	trace_MEMF_Remoteproc_State(rproc, REMOTEPROC_SHUTDOWN, RPROC_SUCCESS);
++
+	/* FIXME missing reset option */
+	return 0;
+ }
+@@ -243,8 +272,10 @@ static int ls10_remoteproc_probe(struct platform_device *pdev)
+
+	rproc_private = devm_kzalloc(&pdev->dev, sizeof(struct ls10_rproc_pdata),
+			     GFP_KERNEL);
+-	if (!rproc_private)
++	if (!rproc_private) {
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+		return -ENOMEM;
++	}
+
+	platform_set_drvdata(pdev, rproc_private);
+
+@@ -252,6 +283,7 @@ static int ls10_remoteproc_probe(struct platform_device *pdev)
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!res) {
+		dev_err(&pdev->dev, "invalid address\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+		return -ENODEV;
+	}
+
+@@ -268,12 +300,14 @@ static int ls10_remoteproc_probe(struct platform_device *pdev)
+	if (!ret) {
+		dev_err(&pdev->dev, "dma_declare_coherent_memory failed\n");
+		ret = -ENOMEM;
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+		goto dma_fault;
+	}
+
+	ret = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(32));
+	if (ret) {
+		dev_err(&pdev->dev, "dma_set_coherent_mask: %d\n", ret);
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+		goto dma_mask_fault;
+	}
+
+@@ -285,6 +319,7 @@ static int ls10_remoteproc_probe(struct platform_device *pdev)
+	of_prop = of_get_property(pdev->dev.of_node, "vring0_intr_num", NULL);
+	if (!of_prop) {
+		dev_err(&pdev->dev, "Unable to read property vring0_intr_num. Make sure the node property is specified\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+		goto ipi_fault;
+	}
+	rproc_private->vring0 = be32_to_cpup(of_prop);
+@@ -293,6 +328,7 @@ static int ls10_remoteproc_probe(struct platform_device *pdev)
+	of_prop = of_get_property(pdev->dev.of_node, "vring1_intr_num", NULL);
+	if (!of_prop) {
+		dev_err(&pdev->dev, "Unable to read property vring1_intr_num. Make sure the node property is specified\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+		goto ipi_fault;
+	}
+	rproc_private->vring1 = be32_to_cpup(of_prop);
+@@ -301,6 +337,7 @@ static int ls10_remoteproc_probe(struct platform_device *pdev)
+	of_prop = of_get_property(pdev->dev.of_node, "cpu", NULL);
+	if (!of_prop) {
+		dev_err(&pdev->dev, "Unable to read property cpu. Make sure the node property is specified\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+		goto ipi_fault;
+	}
+	rproc_private->cpu = be32_to_cpup(of_prop);
+@@ -309,6 +346,7 @@ static int ls10_remoteproc_probe(struct platform_device *pdev)
+	of_prop = of_get_property(pdev->dev.of_node, "remote_id", NULL);
+	if (!of_prop) {
+		dev_err(&pdev->dev, "Unable to read property remote_id. Make sure the node property is specified\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, rproc_private->cpu, RPROC_FAILURE);
+		goto ipi_fault;
+	}
+	rproc_private->remote_id = be32_to_cpup(of_prop);
+@@ -317,6 +355,7 @@ static int ls10_remoteproc_probe(struct platform_device *pdev)
+	ret = set_ipi_handler(rproc_private->vring0, ipi_kick_remoteproc, "Firmware kick");
+	if (ret) {
+		dev_err(&pdev->dev, "IPI handler %d already registered\n", rproc_private->vring0);
++		trace_MEMF_Remoteproc_Init(NULL, NULL, rproc_private->cpu, RPROC_FAILURE);
+		goto ipi_fault;
+	}
+
+@@ -328,6 +367,7 @@ static int ls10_remoteproc_probe(struct platform_device *pdev)
+		default:
+			dev_err(&pdev->dev, "Invalid remote_id specified\n");
+			ret = -1;
++			trace_MEMF_Remoteproc_Init(NULL, NULL, rproc_private->cpu, RPROC_FAILURE);
+			goto ipi_fault;
+	}
+
+@@ -341,14 +381,20 @@ static int ls10_remoteproc_probe(struct platform_device *pdev)
+		if (!rproc_private->rproc) {
+			dev_err(&pdev->dev, "rproc allocation failed\n");
+			ret = -1;
++			trace_MEMF_Remoteproc_Init(NULL, prop, rproc_private->cpu, RPROC_FAILURE);
+			goto ipi_fault;
+		}
+
++		rproc_private->rproc->cpu = rproc_private->cpu;
++
+		ret = rproc_add(rproc_private->rproc);
+		if (ret) {
+			dev_err(&pdev->dev, "rproc registration failed\n");
++			trace_MEMF_Remoteproc_Init(rproc_private->rproc, prop, rproc_private->cpu, RPROC_FAILURE);
+			goto rproc_fault;
+		}
++
++		trace_MEMF_Remoteproc_Init(rproc_private->rproc, prop, rproc_private->cpu, ret);
+		return ret;
+	} else {
+		ret = -1;
+@@ -379,6 +425,8 @@ static int ls10_remoteproc_remove(struct platform_device *pdev)
+
+	clear_ipi_handler(rproc_private->vring0);
+
++	trace_MEMF_Remoteproc_DeInit(rproc_private->rproc, RPROC_SUCCESS);
++
+	rproc_del(rproc_private->rproc);
+	rproc_put(rproc_private->rproc);
+
+--
+2.8.1
+
