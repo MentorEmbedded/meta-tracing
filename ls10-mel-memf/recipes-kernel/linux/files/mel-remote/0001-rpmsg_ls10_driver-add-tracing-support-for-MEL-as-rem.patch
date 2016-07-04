@@ -1,0 +1,139 @@
+From 57c1062d120a5cf758e457c109d6009d0fe317d0 Mon Sep 17 00:00:00 2001
+From: Yasir-Khan <yasir_khan@mentor.com>
+Date: Mon, 4 Jul 2016 18:24:05 +0500
+Subject: [PATCH] rpmsg_ls10_driver: add tracing support for MEL as remote
+
+Signed-off-by: Yasir-Khan <yasir_khan@mentor.com>
+---
+ drivers/rpmsg/rpmsg_ls10_driver.c    | 30 ++++++++++++++++++++++++++++++
+ drivers/rpmsg/rpmsg_ls10_internals.h |  1 +
+ 2 files changed, 31 insertions(+)
+
+diff --git a/drivers/rpmsg/rpmsg_ls10_driver.c b/drivers/rpmsg/rpmsg_ls10_driver.c
+index 7b9e254..26d48b8 100644
+--- a/drivers/rpmsg/rpmsg_ls10_driver.c
++++ b/drivers/rpmsg/rpmsg_ls10_driver.c
+@@ -23,6 +23,10 @@
+  * GNU General Public License for more details.
+  */
+ 
++#include <trace/events/MEMF.h>
++#define CREATE_TRACE_POINTS
++#include <trace/events/Synchronization.h>
++
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
+@@ -47,6 +51,9 @@
+ 
+ #include "rpmsg_ls10_internals.h"
+ 
++#define SUCCESS			0
++#define FAILURE			1
++
+ static DEFINE_IDA(rpmsg_ls10_dev_index);
+ 
+ /* Globals. */
+@@ -91,6 +98,8 @@ static void setup_shared_memory(void)
+ 
+ static bool ls10_rpmsg_virtio_notify(struct virtqueue *vq)
+ {
++	static bool executed = false;
++
+ 	/* Notify the other core. */
+ 	if (vq == ls10_rpmsg_p->vrings[0].vq)
+ 		/* Raise soft IRQ on GIC. */
+@@ -98,6 +107,11 @@ static bool ls10_rpmsg_virtio_notify(struct virtqueue *vq)
+ 	else
+ 		gic_raise_softirq_unicore(0, ls10_rpmsg_p->vring1);
+ 
++	if (!executed) {
++		executed = true;
++		trace_Synchronization_TriggerSend(100, 0, "Trigger");
++	}
++
+ 	return true;
+ }
+ 
+@@ -252,6 +266,8 @@ static void ipi_handler(void)
+ 
+ static int ls10_rpmsg_deinitialize(struct platform_device *pdev)
+ {
++	trace_MEMF_Remoteproc_Rsc_Deinit(ls10_rpmsg_p, SUCCESS);
++
+ 	unregister_virtio_device(&(ls10_rpmsg_p->virtio_dev));
+ 
+ 	put_device(&(ls10_rpmsg_p->mid_dev));
+@@ -269,12 +285,14 @@ static int ls10_rpmsg_initialize(struct platform_device *pdev)
+ 	int index;
+ 	struct virtio_device *virtio_dev;
+ 	int size;
++	int cpu_id = smp_processor_id();
+ 
+ 	/* Register ipi handler. */
+ 	ret = set_ipi_handler(ls10_rpmsg_p->vring0, ipi_handler,
+ 				"Firmware kick");
+ 
+ 	if (ret) {
++		trace_MEMF_Remoteproc_Rsc_Init(ls10_rpmsg_p, cpu_id, FAILURE);
+ 		dev_err(&pdev->dev, "IPI handler already registered\n");
+ 		return -ENODEV;
+ 	}
+@@ -295,6 +313,7 @@ static int ls10_rpmsg_initialize(struct platform_device *pdev)
+ 					DMA_MEMORY_IO);
+ 
+ 	if (!ret) {
++		trace_MEMF_Remoteproc_Rsc_Init(ls10_rpmsg_p, cpu_id, FAILURE);
+ 		dev_err(&pdev->dev, "dma_declare_coherent_memory failed\n");
+ 		return -ENODEV;
+ 	}
+@@ -302,6 +321,7 @@ static int ls10_rpmsg_initialize(struct platform_device *pdev)
+ 	ret = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(32));
+ 
+ 	if (ret) {
++		trace_MEMF_Remoteproc_Rsc_Init(ls10_rpmsg_p, cpu_id, FAILURE);
+ 		dev_err(&pdev->dev, "dma_set_coherent_mask: %d\n", ret);
+ 		return -ENODEV;
+ 	}
+@@ -318,6 +338,7 @@ static int ls10_rpmsg_initialize(struct platform_device *pdev)
+ 	index = ida_simple_get(&rpmsg_ls10_dev_index, 0, 0, GFP_KERNEL);
+ 
+ 	if (index < 0) {
++		trace_MEMF_Remoteproc_Rsc_Init(ls10_rpmsg_p, cpu_id, FAILURE);
+ 		put_device(&(ls10_rpmsg_p->mid_dev));
+ 		return -ENODEV;
+ 	}
+@@ -334,9 +355,18 @@ static int ls10_rpmsg_initialize(struct platform_device *pdev)
+ 	virtio_dev->dev.parent  = &(ls10_rpmsg_p->mid_dev);
+ 	virtio_dev->dev.release = ls10_rpmsg_vdev_release;
+ 
++	ls10_rpmsg_p->master_cpu_id = cpu_id;
++	virtio_dev->priv = &(ls10_rpmsg_p->master_cpu_id);
++
+ 	/* Register the virtio device. */
+ 	ret = register_virtio_device(virtio_dev);
+ 
++	if (ret) {
++		trace_MEMF_Remoteproc_Rsc_Init(ls10_rpmsg_p, cpu_id, FAILURE);
++	} else {
++		trace_MEMF_Remoteproc_Rsc_Init(ls10_rpmsg_p, cpu_id, SUCCESS);
++	}
++
+ 	dev_info(&(ls10_rpmsg_platform->dev), "virtio device registered \r\n");
+ 
+ 	return ret;
+diff --git a/drivers/rpmsg/rpmsg_ls10_internals.h b/drivers/rpmsg/rpmsg_ls10_internals.h
+index 24c1678..2e25ec9 100644
+--- a/drivers/rpmsg/rpmsg_ls10_internals.h
++++ b/drivers/rpmsg/rpmsg_ls10_internals.h
+@@ -54,6 +54,7 @@ struct ls10_rpmsg_instance {
+ 	u32	 virtioid;
+ 	u32	 ringtx;
+ 	u32	 ringrx;
++	u32	 master_cpu_id;
+ 
+ 	struct virtio_device virtio_dev;
+ 
+-- 
+2.8.1
+
