@@ -68,7 +68,7 @@ index 7b9e254..26d48b8 100644
  	int index;
  	struct virtio_device *virtio_dev;
  	int size;
-+	int cpu_id = smp_processor_id();
++	int cpu_id = 0x1;
  
  	/* Register ipi handler. */
  	ret = set_ipi_handler(ls10_rpmsg_p->vring0, ipi_handler,
