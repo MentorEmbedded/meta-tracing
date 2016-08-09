@@ -2,7 +2,7 @@ Index: git/configure
 ===================================================================
 --- git.orig/configure
 +++ git/configure
-@@ -786,6 +786,7 @@ OPT_MAC_SDK=
+@@ -802,6 +802,7 @@ OPT_MAC_SDK=
  COMMERCIAL_USER=ask
  LICENSE_FILE=
  CFG_DEV=no
@@ -10,7 +10,7 @@ Index: git/configure
  
  # initalize variables used for installation
  QT_INSTALL_PREFIX=
-@@ -842,6 +843,10 @@ CFG_DEFAULT_ANDROID_TARGET_ARCH=armeabi-
+@@ -858,6 +859,10 @@ CFG_DEFAULT_ANDROID_TARGET_ARCH=armeabi-
  CFG_DEFAULT_ANDROID_NDK_TOOLCHAIN_VERSION=4.9
  CFG_DEFAULT_ANDROID_NDK_HOST=$ANDROID_NDK_HOST
  
@@ -21,7 +21,7 @@ Index: git/configure
  #-------------------------------------------------------------------------------
  # check SQL drivers available in this package
  #-------------------------------------------------------------------------------
-@@ -2361,6 +2366,13 @@ while [ "$#" -gt 0 ]; do
+@@ -2377,6 +2382,13 @@ while [ "$#" -gt 0 ]; do
              UNKNOWN_OPT=yes
          fi
          ;;
@@ -35,7 +35,7 @@ Index: git/configure
      *)
          UNKNOWN_OPT=yes
          ;;
-@@ -2581,6 +2593,8 @@ Third Party Libraries:
+@@ -2597,6 +2609,8 @@ Third Party Libraries:
                            (libxcb.so will still be used from operating system).
   +  -system-xcb ......... Use xcb- libraries from the operating system.
  
@@ -44,7 +44,7 @@ Index: git/configure
      -xkb-config-root .... Set default XKB config root. This option is used only together with -qt-xkbcommon-x11.
      -qt-xkbcommon-x11 ... Use the xkbcommon library bundled with Qt in combination with xcb.
   +  -system-xkbcommon-x11 Use the xkbcommon library from the operating system in combination with xcb.
-@@ -6458,6 +6472,16 @@ if [ "$CFG_WIDGETS" = "no" ]; then
+@@ -6476,6 +6490,16 @@ if [ "$CFG_WIDGETS" = "no" ]; then
      QCONFIG_FLAGS="$QCONFIG_FLAGS QT_NO_WIDGETS"
  fi
  
@@ -61,7 +61,7 @@ Index: git/configure
  if [ "$XPLATFORM_MAC" = "yes" ]; then
      #On Mac we implicitly link against libz, so we
      #never use the 3rdparty stuff.
-@@ -7431,6 +7455,7 @@ report_support "  udev .................
+@@ -7446,6 +7470,7 @@ report_support "  udev .................
  report_support "  xkbcommon-x11..........." "$CFG_XKBCOMMON" system "system library" qt "bundled copy, XKB config root: $CFG_XKB_CONFIG_ROOT"
  report_support "  xkbcommon-evdev........." "$CFG_XKBCOMMON_EVDEV"
  report_support "  zlib ..................." "$CFG_ZLIB" system "system library" yes "bundled copy"
@@ -154,7 +154,7 @@ Index: git/src/corelib/corelib.pro
 ===================================================================
 --- git.orig/src/corelib/corelib.pro
 +++ git/src/corelib/corelib.pro
-@@ -49,6 +49,7 @@ include(statemachine/statemachine.pri)
+@@ -50,6 +50,7 @@ include(statemachine/statemachine.pri)
  include(mimetypes/mimetypes.pri)
  include(xml/xml.pri)
  
@@ -329,7 +329,7 @@ Index: git/src/src.pro
 ===================================================================
 --- git.orig/src/src.pro
 +++ git/src/src.pro
-@@ -128,9 +128,13 @@ src_plugins.depends = src_sql src_xml sr
+@@ -128,6 +128,9 @@ src_plugins.depends = src_sql src_xml sr
  
  src_android.subdir = $$PWD/android
  
@@ -337,7 +337,11 @@ Index: git/src/src.pro
 +src_satrace.target = sub-satrace
 +
  # this order is important
- contains(QT_CONFIG, zlib)|cross_compile: SUBDIRS += src_qtzlib
+ contains(QT_CONFIG, zlib)|cross_compile {
+     SUBDIRS += src_qtzlib
+@@ -136,6 +139,7 @@ contains(QT_CONFIG, zlib)|cross_compile
+     }
+ }
  SUBDIRS += src_tools_bootstrap src_tools_moc src_tools_rcc
 +contains(QT_CONFIG, sa-trace): SUBDIRS += src_satrace
  !contains(QT_DISABLED_FEATURES, regularexpression):pcre {
@@ -447,7 +451,7 @@ Index: git/src/widgets/kernel/qwidgetbackingstore.cpp
  QT_BEGIN_NAMESPACE
  
  extern QRegion qt_dirtyRegion(QWidget *);
-@@ -79,6 +83,11 @@ void QWidgetBackingStore::qt_flush(QWidg
+@@ -81,6 +85,11 @@ void QWidgetBackingStore::qt_flush(QWidg
      Q_ASSERT(widget);
      Q_ASSERT(backingStore);
      Q_ASSERT(tlw);
@@ -459,7 +463,7 @@ Index: git/src/widgets/kernel/qwidgetbackingstore.cpp
  #if !defined(QT_NO_PAINT_DEBUG)
      static int flushUpdate = qEnvironmentVariableIntValue("QT_FLUSH_UPDATE");
      if (flushUpdate > 0)
-@@ -118,6 +127,10 @@ void QWidgetBackingStore::qt_flush(QWidg
+@@ -134,6 +143,10 @@ void QWidgetBackingStore::qt_flush(QWidg
      } else
  #endif
          backingStore->flush(region, widget->windowHandle(), offset);
