@@ -247,9 +247,9 @@ index a37f7c1..9fbba64 100644
  
 +	trace_MEMF_RPMsg_Init((unsigned int)vrp, remote_cpu_id, RPROC_REMOTE, RPMSG_SUCCESS);
 +
- 	/* tell the remote processor it can start sending messages */
- 	virtqueue_kick(vrp->rvq);
- 
+	/*
+	 * Prepare to kick but don't notify yet - we can't do this before
+	 * device is ready.
 @@ -1625,6 +1687,8 @@ static void rpmsg_remove(struct virtio_device *vdev)
  	if (ret)
  		dev_warn(&vdev->dev, "can't remove rpmsg device: %d\n", ret);
