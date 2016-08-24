@@ -7,7 +7,8 @@ MEMF_COMMON = ""
 python () {
     if d.getVar("MEMF_TRACING", True) == "1":
         d.setVar("MEMF_MASTER", "file://place-memf-master-tracepoints.patch")
-        d.setVar("MEMF_REMOTE", "file://place-memf-remote-tracepoints.patch" )
+        d.setVar("MEMF_REMOTE", "file://place-memf-remote-tracepoints.patch \
+                                 file://store-cpu-id-rpmsg-platform-driver.patch" )
         d.setVar("MEMF_COMMON", "file://define-memf-tracepoints.patch \
                                  file://store_cpu_id_of_remoteproc.patch \
                                  file://place-memf-common-tracepoints.patch")
