@@ -12,12 +12,18 @@ diff --git a/drivers/rpmsg/virtio_rpmsg_bus.c b/drivers/rpmsg/virtio_rpmsg_bus.c
 index a37f7c1..9fbba64 100644
 --- a/drivers/rpmsg/virtio_rpmsg_bus.c
 +++ b/drivers/rpmsg/virtio_rpmsg_bus.c
-@@ -17,6 +17,9 @@
+@@ -17,6 +17,15 @@
   * GNU General Public License for more details.
   */
  
 +#define CREATE_TRACE_POINTS
 +#include <trace/events/MEMF.h>
++
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Init);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_DeInit);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_State);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Rsc_Init);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Rsc_DeInit);
 +
  #define pr_fmt(fmt) "%s: " fmt, __func__
  

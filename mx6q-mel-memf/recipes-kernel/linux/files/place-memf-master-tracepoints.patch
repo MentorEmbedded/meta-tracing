@@ -16,8 +16,8 @@ index 7a238d7..876530b 100644
   * GNU General Public License for more details.
   */
  
-+#define CREATE_TRACE_POINTS
 +#include <trace/events/MEMF.h>
++#define CREATE_TRACE_POINTS
 +#include <trace/events/Synchronization.h>
 +
  #include <linux/kernel.h>
