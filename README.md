@@ -5,18 +5,22 @@ functionality for different packages based on LTTng. This layer might add instru
 features to different packages.
 
 This layer may be used on top of recent git clones of Yocto Project and Mentor's
-Automotive Technology Platform.
+Embedded Linux (MEL).
 
-Maintainers:
-============
+## Contributing
 
-Patches can be sent via github pull request. Following people are maintainer of this layer.
+To contribute to this layer you should create your own fork, create patches and submit them
+via the pull request to github [repository](https://github.com/MentorEmbedded/meta-tracing).
 
+## Maintainer
+
+The core MEL team
+
+Following people are gatekeeper of this layer:
 1. Chris Larson, chris_larson@mentor.com
 2. Noor Ahsan, noor_ahsan@mentor.com
 
-General Information:
-====================
+## General Information:
 
 Browse: https://github.com/MentorEmbedded/meta-tracing
 Clone: git@github.com:MentorEmbedded/meta-tracing.git
