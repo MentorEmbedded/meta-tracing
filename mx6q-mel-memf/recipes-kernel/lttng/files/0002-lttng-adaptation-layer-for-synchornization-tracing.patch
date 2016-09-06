@@ -12,11 +12,10 @@ Signed-off-by: Abdur Rehman <abdur_rehman@mentor.com>
  create mode 100644 instrumentation/events/lttng-module/Synchronization.h
  create mode 100644 probes/lttng-probe-Synchronization.c
 
-diff --git a/instrumentation/events/lttng-module/Synchronization.h b/instrumentation/events/lttng-module/Synchronization.h
-new file mode 100644
-index 0000000..ce6ef60
+Index: git/instrumentation/events/lttng-module/Synchronization.h
+===================================================================
 --- /dev/null
-+++ b/instrumentation/events/lttng-module/Synchronization.h
++++ git/instrumentation/events/lttng-module/Synchronization.h
 @@ -0,0 +1,49 @@
 +#undef TRACE_SYSTEM
 +#define TRACE_SYSTEM Synchronization
@@ -67,23 +66,10 @@ index 0000000..ce6ef60
 +
 +/* other difference: do NOT include <trace/define_trace.h> */
 +#include "../../../probes/define_trace.h"
-diff --git a/probes/Makefile b/probes/Makefile
-index 3767d33..6b6925d 100644
---- a/probes/Makefile
-+++ b/probes/Makefile
-@@ -252,6 +252,7 @@ endif
- 
- ifneq ($(CONFIG_MEMF),)
- obj-m += lttng-probe-memf.o
-+obj-m += lttng-probe-Synchronization.o
- endif
- endif
- 
-diff --git a/probes/lttng-probe-Synchronization.c b/probes/lttng-probe-Synchronization.c
-new file mode 100644
-index 0000000..e2bc97f
+Index: git/probes/lttng-probe-Synchronization.c
+===================================================================
 --- /dev/null
-+++ b/probes/lttng-probe-Synchronization.c
++++ git/probes/lttng-probe-Synchronization.c
 @@ -0,0 +1,23 @@
 +#include <linux/module.h>
 +#include "../lttng-tracer.h"
@@ -108,6 +94,15 @@ index 0000000..e2bc97f
 +    __stringify(LTTNG_MODULES_MINOR_VERSION) "."
 +    __stringify(LTTNG_MODULES_PATCHLEVEL_VERSION)
 +    LTTNG_MODULES_EXTRAVERSION);
--- 
-1.7.9.5
-
+Index: git/probes/Kbuild
+===================================================================
+--- git.orig/probes/Kbuild
++++ git/probes/Kbuild
+@@ -263,6 +263,7 @@ endif # CONFIG_DYNAMIC_FTRACE
+ 
+ ifneq ($(CONFIG_MEMF),)
+   obj-$(CONFIG_LTTNG) += lttng-probe-memf.o
++  obj-$(CONFIG_LTTNG) += lttng-probe-Synchronization.o
+ endif # CONFIG_MEMF
+ 
+ # vim:syntax=make
