@@ -12,11 +12,10 @@ Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
  create mode 100644 instrumentation/events/lttng-module/MEMF.h
  create mode 100644 probes/lttng-probe-MEMF.c
 
-diff --git a/instrumentation/events/lttng-module/MEMF.h b/instrumentation/events/lttng-module/MEMF.h
-new file mode 100644
-index 0000000..ac1f834
+Index: git/instrumentation/events/lttng-module/MEMF.h
+===================================================================
 --- /dev/null
-+++ b/instrumentation/events/lttng-module/MEMF.h
++++ git/instrumentation/events/lttng-module/MEMF.h
 @@ -0,0 +1,268 @@
 +#undef TRACE_SYSTEM
 +#define TRACE_SYSTEM MEMF
@@ -286,25 +285,10 @@ index 0000000..ac1f834
 +
 +/* This part must be outside protection */
 +#include "../../../probes/define_trace.h"
-diff --git a/probes/Makefile b/probes/Makefile
-index 9a2558b..489fa06 100644
---- a/probes/Makefile
-+++ b/probes/Makefile
-@@ -256,6 +256,9 @@ ifneq ($(CONFIG_DYNAMIC_FTRACE),)
- obj-m += lttng-ftrace.o
- endif
-
-+ifneq ($(CONFIG_MEMF),)
-+obj-m += lttng-probe-MEMF.o
-+endif
- endif
-
- obj-m += lttng-test.o
-diff --git a/probes/lttng-probe-MEMF.c b/probes/lttng-probe-MEMF.c
-new file mode 100644
-index 0000000..e850a75
+Index: git/probes/lttng-probe-MEMF.c
+===================================================================
 --- /dev/null
-+++ b/probes/lttng-probe-MEMF.c
++++ git/probes/lttng-probe-MEMF.c
 @@ -0,0 +1,24 @@
 +#include <linux/module.h>
 +#include "../lttng-tracer.h"
@@ -330,6 +314,16 @@ index 0000000..e850a75
 +    LTTNG_MODULES_EXTRAVERSION);
 +
 +
---
-2.8.1
-
+Index: git/probes/Kbuild
+===================================================================
+--- git.orig/probes/Kbuild
++++ git/probes/Kbuild
+@@ -261,4 +261,8 @@ ifneq ($(CONFIG_DYNAMIC_FTRACE),)
+   obj-$(CONFIG_LTTNG) += lttng-ftrace.o
+ endif # CONFIG_DYNAMIC_FTRACE
+ 
++ifneq ($(CONFIG_MEMF),)
++  obj-$(CONFIG_LTTNG) += lttng-probe-MEMF.o
++endif # CONFIG_MEMF
++
+ # vim:syntax=make
