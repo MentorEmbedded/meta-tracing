@@ -38,7 +38,7 @@ index 1a55602..a5e0c27 100644
  
  static bool imx6q_rpmsg_virtio_notify(struct virtqueue *vq)
  {
-+	bool executed = false;
++	static bool executed = false;
 +
  	/* Notify the other core. */
  	if (vq == imx6q_rpmsg_p->vrings[0].vq)
