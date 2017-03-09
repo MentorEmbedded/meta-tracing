@@ -14,6 +14,6 @@ python () {
                                  file://place-memf-common-tracepoints.patch")
 }
 
-SRC_URI_append_mx6q += "${MEMF_MASTER}"
-SRC_URI_append_mx6q-remote += "${MEMF_REMOTE}"
+SRC_URI_append += "${@bb.utils.contains('MACHINE_FEATURES', 'mel-master', '${MEMF_MASTER}', '', d)}"
+SRC_URI_append += "${@bb.utils.contains('MACHINE_FEATURES', 'mel-remote', '${MEMF_REMOTE}', '', d)}"
 SRC_URI_append += "${MEMF_COMMON}"
