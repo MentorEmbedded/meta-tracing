@@ -11,7 +11,8 @@ python () {
                                  file://store-cpu-id-rpmsg-platform-driver.patch" )
         d.setVar("MEMF_COMMON", "file://define-memf-tracepoints.patch \
                                  file://store_cpu_id_of_remoteproc.patch \
-                                 file://place-memf-common-tracepoints.patch")
+                                 file://place-memf-common-tracepoints.patch \
+                                 file://add-traces-to-rpmsg_send_offchannel_raw_large.patch")
 }
 
 SRC_URI_append += "${@bb.utils.contains('MACHINE_FEATURES', 'mel-master', '${MEMF_MASTER}', '', d)}"
