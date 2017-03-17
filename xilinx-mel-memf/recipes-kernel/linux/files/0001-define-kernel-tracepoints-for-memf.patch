@@ -31,7 +31,7 @@ index 0000000..8e01a4a
 +    MEMF_Remoteproc_Init,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Control_Block_Address, char* Firmware_Name, unsigned int CPU_ID, int Status),
++    TP_PROTO(long Control_Block_Address, char* Firmware_Name, unsigned int CPU_ID, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(Control_Block_Address, Firmware_Name, CPU_ID, Status),
@@ -47,7 +47,7 @@ index 0000000..8e01a4a
 +    MEMF_Remoteproc_State,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Control_Block_Address, unsigned int State, int Status),
++    TP_PROTO(long Control_Block_Address, unsigned int State, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(Control_Block_Address, State, Status),
@@ -63,7 +63,7 @@ index 0000000..8e01a4a
 +    MEMF_Remoteproc_DeInit,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Control_Block_Address, int Status),
++    TP_PROTO(long Control_Block_Address, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(Control_Block_Address, Status),
@@ -79,7 +79,7 @@ index 0000000..8e01a4a
 +    MEMF_Remoteproc_Rsc_Init,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Control_Block_Address, unsigned int CPU_ID, int Status),
++    TP_PROTO(long Control_Block_Address, unsigned int CPU_ID, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(Control_Block_Address, CPU_ID, Status),
@@ -95,7 +95,7 @@ index 0000000..8e01a4a
 +    MEMF_Remoteproc_Rsc_Deinit,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Control_Block_Address, int Status),
++    TP_PROTO(long Control_Block_Address, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(Control_Block_Address, Status),
@@ -111,7 +111,7 @@ index 0000000..8e01a4a
 +    MEMF_RPMsg_Init,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address, unsigned int CPU_ID, unsigned int Role, int Status),
++    TP_PROTO(long RPMsg_Control_Block_Address, unsigned int CPU_ID, unsigned int Role, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(RPMsg_Control_Block_Address, CPU_ID, Role, Status),
@@ -127,7 +127,7 @@ index 0000000..8e01a4a
 +    MEMF_RPMsg_DeInit,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address, int Status),
++    TP_PROTO(long RPMsg_Control_Block_Address, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(RPMsg_Control_Block_Address, Status),
@@ -143,8 +143,8 @@ index 0000000..8e01a4a
 +    MEMF_RPMsg_Channel_Create,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address,
-+                unsigned int Channel_Control_Block_Address,
++    TP_PROTO(long RPMsg_Control_Block_Address,
++                long Channel_Control_Block_Address,
 +                char *Name,
 +                unsigned int Source_Address,
 +                unsigned int Destination_Address,
@@ -169,7 +169,7 @@ index 0000000..8e01a4a
 +    MEMF_RPMsg_Channel_Delete,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Channel_Control_Block_Address,
++    TP_PROTO(long Channel_Control_Block_Address,
 +                int Status),
 +
 +    /* arguments for this tracepoint */
@@ -187,8 +187,8 @@ index 0000000..8e01a4a
 +    MEMF_RPMsg_Ept_Create,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address,
-+                unsigned int EPT_Control_Block_Address,
++    TP_PROTO(long RPMsg_Control_Block_Address,
++                long EPT_Control_Block_Address,
 +                unsigned int Address,
 +                int Status),
 +
@@ -209,7 +209,7 @@ index 0000000..8e01a4a
 +    MEMF_RPMsg_Ept_Delete,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int EPT_Control_Block_Address,
++    TP_PROTO(long EPT_Control_Block_Address,
 +                int Status),
 +
 +    /* arguments for this tracepoint */
@@ -227,7 +227,7 @@ index 0000000..8e01a4a
 +    MEMF_RPMsg_Tx_Start,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Channel_Control_Block_Address,
++    TP_PROTO(long Channel_Control_Block_Address,
 +                unsigned int Source_Address,
 +                unsigned int Destination_Address,
 +                unsigned int Size,
@@ -251,7 +251,7 @@ index 0000000..8e01a4a
 +    MEMF_RPMsg_Tx_Stop,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Channel_Control_Block_Address,
++    TP_PROTO(long Channel_Control_Block_Address,
 +                unsigned int Source_Address,
 +                unsigned int Destination_Address,
 +                unsigned int Size,
@@ -275,7 +275,7 @@ index 0000000..8e01a4a
 +    MEMF_RPMsg_Rx_Start,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address,
++    TP_PROTO(long RPMsg_Control_Block_Address,
 +                unsigned int Source_Address,
 +                unsigned int Destination_Address,
 +                unsigned int Size,
@@ -299,7 +299,7 @@ index 0000000..8e01a4a
 +    MEMF_RPMsg_Rx_Stop,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address,
++    TP_PROTO(long RPMsg_Control_Block_Address,
 +                unsigned int Source_Address,
 +                unsigned int Destination_Address,
 +                unsigned int Size,
