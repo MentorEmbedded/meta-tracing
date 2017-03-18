@@ -27,7 +27,7 @@ index 90d3ebb..1c7ece6 100644
 +EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_DeInit);
 +EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_State);
 +EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Rsc_Init);
-+EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Rsc_DeInit);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Rsc_Deinit);
 +
  #define pr_fmt(fmt) "%s: " fmt, __func__
  
