@@ -28,12 +28,12 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_Init,
 +
-+	TP_PROTO(long Control_Block_Address, char* Firmware_Name, unsigned int CPU_ID, int Status),
++	TP_PROTO(unsigned long Control_Block_Address, char* Firmware_Name, unsigned int CPU_ID, int Status),
 +
 +	TP_ARGS(Control_Block_Address, Firmware_Name, CPU_ID, Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, Control_Block_Address, Control_Block_Address)
++		ctf_integer(unsigned long, Control_Block_Address, Control_Block_Address)
 +		ctf_string(Firmware_Name, Firmware_Name)
 +		ctf_integer(unsigned int, CPU_ID, CPU_ID)
 +		ctf_integer(int, Status, Status)
@@ -42,12 +42,12 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_State,
 +
-+	 TP_PROTO(long Control_Block_Address, unsigned int State, int Status),
++	 TP_PROTO(unsigned long Control_Block_Address, unsigned int State, int Status),
 +
 +	 TP_ARGS(Control_Block_Address, State, Status),
 +
 +	 TP_FIELDS(
-+		ctf_integer(long, Control_Block_Address, Control_Block_Address)
++		ctf_integer(unsigned long, Control_Block_Address, Control_Block_Address)
 +		ctf_integer(unsigned int, State, State)
 +		ctf_integer(int, Status, Status)
 +        )
@@ -55,24 +55,24 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_DeInit,
 +
-+	TP_PROTO(long Control_Block_Address, int Status),
++	TP_PROTO(unsigned long Control_Block_Address, int Status),
 +
 +	TP_ARGS(Control_Block_Address, Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, Control_Block_Address, Control_Block_Address)
++		ctf_integer(unsigned long, Control_Block_Address, Control_Block_Address)
 +		ctf_integer(int, Status, Status)
 +	)
 +)
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_Rsc_Init,
 +
-+	TP_PROTO(long Control_Block_Address, unsigned int CPU_ID, int Status),
++	TP_PROTO(unsigned long Control_Block_Address, unsigned int CPU_ID, int Status),
 +
 +	TP_ARGS(Control_Block_Address, CPU_ID, Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, Control_Block_Address, Control_Block_Address)
++		ctf_integer(unsigned long, Control_Block_Address, Control_Block_Address)
 +		ctf_integer(unsigned int, CPU_ID, CPU_ID)
 +		ctf_integer(int, Status, Status)
 +	)
@@ -80,24 +80,24 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_Rsc_Deinit,
 +
-+	TP_PROTO(long Control_Block_Address, int Status),
++	TP_PROTO(unsigned long Control_Block_Address, int Status),
 +
 +	TP_ARGS(Control_Block_Address, Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, Control_Block_Address, Control_Block_Address)
++		ctf_integer(unsigned long, Control_Block_Address, Control_Block_Address)
 +		ctf_integer(int, Status, Status)
 +	)
 +)
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Init,
 +
-+	TP_PROTO(long RPMsg_Control_Block_Address, unsigned int CPU_ID, unsigned int Role, int Status),
++	TP_PROTO(unsigned long RPMsg_Control_Block_Address, unsigned int CPU_ID, unsigned int Role, int Status),
 +
 +	TP_ARGS(RPMsg_Control_Block_Address, CPU_ID, Role, Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++		ctf_integer(unsigned long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
 +		ctf_integer(unsigned int, CPU_ID, CPU_ID)
 +		ctf_integer(unsigned int, Role, Role)
 +		ctf_integer(int, Status, Status)
@@ -106,20 +106,20 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_DeInit,
 +
-+	TP_PROTO(long RPMsg_Control_Block_Address, int Status),
++	TP_PROTO(unsigned long RPMsg_Control_Block_Address, int Status),
 +
 +	TP_ARGS(RPMsg_Control_Block_Address, Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++		ctf_integer(unsigned long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
 +		ctf_integer(int, Status, Status)
 +	)
 +)
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Channel_Create,
 +
-+	TP_PROTO(long RPMsg_Control_Block_Address,
-+		long Channel_Control_Block_Address,
++	TP_PROTO(unsigned long RPMsg_Control_Block_Address,
++		unsigned long Channel_Control_Block_Address,
 +		char *Name,
 +		unsigned int Source_Address,
 +		unsigned int Destination_Address,
@@ -133,8 +133,8 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +		Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
-+		ctf_integer(long, Channel_Control_Block_Address, Channel_Control_Block_Address)
++		ctf_integer(unsigned long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++		ctf_integer(unsigned long, Channel_Control_Block_Address, Channel_Control_Block_Address)
 +		ctf_string(Name, Name)
 +		ctf_integer(unsigned int, Source_Address, Source_Address)
 +		ctf_integer(unsigned int, Destination_Address, Destination_Address)
@@ -144,22 +144,22 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Channel_Delete,
 +
-+	TP_PROTO(long Channel_Control_Block_Address,
++	TP_PROTO(unsigned long Channel_Control_Block_Address,
 +		int Status),
 +
 +	TP_ARGS(Channel_Control_Block_Address,
 +		Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, Channel_Control_Block_Address, Channel_Control_Block_Address)
++		ctf_integer(unsigned long, Channel_Control_Block_Address, Channel_Control_Block_Address)
 +		ctf_integer(int, Status, Status)
 +	)
 +)
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Ept_Create,
 +
-+	TP_PROTO(long RPMsg_Control_Block_Address,
-+		long EPT_Control_Block_Address,
++	TP_PROTO(unsigned long RPMsg_Control_Block_Address,
++		unsigned long EPT_Control_Block_Address,
 +		unsigned int Address,
 +		int Status),
 +
@@ -169,8 +169,8 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +		Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
-+		ctf_integer(long, EPT_Control_Block_Address, EPT_Control_Block_Address)
++		ctf_integer(unsigned long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++		ctf_integer(unsigned long, EPT_Control_Block_Address, EPT_Control_Block_Address)
 +		ctf_integer(unsigned int, Address, Address)
 +		ctf_integer(int, Status, Status)
 +	)
@@ -178,21 +178,21 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Ept_Delete,
 +
-+	TP_PROTO(long EPT_Control_Block_Address,
++	TP_PROTO(unsigned long EPT_Control_Block_Address,
 +		int Status),
 +
 +	TP_ARGS(EPT_Control_Block_Address,
 +		Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, EPT_Control_Block_Address, EPT_Control_Block_Address)
++		ctf_integer(unsigned long, EPT_Control_Block_Address, EPT_Control_Block_Address)
 +		ctf_integer(int, Status, Status)
 +	 )
 +)
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Tx_Start,
 +
-+	TP_PROTO(long Channel_Control_Block_Address,
++	TP_PROTO(unsigned long Channel_Control_Block_Address,
 +		unsigned int Source_Address,
 +		unsigned int Destination_Address,
 +		unsigned int Size,
@@ -205,7 +205,7 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +		Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, Channel_Control_Block_Address, Channel_Control_Block_Address)
++		ctf_integer(unsigned long, Channel_Control_Block_Address, Channel_Control_Block_Address)
 +		ctf_integer(unsigned int, Source_Address, Source_Address)
 +		ctf_integer(unsigned int, Destination_Address, Destination_Address)
 +		ctf_integer(unsigned int, Size, Size)
@@ -215,7 +215,7 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Tx_Stop,
 +
-+	TP_PROTO(long Channel_Control_Block_Address,
++	TP_PROTO(unsigned long Channel_Control_Block_Address,
 +		unsigned int Source_Address,
 +		unsigned int Destination_Address,
 +		unsigned int Size,
@@ -228,7 +228,7 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +		Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, Channel_Control_Block_Address, Channel_Control_Block_Address)
++		ctf_integer(unsigned long, Channel_Control_Block_Address, Channel_Control_Block_Address)
 +		ctf_integer(unsigned int, Source_Address, Source_Address)
 +		ctf_integer(unsigned int, Destination_Address, Destination_Address)
 +		ctf_integer(unsigned int, Size, Size)
@@ -238,7 +238,7 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Rx_Start,
 +
-+	TP_PROTO(long RPMsg_Control_Block_Address,
++	TP_PROTO(unsigned long RPMsg_Control_Block_Address,
 +		unsigned int Source_Address,
 +		unsigned int Destination_Address,
 +		unsigned int Size,
@@ -251,7 +251,7 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +		Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++		ctf_integer(unsigned long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
 +		ctf_integer(unsigned int, Source_Address, Source_Address)
 +		ctf_integer(unsigned int, Destination_Address, Destination_Address)
 +		ctf_integer(unsigned int, Size, Size)
@@ -261,7 +261,7 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +LTTNG_TRACEPOINT_EVENT(MEMF_RPMsg_Rx_Stop,
 +
-+	TP_PROTO(long RPMsg_Control_Block_Address,
++	TP_PROTO(unsigned long RPMsg_Control_Block_Address,
 +		unsigned int Source_Address,
 +		unsigned int Destination_Address,
 +		unsigned int Size,
@@ -274,7 +274,7 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +		Status),
 +
 +	TP_FIELDS(
-+		ctf_integer(long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
++		ctf_integer(unsigned long, RPMsg_Control_Block_Address, RPMsg_Control_Block_Address)
 +		ctf_integer(unsigned int, Source_Address, Source_Address)
 +		ctf_integer(unsigned int, Destination_Address, Destination_Address)
 +		ctf_integer(unsigned int, Size, Size)
