@@ -101,7 +101,7 @@ Index: git/probes/Kbuild
 @@ -263,6 +263,7 @@ endif # CONFIG_DYNAMIC_FTRACE
  
  ifneq ($(CONFIG_MEMF),)
-   obj-$(CONFIG_LTTNG) += lttng-probe-memf.o
+   obj-$(CONFIG_LTTNG) += lttng-probe-MEMF.o
 +  obj-$(CONFIG_LTTNG) += lttng-probe-Synchronization.o
  endif # CONFIG_MEMF
  
