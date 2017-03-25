@@ -7,6 +7,7 @@ python () {
                          file://0002-allow-storing-cpu-id-of-remoteproc-for-memf-tracing.patch \
                          file://0003-place-memf-common-tracepoints.patch \
                          file://0001-place-trace-points-to-R5-remoteproc-platform-driver.patch \
-                         file://0001-export-Synchronization_TriggerSend-tracepoint-to-use.patch")
+                         file://0001-export-Synchronization_TriggerSend-tracepoint-to-use.patch \
+                         file://0001-provide-MEMF-tracing-support-using-separate-file.patch")
     return
 }
