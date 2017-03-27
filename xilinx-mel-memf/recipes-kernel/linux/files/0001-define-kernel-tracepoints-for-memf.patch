@@ -1,3 +1,19 @@
+From a974f2b7d38db56b05bc16aa74b44ca160ef40b5 Mon Sep 17 00:00:00 2001
+From: Fahad Arslan <Fahad_Arslan@mentor.com>
+Date: Thu, 23 Jun 2016 14:04:38 +0500
+Subject: [PATCH 1/3] define kernel tracepoints for memf
+
+Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
+---
+ include/trace/events/MEMF.h            | 305 +++++++++++++++++++++++++++++++++
+ include/trace/events/Synchronization.h |  45 +++++
+ 2 files changed, 350 insertions(+)
+ create mode 100644 include/trace/events/MEMF.h
+ create mode 100644 include/trace/events/Synchronization.h
+
+diff --git a/include/trace/events/MEMF.h b/include/trace/events/MEMF.h
+new file mode 100644
+index 0000000..8e01a4a
 --- /dev/null
 +++ b/include/trace/events/MEMF.h
 @@ -0,0 +1,305 @@
@@ -15,7 +31,7 @@
 +    MEMF_Remoteproc_Init,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Control_Block_Address, char* Firmware_Name, unsigned int CPU_ID, int Status),
++    TP_PROTO(unsigned long Control_Block_Address, char* Firmware_Name, unsigned int CPU_ID, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(Control_Block_Address, Firmware_Name, CPU_ID, Status),
@@ -27,11 +43,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "Remoteproc_State" is the event name */
 +    MEMF_Remoteproc_State,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Control_Block_Address, unsigned int State, int Status),
++    TP_PROTO(unsigned long Control_Block_Address, unsigned int State, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(Control_Block_Address, State, Status),
@@ -43,11 +59,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "Remoteproc_DeInit" is the event name */
 +    MEMF_Remoteproc_DeInit,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Control_Block_Address, int Status),
++    TP_PROTO(unsigned long Control_Block_Address, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(Control_Block_Address, Status),
@@ -59,11 +75,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "Remoteproc_Rsc_Init" is the event name */
 +    MEMF_Remoteproc_Rsc_Init,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Control_Block_Address, unsigned int CPU_ID, int Status),
++    TP_PROTO(unsigned long Control_Block_Address, unsigned int CPU_ID, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(Control_Block_Address, CPU_ID, Status),
@@ -75,11 +91,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "Remoteproc_Rsc_Deinit" is the event name */
 +    MEMF_Remoteproc_Rsc_Deinit,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Control_Block_Address, int Status),
++    TP_PROTO(unsigned long Control_Block_Address, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(Control_Block_Address, Status),
@@ -91,11 +107,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "RPMsg_Init" is the event name */
 +    MEMF_RPMsg_Init,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address, unsigned int CPU_ID, unsigned int Role, int Status),
++    TP_PROTO(unsigned long RPMsg_Control_Block_Address, unsigned int CPU_ID, unsigned int Role, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(RPMsg_Control_Block_Address, CPU_ID, Role, Status),
@@ -107,11 +123,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "RPMsg_DeInit" is the event name */
 +    MEMF_RPMsg_DeInit,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address, int Status),
++    TP_PROTO(unsigned long RPMsg_Control_Block_Address, int Status),
 +
 +    /* arguments for this tracepoint */
 +    TP_ARGS(RPMsg_Control_Block_Address, Status),
@@ -123,12 +139,12 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "RPMsg_Channel_Create" is the event name */
 +    MEMF_RPMsg_Channel_Create,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address,
-+                unsigned int Channel_Control_Block_Address,
++    TP_PROTO(unsigned long RPMsg_Control_Block_Address,
++                unsigned long Channel_Control_Block_Address,
 +                char *Name,
 +                unsigned int Source_Address,
 +                unsigned int Destination_Address,
@@ -149,11 +165,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "RPMsg_Channel_Delete" is the event name */
 +    MEMF_RPMsg_Channel_Delete,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Channel_Control_Block_Address,
++    TP_PROTO(unsigned long Channel_Control_Block_Address,
 +                int Status),
 +
 +    /* arguments for this tracepoint */
@@ -167,12 +183,12 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "RPMsg_Ept_Create" is the event name */
 +    MEMF_RPMsg_Ept_Create,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address,
-+                unsigned int EPT_Control_Block_Address,
++    TP_PROTO(unsigned long RPMsg_Control_Block_Address,
++                unsigned long EPT_Control_Block_Address,
 +                unsigned int Address,
 +                int Status),
 +
@@ -189,11 +205,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "RPMsg_Ept_Delete" is the event name */
 +    MEMF_RPMsg_Ept_Delete,
-+ 
++
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int EPT_Control_Block_Address,
++    TP_PROTO(unsigned long EPT_Control_Block_Address,
 +                int Status),
 +
 +    /* arguments for this tracepoint */
@@ -207,11 +223,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "RPMsg_Tx_Start" is the event name */
 +    MEMF_RPMsg_Tx_Start,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Channel_Control_Block_Address,
++    TP_PROTO(unsigned long Channel_Control_Block_Address,
 +                unsigned int Source_Address,
 +                unsigned int Destination_Address,
 +                unsigned int Size,
@@ -231,11 +247,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "RPMsg_Tx_Stop" is the event name */
 +    MEMF_RPMsg_Tx_Stop,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int Channel_Control_Block_Address,
++    TP_PROTO(unsigned long Channel_Control_Block_Address,
 +                unsigned int Source_Address,
 +                unsigned int Destination_Address,
 +                unsigned int Size,
@@ -255,11 +271,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "RPMsg_Rx_Start" is the event name */
 +    MEMF_RPMsg_Rx_Start,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address,
++    TP_PROTO(unsigned long RPMsg_Control_Block_Address,
 +                unsigned int Source_Address,
 +                unsigned int Destination_Address,
 +                unsigned int Size,
@@ -279,11 +295,11 @@
 +);
 +
 +TRACE_EVENT(
-+    /* "MEMF" is the subsystem name, "" is the event name */
++    /* "MEMF" is the subsystem name, "RPMsg_Rx_Stop" is the event name */
 +    MEMF_RPMsg_Rx_Stop,
 +
 +    /* tracepoint function prototype */
-+    TP_PROTO(unsigned int RPMsg_Control_Block_Address,
++    TP_PROTO(unsigned long RPMsg_Control_Block_Address,
 +                unsigned int Source_Address,
 +                unsigned int Destination_Address,
 +                unsigned int Size,
@@ -306,6 +322,9 @@
 +
 +/* this part must be outside protection */
 +#include <trace/define_trace.h>
+diff --git a/include/trace/events/Synchronization.h b/include/trace/events/Synchronization.h
+new file mode 100644
+index 0000000..df160b2
 --- /dev/null
 +++ b/include/trace/events/Synchronization.h
 @@ -0,0 +1,45 @@
@@ -354,3 +373,6 @@
 +
 +/* this part must be outside protection */
 +#include <trace/define_trace.h>
+--
+2.8.1
+

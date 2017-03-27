@@ -212,6 +212,19 @@ Index: git/src/corelib/kernel/qcoreapplication.cpp
      return notifyInternal2(receiver, event);
  }
  
+@@ -991,6 +1009,11 @@ bool QCoreApplication::notifyInternal(QObject *receiver, QEvent *event)
+ */
+ bool QCoreApplication::notifyInternal2(QObject *receiver, QEvent *event)
+ {
++#ifdef ENABLE_SA_TRACE
++    if (event)
++        qt_tracepoint(Qt, qtCoreEvents, event->type());
++#endif // ENABLE_SA_TRACE
++
+     bool selfRequired = QCoreApplicationPrivate::threadRequiresCoreApplication();
+     if (!self && selfRequired)
+         return false;
+
 Index: git/src/gui/gui.pro
 ===================================================================
 --- git.orig/src/gui/gui.pro

@@ -20,7 +20,7 @@ index 3024d04..1019ed7 100644
  	virtio_dev->config	  = &imx6q_rpmsg_virtio_config_ops;
  	virtio_dev->dev.parent  = &(imx6q_rpmsg_p->mid_dev);
  	virtio_dev->dev.release = imx6q_rpmsg_vdev_release;
-+	imx6q_rpmsg_p->master_cpu_id = MASTER_CPU_ID;
++	imx6q_rpmsg_p->master_cpu_id = cpu_id;
 +	virtio_dev->priv	= &(imx6q_rpmsg_p->master_cpu_id);
  
  	/* Register the virtio device. */

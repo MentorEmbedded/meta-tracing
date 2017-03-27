@@ -1,0 +1,268 @@
+From 8ebf248384a7fb9daa84869936ac218d68e36011 Mon Sep 17 00:00:00 2001
+From: Fahad Arslan <Fahad_Arslan@mentor.com>
+Date: Fri, 17 Mar 2017 21:07:49 +0500
+Subject: [PATCH 1/1] place trace points to R5 remoteproc platform driver
+
+Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
+---
+ drivers/remoteproc/zynqmp_r5_remoteproc.c | 53 ++++++++++++++++++++++++++++++-
+ 1 file changed, 52 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/remoteproc/zynqmp_r5_remoteproc.c b/drivers/remoteproc/zynqmp_r5_remoteproc.c
+index 5682747..03d485b 100644
+--- a/drivers/remoteproc/zynqmp_r5_remoteproc.c
++++ b/drivers/remoteproc/zynqmp_r5_remoteproc.c
+@@ -21,6 +21,9 @@
+  * GNU General Public License for more details.
+  */
+ 
++#include <trace/events/MEMF.h>
++#include <trace/events/Synchronization.h>
++
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/err.h>
+@@ -37,6 +40,12 @@
+ 
+ #include "remoteproc_internal.h"
+ 
++#define	       RPROC_SUCCESS            0
++#define	       RPROC_FAILURE            1
++#define	       REMOTEPROC_BOOT          0
++#define	       REMOTEPROC_SHUTDOWN      1
++#define	       REMOTEPROC_ACTIVE        2
++
+ /* define size of scratchpad aread for vring ipi info */
+ #define SCRATCHPAD_SIZE	(4 * 1024)
+ /* define address of TCM in master address space */
+@@ -316,10 +325,17 @@ static void ipi_init(struct zynqmp_r5_rproc_pdata *pdata)
+ static void handle_event(struct zynqmp_r5_rproc_pdata *local)
+ {
+ 	struct ipi_info *ipi = (struct ipi_info *) local->scratchpad_base;
++	static bool initialized = false;
+ 
+ 	if (rproc_vq_interrupt(local->rproc, 0) == IRQ_NONE)
+ 		dev_dbg(&remoteprocdev[local->rpu_id]->dev, \
+ 			"no message found in vqid 0\n");
++	else {
++		if (!initialized) {
++			initialized = true;
++			trace_MEMF_Remoteproc_State(local->rproc, REMOTEPROC_ACTIVE, RPROC_SUCCESS);
++		}
++	}
+ 
+ 	iowrite32(-1, &ipi->reg_read);
+ 
+@@ -372,6 +388,7 @@ static int zynqmp_r5_rproc_start(struct rproc *rproc)
+ 	ret = get_firmware_entry_addr(local, &bootaddr);
+ 	if (ret < 0) {
+ 		dev_err(dev, "%s: failed to get RPU boot addr.\n", __func__);
++		trace_MEMF_Remoteproc_State(rproc, REMOTEPROC_BOOT, RPROC_FAILURE);
+ 		return ret;
+ 	}
+ #if 0
+@@ -403,6 +420,7 @@ static int zynqmp_r5_rproc_start(struct rproc *rproc)
+ 	r5_halt(local, false);
+ 
+ 	ipi_init(local);
++	trace_MEMF_Remoteproc_State(rproc, REMOTEPROC_BOOT, RPROC_SUCCESS);
+ 	return 0;
+ }
+ 
+@@ -413,6 +431,7 @@ static void zynqmp_r5_rproc_kick(struct rproc *rproc, int vqid)
+ 	struct platform_device *pdev = to_platform_device(dev);
+ 	struct zynqmp_r5_rproc_pdata *local = platform_get_drvdata(pdev);
+ 	struct ipi_info *ipi = (struct ipi_info *) local->scratchpad_base;
++	static bool initialized = false;
+ 
+ 	dev_dbg(dev, "KICK Firmware to start send messages vqid %d\n", vqid);
+ 
+@@ -432,6 +451,11 @@ static void zynqmp_r5_rproc_kick(struct rproc *rproc, int vqid)
+ 	 * Currently vqid is not used because we only got one.
+ 	 */
+ 	reg_write(local->ipi_base, TRIG_OFFSET, local->ipi_dest_mask);
++
++	if (!initialized) {
++		initialized = true;
++		trace_Synchronization_TriggerSend(100, 0, "Trigger");
++	}
+ }
+ 
+ /* power off the remote processor */
+@@ -448,6 +472,9 @@ static int zynqmp_r5_rproc_stop(struct rproc *rproc)
+ 
+ 	reg_write(local->ipi_base, IDR_OFFSET, local->ipi_dest_mask);
+ 	reg_write(local->ipi_base, ISR_OFFSET, local->ipi_dest_mask);
++
++	trace_MEMF_Remoteproc_State(rproc, REMOTEPROC_SHUTDOWN, RPROC_SUCCESS);
++
+ 	return 0;
+ }
+ 
+@@ -508,8 +535,10 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 
+ 	local = devm_kzalloc(&pdev->dev, sizeof(struct zynqmp_r5_rproc_pdata),
+ 				 GFP_KERNEL);
+-	if (!local)
++	if (!local) {
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+ 		return -ENOMEM;
++	}
+ 
+ 	platform_set_drvdata(pdev, local);
+ 
+@@ -517,6 +546,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "remote_mem");
+ 	if (!res) {
+ 		dev_err(&pdev->dev, "invalid address\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+ 		return -ENODEV;
+ 	}
+ 
+@@ -532,6 +562,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 		DMA_MEMORY_MAP);
+ 	if (!ret) {
+ 		dev_err(&pdev->dev, "dma_declare_coherent_memory failed\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+ 		ret = -ENOMEM;
+ 		goto dma_fault;
+ 	}
+@@ -540,6 +571,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	ret = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(32));
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "dma_set_coherent_mask: %d\n", ret);
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+ 		goto dma_mask_fault;
+ 	}
+ 
+@@ -551,6 +583,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 
+ 	if (IS_ERR(local->scratchpad_base)) {
+ 		dev_err(&pdev->dev, "Unable to map scratchpad I/O memory\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+ 		ret = PTR_ERR(local->scratchpad_base);
+ 		goto dma_mask_fault;
+ 	}
+@@ -580,6 +613,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 		dev_err(&pdev->dev, "Invalid core_conf mode provided - %s , %d\n",
+ 			prop, local->rpu_mode);
+ 		ret = -EINVAL;
++		trace_MEMF_Remoteproc_Init(NULL, NULL, NULL, RPROC_FAILURE);
+ 		goto dma_mask_fault;
+ 	}
+ 
+@@ -596,6 +630,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	r5_regs_node = of_find_compatible_node(NULL, NULL, "rpu-registers");
+ 	if(!r5_regs_node) {
+ 		dev_err(&pdev->dev, "Unable to get rpu registers node\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, local->rpu_id, RPROC_FAILURE);
+ 		ret = -ENODEV;
+ 		goto dma_mask_fault;
+ 	}
+@@ -603,6 +638,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	ret = of_address_to_resource(r5_regs_node, 0, &r5_reg_res);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "Unable to get RPU I/O memory\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, local->rpu_id, RPROC_FAILURE);
+ 		goto dma_mask_fault;
+ 	}
+ 
+@@ -611,6 +647,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	local->rpu_base = devm_ioremap(&pdev->dev, r5_reg_res.start, resource_size(&r5_reg_res));
+ 	if (IS_ERR(local->rpu_base)) {
+ 		dev_err(&pdev->dev, "Unable to map RPU I/O memory\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, local->rpu_id, RPROC_FAILURE);
+ 		ret = PTR_ERR(local->rpu_base);
+ 		goto dma_mask_fault;
+ 	}
+@@ -618,6 +655,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	ret = of_address_to_resource(r5_regs_node, 1, &r5_reg_res);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "Unable to get CRL_APB I/O memory\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, local->rpu_id, RPROC_FAILURE);
+ 		goto dma_mask_fault;
+ 	}
+ 
+@@ -626,6 +664,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	local->crl_apb_base = devm_ioremap(&pdev->dev, r5_reg_res.start, resource_size(&r5_reg_res));
+ 	if (IS_ERR(local->crl_apb_base)) {
+ 		dev_err(&pdev->dev, "Unable to map CRL_APB I/O memory\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, local->rpu_id, RPROC_FAILURE);
+ 		ret = PTR_ERR(local->crl_apb_base);
+ 		goto dma_mask_fault;
+ 	}
+@@ -633,6 +672,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	ret = of_address_to_resource(r5_regs_node, 2, &r5_reg_res);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "Unable to get IPI I/O memory\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, local->rpu_id, RPROC_FAILURE);
+ 		goto dma_mask_fault;
+ 	}
+ 
+@@ -641,6 +681,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	local->ipi_base = devm_ioremap(&pdev->dev, r5_reg_res.start, resource_size(&r5_reg_res));
+ 	if (IS_ERR(local->ipi_base)) {
+ 		pr_err("%s: Unable to map IPI\n", __func__);
++		trace_MEMF_Remoteproc_Init(NULL, NULL, local->rpu_id, RPROC_FAILURE);
+ 		ret = PTR_ERR(local->ipi_base);
+ 		goto dma_mask_fault;
+ 	}
+@@ -650,6 +691,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	local->tcm_base = devm_ioremap_nocache(&pdev->dev, TCM_BASE, TCM_SIZE);
+ 	if (IS_ERR(local->tcm_base)) {
+ 		dev_err(&pdev->dev, "Unable to map TCM memory\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, local->rpu_id, RPROC_FAILURE);
+ 		ret = PTR_ERR(local->tcm_base);
+ 		goto dma_mask_fault;
+ 	}
+@@ -659,6 +701,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	if (local->vring0 < 0) {
+ 		ret = local->vring0;
+ 		dev_err(&pdev->dev, "unable to find IPI IRQ\n");
++		trace_MEMF_Remoteproc_Init(NULL, NULL, local->rpu_id, RPROC_FAILURE);
+ 		goto dma_mask_fault;
+ 	}
+ 	ret = devm_request_irq(&pdev->dev, local->vring0,
+@@ -667,6 +710,7 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "IRQ %d already allocated\n",
+ 			local->vring0);
++		trace_MEMF_Remoteproc_Init(NULL, NULL, local->rpu_id, RPROC_FAILURE);
+ 		goto dma_mask_fault;
+ 	}
+ 	dev_dbg(&pdev->dev, "vring0 irq: %d\n", local->vring0);
+@@ -683,17 +727,22 @@ static int zynqmp_r5_remoteproc_probe(struct platform_device *pdev)
+ 	local->rproc = rproc_alloc(&pdev->dev, dev_name(&pdev->dev),
+ 		&zynqmp_r5_rproc_ops, rproc_firmware, sizeof(struct rproc));
+ 	if (!local->rproc) {
++		trace_MEMF_Remoteproc_Init(NULL, rproc_firmware, local->rpu_id, RPROC_FAILURE);
+ 		dev_err(&pdev->dev, "rproc allocation failed\n");
+ 		goto rproc_fault;
+ 	}
+ 
+ 	zynqmp_r5_rproc_init(local->rproc);
++
++	local->rproc->cpu = local->rpu_id;
+ 	ret = rproc_add(local->rproc);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "rproc registration failed\n");
++		trace_MEMF_Remoteproc_Init(local->rproc, rproc_firmware, local->rpu_id, RPROC_FAILURE);
+ 		goto rproc_fault;
+ 	}
+ 
++	trace_MEMF_Remoteproc_Init(local->rproc, rproc_firmware, local->rpu_id, RPROC_SUCCESS);
+ 	return ret;
+ 
+ rproc_fault:
+@@ -712,6 +761,8 @@ static int zynqmp_r5_remoteproc_remove(struct platform_device *pdev)
+ 
+ 	dev_info(&pdev->dev, "%s\n", __func__);
+ 
++	trace_MEMF_Remoteproc_DeInit(local->rproc, RPROC_SUCCESS);
++
+ 	rproc_del(local->rproc);
+ 	rproc_put(local->rproc);
+ 
+-- 
+2.8.1
+
