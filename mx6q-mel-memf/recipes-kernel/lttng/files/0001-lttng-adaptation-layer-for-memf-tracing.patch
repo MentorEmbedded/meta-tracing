@@ -7,10 +7,10 @@ Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
 ---
  instrumentation/events/lttng-module/MEMF.h |  268 ++++++++++++++++++++++++++++
  probes/Makefile                            |    3 +
- probes/lttng-probe-MEMF.c                  |   24 ++
+ probes/lttng-probe-memf.c                  |   24 ++
  3 files changed, 478 insertions(+)
  create mode 100644 instrumentation/events/lttng-module/MEMF.h
- create mode 100644 probes/lttng-probe-MEMF.c
+ create mode 100644 probes/lttng-probe-memf.c
 
 Index: git/instrumentation/events/lttng-module/MEMF.h
 ===================================================================
@@ -285,10 +285,10 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +
 +/* This part must be outside protection */
 +#include "../../../probes/define_trace.h"
-Index: git/probes/lttng-probe-MEMF.c
+Index: git/probes/lttng-probe-memf.c
 ===================================================================
 --- /dev/null
-+++ git/probes/lttng-probe-MEMF.c
++++ git/probes/lttng-probe-memf.c
 @@ -0,0 +1,24 @@
 +#include <linux/module.h>
 +#include "../lttng-tracer.h"
@@ -323,7 +323,7 @@ Index: git/probes/Kbuild
  endif # CONFIG_DYNAMIC_FTRACE
  
 +ifneq ($(CONFIG_MEMF),)
-+  obj-$(CONFIG_LTTNG) += lttng-probe-MEMF.o
++  obj-$(CONFIG_LTTNG) += lttng-probe-memf.o
 +endif # CONFIG_MEMF
 +
  # vim:syntax=make
