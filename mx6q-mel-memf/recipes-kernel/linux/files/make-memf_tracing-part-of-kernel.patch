@@ -1,0 +1,23 @@
+From 2265c8563a76f98a884cf20505519daea59b7eb4 Mon Sep 17 00:00:00 2001
+From: Abdur Rehman <abdur_rehman@mentor.com>
+Date: Wed, 29 Mar 2017 00:06:36 +0500
+Subject: [PATCH 1/1] make memf_tracing part of kernel
+
+Signed-off-by: Abdur Rehman <abdur_rehman@mentor.com>
+---
+ arch/arm/mach-imx/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-imx/Makefile b/arch/arm/mach-imx/Makefile
+index d973b16..7cecfbb 100644
+--- a/arch/arm/mach-imx/Makefile
++++ b/arch/arm/mach-imx/Makefile
+@@ -1,4 +1,4 @@
+-obj-y := time.o cpu.o system.o irq-common.o common.o
++obj-y := time.o cpu.o system.o irq-common.o common.o memf_tracing.o
+ 
+ obj-$(CONFIG_SOC_IMX1) += clk-imx1.o mm-imx1.o
+ obj-$(CONFIG_SOC_IMX21) += clk-imx21.o mm-imx21.o
+-- 
+2.8.1
+
