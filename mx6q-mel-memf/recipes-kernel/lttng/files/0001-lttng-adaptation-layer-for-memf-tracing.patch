@@ -20,8 +20,8 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +#undef TRACE_SYSTEM
 +#define TRACE_SYSTEM MEMF 
 +
-+#if !defined(LTTNG_TRACE_MEMF_H) || defined(TRACE_HEADER_MULTI_READ)
-+#define LTTNG_TRACE_MEMF_H
++#if !defined(_LTTNG_MEMF_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _LTTNG_MEMF_H
 +
 +#include "../../../probes/lttng-tracepoint-event.h"
 +#include <linux/tracepoint.h>
@@ -78,7 +78,7 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +	)
 +)
 +
-+LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_Rsc_DeInit,
++LTTNG_TRACEPOINT_EVENT(MEMF_Remoteproc_Rsc_Deinit,
 +
 +        TP_PROTO(unsigned int Control_Block_Address, int Status),
 +
@@ -281,7 +281,7 @@ Index: git/instrumentation/events/lttng-module/MEMF.h
 +		ctf_integer(int, Status, Status)
 +	)
 +)
-+#endif /* LTTNG_TRACE_MEMF_H */
++#endif /* LTTNG_MEMF_H */
 +
 +/* This part must be outside protection */
 +#include "../../../probes/define_trace.h"
@@ -307,7 +307,7 @@ Index: git/probes/lttng-probe-memf.c
 +
 +MODULE_LICENSE("GPL and additional rights");
 +MODULE_AUTHOR("Fahad Arslan <fahad_arslan@mentor.com>");
-+MODULE_DESCRIPTION("LTTng memf probes");
++MODULE_DESCRIPTION("LTTng MEMF probes");
 +MODULE_VERSION(__stringify(LTTNG_MODULES_MAJOR_VERSION) "."
 +    __stringify(LTTNG_MODULES_MINOR_VERSION) "."
 +    __stringify(LTTNG_MODULES_PATCHLEVEL_VERSION)

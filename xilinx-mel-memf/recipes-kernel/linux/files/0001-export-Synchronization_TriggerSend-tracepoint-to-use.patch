@@ -1,0 +1,27 @@
+From 85dcb8e65df4fdbf821d006bfa58fc873c08cee6 Mon Sep 17 00:00:00 2001
+From: Fahad Arslan <Fahad_Arslan@mentor.com>
+Date: Fri, 17 Mar 2017 21:39:45 +0500
+Subject: [PATCH 1/1] export Synchronization_TriggerSend tracepoint to use in
+ other modules
+
+Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
+---
+ drivers/remoteproc/zynqmp_a53_remoteproc.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/remoteproc/zynqmp_a53_remoteproc.c b/drivers/remoteproc/zynqmp_a53_remoteproc.c
+index f104fe3..e7e2681 100644
+--- a/drivers/remoteproc/zynqmp_a53_remoteproc.c
++++ b/drivers/remoteproc/zynqmp_a53_remoteproc.c
+@@ -29,6 +29,8 @@
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/Synchronization.h>
+ 
++EXPORT_TRACEPOINT_SYMBOL(Synchronization_TriggerSend);
++
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/err.h>
+-- 
+2.8.1
+
