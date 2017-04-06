@@ -1,0 +1,53 @@
+From 54d8878a641e8787274f9500e5d828409fb4ebe3 Mon Sep 17 00:00:00 2001
+From: Fahad Arslan <Fahad_Arslan@mentor.com>
+Date: Thu, 6 Apr 2017 19:40:30 +0500
+Subject: [PATCH 1/1] use correct type to log trace event
+
+Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
+---
+ drivers/rpmsg/virtio_rpmsg_bus.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/rpmsg/virtio_rpmsg_bus.c b/drivers/rpmsg/virtio_rpmsg_bus.c
+index 8ea44f6..65208bb 100644
+--- a/drivers/rpmsg/virtio_rpmsg_bus.c
++++ b/drivers/rpmsg/virtio_rpmsg_bus.c
+@@ -1731,7 +1731,7 @@ static int rpmsg_probe(struct virtio_device *vdev)
+ 	/* We expect two virtqueues, rx and tx (and in this order) */
+ 	err = vdev->config->find_vqs(vdev, 2, vqs, vq_cbs, names);
+ 	if (err) {
+-		trace_MEMF_RPMsg_Init((unsigned int)vrp, remote_cpu_id,
++		trace_MEMF_RPMsg_Init(vrp, remote_cpu_id,
+ 			RPROC_REMOTE, RPMSG_FAILURE);
+ 		goto free_vrp;
+ 	}
+@@ -1757,7 +1757,7 @@ static int rpmsg_probe(struct virtio_device *vdev)
+ 				     GFP_KERNEL);
+ 	if (!bufs_va) {
+ 		err = -ENOMEM;
+-		trace_MEMF_RPMsg_Init((unsigned int)vrp, remote_cpu_id,
++		trace_MEMF_RPMsg_Init(vrp, remote_cpu_id,
+ 			RPROC_REMOTE, RPMSG_FAILURE);
+ 		goto vqs_del;
+ 	}
+@@ -1832,7 +1832,7 @@ static int rpmsg_probe(struct virtio_device *vdev)
+ 						vrp, RPMSG_NS_ADDR);
+ 		if (!vrp->ns_ept) {
+ 			dev_err(&vdev->dev, "failed to create the ns ept\n");
+-			trace_MEMF_RPMsg_Init((unsigned int)vrp, remote_cpu_id,
++			trace_MEMF_RPMsg_Init(vrp, remote_cpu_id,
+ 				RPROC_REMOTE, RPMSG_FAILURE);
+ 			err = -ENOMEM;
+ 			goto free_coherent;
+@@ -1854,7 +1854,7 @@ static int rpmsg_probe(struct virtio_device *vdev)
+ 	 * doing notify, not a full kick here, so that's ok.
+ 	 */
+ 	if (notify) {
+-		trace_MEMF_RPMsg_Init((unsigned int)vrp, remote_cpu_id, RPROC_REMOTE, RPMSG_SUCCESS);
++		trace_MEMF_RPMsg_Init(vrp, remote_cpu_id, RPROC_REMOTE, RPMSG_SUCCESS);
+ 		virtqueue_notify(vrp->rvq);
+ 	}
+ 
+-- 
+2.8.1
+
