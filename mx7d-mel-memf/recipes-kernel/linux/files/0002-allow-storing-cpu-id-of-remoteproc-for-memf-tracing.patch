@@ -1,0 +1,49 @@
+From b24636f1547bb63491590e92a3ff0a82ce7ef7c4 Mon Sep 17 00:00:00 2001
+From: Abdul Karim <HafizAbdul_Karim@mentor.com>
+Date: Tue, 12 Sept, 2017 23:12:06 +0500
+Subject: [PATCH 2/3] allow storing cpu id of remoteproc for memf tracing
+
+Signed-off-by: Abdul Karim <HafizAbdul_Karim@mentor.com>
+
+---
+ drivers/remoteproc/remoteproc_virtio.c | 3 +++
+ include/linux/remoteproc.h             | 2 ++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/drivers/remoteproc/remoteproc_virtio.c b/drivers/remoteproc/remoteproc_virtio.c
+index e1a1023..20ea8fe 100644
+--- a/drivers/remoteproc/remoteproc_virtio.c
++++ b/drivers/remoteproc/remoteproc_virtio.c
+@@ -338,6 +338,9 @@ int rproc_add_virtio_dev(struct rproc_vdev *rvdev, int id)
+	 */
+	get_device(&rproc->dev);
+
++	/* store cpu id of remote proc to pass it to rpmsg framework */
++	vdev->priv = &rproc->cpu;
++
+	ret = register_virtio_device(vdev);
+	if (ret) {
+		put_device(&rproc->dev);
+diff --git a/include/linux/remoteproc.h b/include/linux/remoteproc.h
+index 78b8a9b..d52c85d 100644
+--- a/include/linux/remoteproc.h
++++ b/include/linux/remoteproc.h
+@@ -405,6 +405,7 @@ enum rproc_crash_type {
+  * @cached_table: copy of the resource table
+  * @table_csum: checksum of the resource table
+  * @has_iommu: flag to indicate if remote processor is behind an MMU
++ * @cpu: cpu id for remote firmware
+  */
+ struct rproc {
+	struct klist_node node;
+@@ -437,6 +438,7 @@ struct rproc {
+	struct resource_table *cached_table;
+	u32 table_csum;
+	bool has_iommu;
++	u32 cpu;
+ };
+
+ /* we currently support only two vrings per rvdev */
+--
+2.8.1
+
