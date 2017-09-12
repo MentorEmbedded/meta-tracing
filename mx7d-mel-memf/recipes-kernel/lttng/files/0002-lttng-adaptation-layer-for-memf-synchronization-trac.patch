@@ -1,0 +1,111 @@
+From 3ff4f13178307d909820d0ce3c7d82af0e606566 Mon Sep 17 00:00:00 2001
+From: Fahad Arslan <Fahad_Arslan@mentor.com>
+Date: Thu, 23 Jun 2016 12:52:51 +0500
+Subject: [PATCH 2/2] lttng adaptation layer for memf synchronization
+ tracepoints
+
+Signed-off-by: Fahad Arslan <Fahad_Arslan@mentor.com>
+---
+ .../events/lttng-module/Synchronization.h          | 51 ++++++++++++++++++++++
+ probes/Makefile                                    |  1 +
+ probes/lttng-probe-Synchronization.c               | 23 ++++++++++
+ 3 files changed, 75 insertions(+)
+ create mode 100644 instrumentation/events/lttng-module/Synchronization.h
+ create mode 100644 probes/lttng-probe-Synchronization.c
+
+Index: git/instrumentation/events/lttng-module/Synchronization.h
+===================================================================
+--- /dev/null
++++ git/instrumentation/events/lttng-module/Synchronization.h
+@@ -0,0 +1,51 @@
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM Synchronization
++
++#if !defined(_LTTNG_SYNCHRONIZATION_H) || defined(TRACE_HEADER_MULTI_READ)
++#define _LTTNG_SYNCHRONIZATION_H
++
++#include "../../../probes/lttng-tracepoint-event.h"
++#include <linux/tracepoint.h>
++
++LTTNG_TRACEPOINT_EVENT(
++    /* format identical to mainline version for those */
++    /* "Synchronization" is the subsystem name, "TriggerSend" is the event name */
++    Synchronization_TriggerSend,
++
++    /* tracepoint function prototype */
++    TP_PROTO(unsigned int Priority, unsigned int CorrelationId, const char *Name),
++
++    /* arguments for this tracepoint */
++    TP_ARGS(Priority, CorrelationId, Name),
++
++    /* notice the use of ctf_integer()/tp_strcpy() and no semicolons */
++    TP_FIELDS(
++        ctf_integer(unsigned int, Priority, Priority)
++        ctf_integer(unsigned int, CorrelationId, CorrelationId)
++        ctf_string(Name, Name)
++    )
++)
++
++LTTNG_TRACEPOINT_EVENT(
++    /* format identical to mainline version for those */
++    /* "Synchronization" is the subsystem name, "TriggerReceive" is the event name */
++    Synchronization_TriggerReceive,
++
++    /* tracepoint function prototype */
++    TP_PROTO(unsigned int Priority, unsigned int CorrelationId, const char *Name),
++
++    /* arguments for this tracepoint */
++    TP_ARGS(Priority, CorrelationId, Name),
++
++    /* notice the use of ctf_integer()/tp_strcpy() and no semicolons */
++    TP_FIELDS(
++        ctf_integer(unsigned int, Priority, Priority)
++        ctf_integer(unsigned int, CorrelationId, CorrelationId)
++        ctf_string(Name, Name)
++    )
++)
++
++#endif /* !defined(_LTTNG_SYNCHRONIZATION_H) || defined(TRACE_HEADER_MULTI_READ) */
++
++/* other difference: do NOT include <trace/define_trace.h> */
++#include "../../../probes/define_trace.h"
+Index: git/probes/lttng-probe-Synchronization.c
+===================================================================
+--- /dev/null
++++ git/probes/lttng-probe-Synchronization.c
+@@ -0,0 +1,23 @@
++#include <linux/module.h>
++#include "../lttng-tracer.h"
++
++/*
++ * Build-time verification of mismatch between mainline TRACE_EVENT()
++ * arguments and LTTng adaptation layer LTTNG_TRACEPOINT_EVENT() arguments.
++ */
++#include <trace/events/Synchronization.h>
++
++/* create LTTng tracepoint probes */
++#define LTTNG_PACKAGE_BUILD
++#define CREATE_TRACE_POINTS
++#define TRACE_INCLUDE_PATH ../instrumentation/events/lttng-module
++
++#include "../instrumentation/events/lttng-module/Synchronization.h"
++
++MODULE_LICENSE("GPL and additional rights");
++MODULE_AUTHOR("Abdur Rehman <abdur_rehman@mentor.com>");
++MODULE_DESCRIPTION("LTTng Synchronization probes");
++MODULE_VERSION(__stringify(LTTNG_MODULES_MAJOR_VERSION) "."
++    __stringify(LTTNG_MODULES_MINOR_VERSION) "."
++    __stringify(LTTNG_MODULES_PATCHLEVEL_VERSION)
++    LTTNG_MODULES_EXTRAVERSION);
+Index: git/probes/Kbuild
+===================================================================
+--- git.orig/probes/Kbuild
++++ git/probes/Kbuild
+@@ -263,6 +263,7 @@ endif # CONFIG_DYNAMIC_FTRACE
+ 
+ ifneq ($(CONFIG_MEMF),)
+   obj-$(CONFIG_LTTNG) += lttng-probe-memf.o
++  obj-$(CONFIG_LTTNG) += lttng-probe-Synchronization.o
+ endif # CONFIG_MEMF
+ 
+ # vim:syntax=make
