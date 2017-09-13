@@ -1,5 +1,5 @@
---- a/drivers/rpmsg/virtio_rpmsg_bus.c
-+++ b/drivers/rpmsg/virtio_rpmsg_bus.c
+--- a/drivers/rpmsg/virtio_rpmsg_bus.c	2017-09-11 22:28:09.072347273 +0500
++++ b/drivers/rpmsg/virtio_rpmsg_bus.c	2017-09-13 13:29:29.176454106 +0500
 @@ -17,6 +17,15 @@
   * GNU General Public License for more details.
   */
@@ -91,7 +91,25 @@
  		return NULL;
  	}
  
-@@ -562,8 +596,12 @@
+@@ -545,9 +579,17 @@
+ 	if (ret) {
+ 		dev_err(dev, "device_register failed: %d\n", ret);
+ 		put_device(&rpdev->dev);
++               trace_MEMF_RPMsg_Channel_Create(vrp, rpdev, rpdev->id.name,
++                       rpdev->src, rpdev->dst, RPMSG_FAILURE);
++
++
+ 		return NULL;
+ 	}
+ 
++       trace_MEMF_RPMsg_Channel_Create(vrp, rpdev, rpdev->id.name,
++               rpdev->src, rpdev->dst, ret);
++
++
+ 	return rpdev;
+ }
+ 
+@@ -562,8 +604,12 @@
  	struct device *dev;
  
  	dev = device_find_child(&vdev->dev, chinfo, rpmsg_channel_match);
@@ -106,7 +124,7 @@
  
  	device_unregister(dev);
  
-@@ -1027,6 +1065,7 @@
+@@ -1027,6 +1073,7 @@
  	print_hex_dump(KERN_DEBUG, "rpmsg_virtio RX: ", DUMP_PREFIX_NONE, 16, 1,
  					msg, sizeof(*msg) + msg->len, true);
  #endif
@@ -114,7 +132,7 @@
  
  	/* use the dst addr to fetch the callback of the appropriate user */
  	mutex_lock(&vrp->endpoints_lock);
-@@ -1065,6 +1104,7 @@
+@@ -1065,6 +1112,7 @@
  		__rpmsg_deinit_rx_buf(vrp->rvq, rxb);
  		rpmsg_dealloc(rxb);
  	}
@@ -122,7 +140,7 @@
  
          return 0;
  }
-@@ -1128,6 +1168,7 @@
+@@ -1128,6 +1176,7 @@
  
  	/* bcasting isn't allowed */
  	if (src == RPMSG_ADDR_ANY || dst == RPMSG_ADDR_ANY) {
@@ -130,7 +148,7 @@
  		dev_err(dev, "invalid addr (src 0x%x, dst 0x%x)\n", src, dst);
  		return -EINVAL;
  	}
-@@ -1147,6 +1188,8 @@
+@@ -1147,6 +1196,8 @@
  
  		if (ret && !wait) {
  			dev_err(dev, "Failed to create rpmsg tx buffer\n");
@@ -139,7 +157,7 @@
  			return -ENOMEM;
  		}
  
-@@ -1171,12 +1214,15 @@
+@@ -1171,12 +1222,15 @@
  			/* timeout ? */
  			if (!err) {
  				dev_err(dev, "timeout waiting for a tx buffer\n");
@@ -155,7 +173,7 @@
  	/* Initialize scatterlist which will hold physical addresses of buffers to transmit */
  	sg_init_table(sgl, tx_buf->buffer_count);
  
-@@ -1193,7 +1239,9 @@
+@@ -1193,7 +1247,9 @@
  
  	if (!rp_hdr) {
  		dev_err(dev, "Unable to get rpmsg header buffer\n");
@@ -165,7 +183,7 @@
  	}
  
  	rp_hdr->len = len;
-@@ -1250,11 +1298,15 @@
+@@ -1250,11 +1306,15 @@
  		 * this will wait for a buffer management overhaul.
  		 */
  		dev_err(dev, "virtqueue_add_outbuf failed: %d\n", err);
@@ -181,7 +199,7 @@
  out:
  	/* free-up the rpmsg tx buffer */
  	if (!zc) {
-@@ -1314,7 +1366,9 @@
+@@ -1314,7 +1374,9 @@
  
  	/* bcasting isn't allowed */
  	if (src == RPMSG_ADDR_ANY || dst == RPMSG_ADDR_ANY) {
@@ -192,7 +210,7 @@
  		return -EINVAL;
  	}
  
-@@ -1329,8 +1383,11 @@
+@@ -1329,8 +1391,11 @@
  	 */
  	if (len > RPMSG_BUF_SIZE - sizeof(struct rpmsg_hdr)) {
  		dev_err(dev, "message is too big (%d)\n", len);
@@ -204,7 +222,7 @@
  
  	/* grab a buffer */
  #ifdef CONFIG_MEMF
-@@ -1339,8 +1396,11 @@
+@@ -1339,8 +1404,11 @@
  	msg = get_a_tx_buf(vrp);
  
  #endif
@@ -218,7 +236,7 @@
  
  	/* no free buffer ? wait for one (but bail after 15 seconds) */
  	while (!msg) {
-@@ -1367,6 +1427,8 @@
+@@ -1367,6 +1435,8 @@
  		/* timeout ? */
  		if (!err) {
  			dev_err(dev, "timeout waiting for a tx buffer\n");
@@ -227,7 +245,7 @@
  			return -ERESTARTSYS;
  		}
  	}
-@@ -1409,11 +1471,15 @@
+@@ -1409,11 +1479,15 @@
  		 * this will wait for a buffer management overhaul.
  		 */
  		dev_err(dev, "virtqueue_add_outbuf failed: %d\n", err);
@@ -243,7 +261,7 @@
  out:
  	mutex_unlock(&vrp->tx_lock);
  	return err;
-@@ -1624,10 +1690,19 @@
+@@ -1624,10 +1698,19 @@
  	bool notify;
  	void *cookie[1];
  	struct shmem_buffer *buffer;
@@ -265,7 +283,7 @@
  
  	vrp->vdev = vdev;
  
-@@ -1638,8 +1713,12 @@
+@@ -1638,8 +1721,12 @@
  
  	/* We expect two virtqueues, rx and tx (and in this order) */
  	err = vdev->config->find_vqs(vdev, 2, vqs, vq_cbs, names);
@@ -280,7 +298,7 @@
  
  	vrp->rvq = vqs[0];
  	vrp->svq = vqs[1];
-@@ -1662,6 +1741,8 @@
+@@ -1662,6 +1749,8 @@
  				     GFP_KERNEL);
  	if (!bufs_va) {
  		err = -ENOMEM;
@@ -289,7 +307,7 @@
  		goto vqs_del;
  	}
  
-@@ -1754,8 +1835,12 @@
+@@ -1754,8 +1843,12 @@
  	 * this might be concurrent with callbacks, but we are only
  	 * doing notify, not a full kick here, so that's ok.
  	 */
@@ -304,7 +322,7 @@
  
  	dev_info(&vdev->dev, "rpmsg host is online\n");
  
-@@ -1788,6 +1873,9 @@
+@@ -1788,6 +1881,9 @@
  	if (ret)
  		dev_warn(&vdev->dev, "can't remove rpmsg device: %d\n", ret);
  
