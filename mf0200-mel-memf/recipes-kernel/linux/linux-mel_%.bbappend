@@ -10,12 +10,9 @@ python () {
 				 file://0002-make-memf_tracing-part-of-kernel.patch \
 				 file://0003-place-memf-remote-tracepoints.patch \
 				 file://0004-store-cpu-id-rpmsg-platform-driver.patch \
-				 file://0005-do-not-create-tracepoints-in-rpmsg_imx6q-driver.patch \
-				 file://0006-use-smp_processor_id-instead-of-using-hardcoded-cpu.patch \
 				 file://0007-place-memf-common-tracepoints.patch \
 				 file://0008-add-traces-to-rpmsg_send_offchannel_raw_large.patch \
 				 file://0009-create-and-export-tracepoints-in-memf_tracing.patch \
-				 file://0010-do-not-create-or-export-tracepoints-in-virtio_rpmsg_.patch \
 				 file://0011-store_cpu_id_of_remoteproc.patch")
 }
 

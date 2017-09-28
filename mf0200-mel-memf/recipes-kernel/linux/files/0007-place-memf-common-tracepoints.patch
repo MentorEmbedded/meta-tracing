@@ -1,34 +1,27 @@
-From 9c86b8aa8c83d80b6ab6f8cca7667b234338ff6e Mon Sep 17 00:00:00 2001
+From 026468f321e14f34361d63ce4b403501ff7fd281 Mon Sep 17 00:00:00 2001
 From: AbdulKarim <HafizAbdul_Karim@mentor.com>
-Date: Thu, 14 Sep 2017 22:43:09 +0500
+Date: Thu, 28 Sep 2017 19:23:22 +0500
 Subject: [PATCH 1/1] place-memf-common-tracepoints
 
 Signed-off-by: AbdulKarim <HafizAbdul_Karim@mentor.com>
 ---
- drivers/rpmsg/virtio_rpmsg_bus.c | 77 +++++++++++++++++++++++++++++++++++++---
- 1 file changed, 72 insertions(+), 5 deletions(-)
+ drivers/rpmsg/virtio_rpmsg_bus.c | 70 +++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 65 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/rpmsg/virtio_rpmsg_bus.c b/drivers/rpmsg/virtio_rpmsg_bus.c
-index 5fffd07..2486d9e 100644
+index 5fffd07..1c8e202 100644
 --- a/drivers/rpmsg/virtio_rpmsg_bus.c
 +++ b/drivers/rpmsg/virtio_rpmsg_bus.c
-@@ -17,6 +17,15 @@
+@@ -17,6 +17,8 @@
   * GNU General Public License for more details.
   */
  
-+#define CREATE_TRACE_POINTS
 +#include <trace/events/MEMF.h>
-+
-+EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Init);
-+EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_DeInit);
-+EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_State);
-+EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Rsc_Init);
-+EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Rsc_Deinit);
 +
  #define pr_fmt(fmt) "%s: " fmt, __func__
  
  #include <linux/kernel.h>
-@@ -35,6 +44,11 @@
+@@ -35,6 +37,11 @@
  #include <linux/mutex.h>
  #include <linux/delay.h>
  
@@ -40,7 +33,7 @@ index 5fffd07..2486d9e 100644
  /**
   * struct virtproc_info - virtual remote processor state
   * @vdev:	the virtio device
-@@ -226,6 +240,7 @@ static struct rpmsg_endpoint *__rpmsg_create_ept(struct virtproc_info *vrp,
+@@ -226,6 +233,7 @@ static struct rpmsg_endpoint *__rpmsg_create_ept(struct virtproc_info *vrp,
  	ept = kzalloc(sizeof(*ept), GFP_KERNEL);
  	if (!ept) {
  		dev_err(dev, "failed to kzalloc a new ept\n");
@@ -48,7 +41,7 @@ index 5fffd07..2486d9e 100644
  		return NULL;
  	}
  
-@@ -251,6 +266,7 @@ static struct rpmsg_endpoint *__rpmsg_create_ept(struct virtproc_info *vrp,
+@@ -251,6 +259,7 @@ static struct rpmsg_endpoint *__rpmsg_create_ept(struct virtproc_info *vrp,
  	id = idr_alloc(&vrp->endpoints, ept, id_min, id_max, GFP_KERNEL);
  	if (id < 0) {
  		dev_err(dev, "idr_alloc failed: %d\n", id);
@@ -56,7 +49,7 @@ index 5fffd07..2486d9e 100644
  		goto free_ept;
  	}
  	ept->addr = id;
-@@ -308,7 +324,12 @@ free_ept:
+@@ -308,7 +317,12 @@ free_ept:
  struct rpmsg_endpoint *rpmsg_create_ept(struct rpmsg_channel *rpdev,
  				rpmsg_rx_cb_t cb, void *priv, u32 addr)
  {
@@ -70,7 +63,7 @@ index 5fffd07..2486d9e 100644
  }
  EXPORT_SYMBOL(rpmsg_create_ept);
  
-@@ -325,6 +346,8 @@ EXPORT_SYMBOL(rpmsg_create_ept);
+@@ -325,6 +339,8 @@ EXPORT_SYMBOL(rpmsg_create_ept);
  static void
  __rpmsg_destroy_ept(struct virtproc_info *vrp, struct rpmsg_endpoint *ept)
  {
@@ -79,7 +72,7 @@ index 5fffd07..2486d9e 100644
  	/* make sure new inbound messages can't find this ept anymore */
  	mutex_lock(&vrp->endpoints_lock);
  	idr_remove(&vrp->endpoints, ept->addr);
-@@ -513,12 +536,16 @@ static struct rpmsg_channel *rpmsg_create_channel(struct virtproc_info *vrp,
+@@ -513,12 +529,16 @@ static struct rpmsg_channel *rpmsg_create_channel(struct virtproc_info *vrp,
  		put_device(tmp);
  		dev_err(dev, "channel %s:%x:%x already exist\n",
  				chinfo->name, chinfo->src, chinfo->dst);
@@ -96,7 +89,7 @@ index 5fffd07..2486d9e 100644
  		return NULL;
  	}
  
-@@ -545,9 +572,14 @@ static struct rpmsg_channel *rpmsg_create_channel(struct virtproc_info *vrp,
+@@ -545,9 +565,14 @@ static struct rpmsg_channel *rpmsg_create_channel(struct virtproc_info *vrp,
  	if (ret) {
  		dev_err(dev, "device_register failed: %d\n", ret);
  		put_device(&rpdev->dev);
@@ -111,7 +104,7 @@ index 5fffd07..2486d9e 100644
  	return rpdev;
  }
  
-@@ -562,8 +594,12 @@ static int rpmsg_destroy_channel(struct virtproc_info *vrp,
+@@ -562,8 +587,12 @@ static int rpmsg_destroy_channel(struct virtproc_info *vrp,
  	struct device *dev;
  
  	dev = device_find_child(&vdev->dev, chinfo, rpmsg_channel_match);
@@ -125,7 +118,7 @@ index 5fffd07..2486d9e 100644
  
  	device_unregister(dev);
  
-@@ -1028,6 +1064,8 @@ static int rpmsg_recv_large(struct virtproc_info *vrp, struct device *dev,
+@@ -1028,6 +1057,8 @@ static int rpmsg_recv_large(struct virtproc_info *vrp, struct device *dev,
  					msg, sizeof(*msg) + msg->len, true);
  #endif
  
@@ -134,7 +127,7 @@ index 5fffd07..2486d9e 100644
  	/* use the dst addr to fetch the callback of the appropriate user */
  	mutex_lock(&vrp->endpoints_lock);
  	ept = idr_find(&vrp->endpoints, msg->dst);
-@@ -1066,6 +1104,7 @@ static int rpmsg_recv_large(struct virtproc_info *vrp, struct device *dev,
+@@ -1066,6 +1097,7 @@ static int rpmsg_recv_large(struct virtproc_info *vrp, struct device *dev,
  		rpmsg_dealloc(rxb);
  	}
  
@@ -142,7 +135,7 @@ index 5fffd07..2486d9e 100644
          return 0;
  }
  
-@@ -1315,6 +1354,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
+@@ -1315,6 +1347,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
  	/* bcasting isn't allowed */
  	if (src == RPMSG_ADDR_ANY || dst == RPMSG_ADDR_ANY) {
  		dev_err(dev, "invalid addr (src 0x%x, dst 0x%x)\n", src, dst);
@@ -150,7 +143,7 @@ index 5fffd07..2486d9e 100644
  		return -EINVAL;
  	}
  
-@@ -1329,9 +1369,12 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
+@@ -1329,9 +1362,12 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
  	 */
  	if (len > RPMSG_BUF_SIZE - sizeof(struct rpmsg_hdr)) {
  		dev_err(dev, "message is too big (%d)\n", len);
@@ -163,7 +156,7 @@ index 5fffd07..2486d9e 100644
  	/* grab a buffer */
  #ifdef CONFIG_MEMF
  	msg= get_shmem_buffer(vrp);
-@@ -1339,8 +1382,10 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
+@@ -1339,8 +1375,10 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
  	msg = get_a_tx_buf(vrp);
  
  #endif
@@ -175,7 +168,7 @@ index 5fffd07..2486d9e 100644
  
  	/* no free buffer ? wait for one (but bail after 15 seconds) */
  	while (!msg) {
-@@ -1367,6 +1412,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
+@@ -1367,6 +1405,7 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
  		/* timeout ? */
  		if (!err) {
  			dev_err(dev, "timeout waiting for a tx buffer\n");
@@ -183,7 +176,7 @@ index 5fffd07..2486d9e 100644
  			return -ERESTARTSYS;
  		}
  	}
-@@ -1409,11 +1455,15 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
+@@ -1409,11 +1448,15 @@ int rpmsg_send_offchannel_raw(struct rpmsg_channel *rpdev, u32 src, u32 dst,
  		 * this will wait for a buffer management overhaul.
  		 */
  		dev_err(dev, "virtqueue_add_outbuf failed: %d\n", err);
@@ -199,7 +192,7 @@ index 5fffd07..2486d9e 100644
  out:
  	mutex_unlock(&vrp->tx_lock);
  	return err;
-@@ -1624,10 +1674,16 @@ static int rpmsg_probe(struct virtio_device *vdev)
+@@ -1624,10 +1667,16 @@ static int rpmsg_probe(struct virtio_device *vdev)
  	bool notify;
  	void *cookie[1];
  	struct shmem_buffer *buffer;
@@ -217,7 +210,7 @@ index 5fffd07..2486d9e 100644
  
  	vrp->vdev = vdev;
  
-@@ -1638,8 +1694,11 @@ static int rpmsg_probe(struct virtio_device *vdev)
+@@ -1638,8 +1687,11 @@ static int rpmsg_probe(struct virtio_device *vdev)
  
  	/* We expect two virtqueues, rx and tx (and in this order) */
  	err = vdev->config->find_vqs(vdev, 2, vqs, vq_cbs, names);
@@ -230,7 +223,7 @@ index 5fffd07..2486d9e 100644
  
  	vrp->rvq = vqs[0];
  	vrp->svq = vqs[1];
-@@ -1662,6 +1721,8 @@ static int rpmsg_probe(struct virtio_device *vdev)
+@@ -1662,6 +1714,8 @@ static int rpmsg_probe(struct virtio_device *vdev)
  				     GFP_KERNEL);
  	if (!bufs_va) {
  		err = -ENOMEM;
@@ -239,7 +232,7 @@ index 5fffd07..2486d9e 100644
  		goto vqs_del;
  	}
  
-@@ -1736,10 +1797,14 @@ static int rpmsg_probe(struct virtio_device *vdev)
+@@ -1736,10 +1790,14 @@ static int rpmsg_probe(struct virtio_device *vdev)
  		if (!vrp->ns_ept) {
  			dev_err(&vdev->dev, "failed to create the ns ept\n");
  			err = -ENOMEM;
@@ -254,7 +247,7 @@ index 5fffd07..2486d9e 100644
  	/*
  	 * Prepare to kick but don't notify yet - we can't do this before
  	 * device is ready.
-@@ -1788,6 +1853,8 @@ static void rpmsg_remove(struct virtio_device *vdev)
+@@ -1788,6 +1846,8 @@ static void rpmsg_remove(struct virtio_device *vdev)
  	if (ret)
  		dev_warn(&vdev->dev, "can't remove rpmsg device: %d\n", ret);
  
