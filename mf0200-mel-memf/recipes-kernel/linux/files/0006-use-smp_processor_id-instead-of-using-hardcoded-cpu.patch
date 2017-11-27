@@ -1,0 +1,80 @@
+From 9a4db3645b10be15a04338db2f2abf6acaa8ad8f Mon Sep 17 00:00:00 2001
+From: AbdulKarim <HafizAbdul_Karim@mentor.com>
+Date: Thu, 14 Sep 2017 22:28:17 +0500
+Subject: [PATCH 1/1] use-smp_processor_id-instead-of-using-hardcoded-cpu
+
+Signed-off-by: AbdulKarim <HafizAbdul_Karim@mentor.com>
+---
+ drivers/rpmsg/rpmsg_imx6q_driver.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/rpmsg/rpmsg_imx6q_driver.c b/drivers/rpmsg/rpmsg_imx6q_driver.c
+index b4ed419..bdf8b23 100644
+--- a/drivers/rpmsg/rpmsg_imx6q_driver.c
++++ b/drivers/rpmsg/rpmsg_imx6q_driver.c
+@@ -50,7 +50,6 @@
+ 
+ #include "rpmsg_imx6q_internals.h"
+ 
+-#define MASTER_CPU_ID		0
+ #define SUCCESS			0
+ #define FAILURE			1
+ 
+@@ -286,13 +285,14 @@ static int imx6q_rpmsg_initialize(struct platform_device *pdev)
+ 	int index;
+ 	struct virtio_device *virtio_dev;
+ 	int size;
++	int cpu_id = smp_processor_id();
+ 
+ 	/* Register ipi handler. */
+ 	ret = set_ipi_handler(imx6q_rpmsg_p->vring0, ipi_handler,
+ 				"Firmware kick");
+ 
+ 	if (ret) {
+-		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, MASTER_CPU_ID, FAILURE);
++		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, cpu_id, FAILURE);
+ 		dev_err(&pdev->dev, "IPI handler already registered\n");
+ 		return -ENODEV;
+ 	}
+@@ -313,7 +313,7 @@ static int imx6q_rpmsg_initialize(struct platform_device *pdev)
+ 					DMA_MEMORY_IO);
+ 
+ 	if (!ret) {
+-		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, MASTER_CPU_ID, FAILURE);
++		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, cpu_id, FAILURE);
+ 		dev_err(&pdev->dev, "dma_declare_coherent_memory failed\n");
+ 		return -ENODEV;
+ 	}
+@@ -321,7 +321,7 @@ static int imx6q_rpmsg_initialize(struct platform_device *pdev)
+ 	ret = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(32));
+ 
+ 	if (ret) {
+-		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, MASTER_CPU_ID, FAILURE);
++		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, cpu_id, FAILURE);
+ 		dev_err(&pdev->dev, "dma_set_coherent_mask: %d\n", ret);
+ 		return -ENODEV;
+ 	}
+@@ -338,7 +338,7 @@ static int imx6q_rpmsg_initialize(struct platform_device *pdev)
+ 	index = ida_simple_get(&rpmsg_imx6q_dev_index, 0, 0, GFP_KERNEL);
+ 
+ 	if (index < 0) {
+-		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, MASTER_CPU_ID, FAILURE);
++		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, cpu_id, FAILURE);
+ 		put_device(&(imx6q_rpmsg_p->mid_dev));
+ 		return -ENODEV;
+ 	}
+@@ -361,9 +361,9 @@ static int imx6q_rpmsg_initialize(struct platform_device *pdev)
+ 	ret = register_virtio_device(virtio_dev);
+ 
+ 	if (ret) {
+-		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, MASTER_CPU_ID, FAILURE);
++		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, cpu_id, FAILURE);
+ 	} else {
+-		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, MASTER_CPU_ID, SUCCESS);
++		trace_MEMF_Remoteproc_Rsc_Init(imx6q_rpmsg_p, cpu_id, SUCCESS);
+ 	}
+ 
+ 	dev_info(&(imx6q_rpmsg_platform->dev), "virtio device registered \r\n");
+-- 
+2.8.1
+
