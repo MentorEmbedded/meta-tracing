@@ -1,0 +1,60 @@
+From 3267275d6ca8d06f36472e28d652ba295c27d4ac Mon Sep 17 00:00:00 2001
+From: Abdur Rehman <abdur_rehman@mentor.com>
+Date: Tue, 28 Mar 2017 22:10:27 +0500
+Subject: [PATCH 1/1] create and export tracepoints in memf_tracing
+
+Signed-off-by: Abdur Rehman <abdur_rehman@mentor.com>
+---
+ arch/arm/mach-imx/memf_tracing.c | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+ create mode 100644 arch/arm/mach-imx/memf_tracing.c
+
+diff --git a/arch/arm/mach-imx/memf_tracing.c b/arch/arm/mach-imx/memf_tracing.c
+new file mode 100644
+index 0000000..d5609b6
+--- /dev/null
++++ b/arch/arm/mach-imx/memf_tracing.c
+@@ -0,0 +1,40 @@
++/*
++ * MEMF Tracing
++ *
++ * Copyright (C) 2017 Mentor Graphics Corporation
++ *
++ * Fahad Arslan <fahad_arslan@mentor.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#define CREATE_TRACE_POINTS
++#include <trace/events/Synchronization.h>
++#define CREATE_TRACE_POINTS
++#include <trace/events/MEMF.h>
++
++EXPORT_TRACEPOINT_SYMBOL(MEMF_RPMsg_Init);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_RPMsg_DeInit);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_RPMsg_Channel_Create);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_RPMsg_Channel_Delete);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_RPMsg_Ept_Create);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_RPMsg_Ept_Delete);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_RPMsg_Tx_Start);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_RPMsg_Tx_Stop);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_RPMsg_Rx_Start);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_RPMsg_Rx_Stop);
++
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Init);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_DeInit);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_State);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Rsc_Init);
++EXPORT_TRACEPOINT_SYMBOL(MEMF_Remoteproc_Rsc_Deinit);
++
++EXPORT_TRACEPOINT_SYMBOL(Synchronization_TriggerSend);
+-- 
+2.8.1
+

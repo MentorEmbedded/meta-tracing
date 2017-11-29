@@ -8,6 +8,7 @@ python () {
                          file://0003-place-memf-common-tracepoints.patch \
                          file://0001-place-trace-points-to-R5-remoteproc-platform-driver.patch \
                          file://0001-export-Synchronization_TriggerSend-tracepoint-to-use.patch \
-                         file://0001-provide-MEMF-tracing-support-using-separate-file.patch")
+                         file://0001-provide-MEMF-tracing-support-using-separate-file.patch \
+                         file://0001-use-correct-type-to-log-trace-event.patch")
     return
 }
