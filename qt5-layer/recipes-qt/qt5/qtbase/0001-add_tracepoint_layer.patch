@@ -479,7 +479,7 @@ Index: git/src/widgets/kernel/qwidgetbackingstore.cpp
 @@ -134,6 +143,10 @@ void QWidgetBackingStore::qt_flush(QWidg
      } else
  #endif
-         backingStore->flush(region, widget->windowHandle(), offset);
+         backingStore->flush(effectiveRegion, widget->windowHandle(), offset);
 +
 +#ifdef ENABLE_SA_TRACE
 +    qt_tracepoint(Qt, qtFrameSync, 0);
