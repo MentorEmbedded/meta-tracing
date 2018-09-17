@@ -8,10 +8,10 @@ Subject: [PATCH 01/11] Add optional LTTng support in configure.
  1 file changed, 21 insertions(+)
 
 diff --git a/configure.ac b/configure.ac
-index e366ff1..087f80a 100644
+index 7b050ac..81d3b66 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -765,6 +765,26 @@ if test "x${GST_DISABLE_GST_DEBUG}" != "xyes"; then
+@@ -800,6 +800,26 @@ if test "x${GST_DISABLE_GST_DEBUG}" != "xyes"; then
    AC_TYPE_SIZE_T
  fi
  
@@ -38,8 +38,8 @@ index e366ff1..087f80a 100644
  dnl *** checks for dependency libraries ***
  
  dnl GLib
-@@ -1100,6 +1120,7 @@ Configuration
- 	PTP clock support          : ${HAVE_PTP}
+@@ -1157,6 +1177,7 @@ Configuration
+ 	libdw support              : ${HAVE_DW}
  
  	Debug                      : ${USE_DEBUG}
 +	LTTng tracepoints          : ${enable_lttng_tracepoints}

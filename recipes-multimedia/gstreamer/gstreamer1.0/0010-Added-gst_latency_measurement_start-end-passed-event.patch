@@ -9,7 +9,7 @@ Subject: [PATCH 10/11] Added gst_latency_measurement_start/end/passed events.
  2 files changed, 16 insertions(+)
 
 diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
-index aea8858..6c91a2f 100644
+index 652842a..7efee19 100644
 --- a/gst/gst_tracepoints.c
 +++ b/gst/gst_tracepoints.c
 @@ -33,6 +33,7 @@
@@ -18,10 +18,10 @@ index aea8858..6c91a2f 100644
  enum GstFlowTracepointType;
 +static const gchar *gst_tracepoints_get_pad_element_name (GstPad * pad);
  static const gchar *gst_tracepoints_get_pad_element_name_if_needed (GstPad *
-     pad, enum GstFlowTracepointType tracepoint_type);
+    pad, enum GstFlowTracepointType tracepoint_type);
  static guint16 gst_tracepoints_get_thread_id (void);
 diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
-index 6c6580f..103c45c 100644
+index 67a26a6..fed35fa 100644
 --- a/gst/gst_tracepoints.h
 +++ b/gst/gst_tracepoints.h
 @@ -134,6 +134,21 @@ GST_TRACEPOINT_EVENT (gst_flow_event_caps,
