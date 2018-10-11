@@ -193,11 +193,11 @@ index cf89a5f..c6cd71f 100644
  }
  
 diff --git a/src/declarative/qml/qdeclarativeengine.cpp b/src/declarative/qml/qdeclarativeengine.cpp
-index af6c7aa..eccad29 100644
+index af6c7aa..eb593ea 100644
 --- a/src/declarative/qml/qdeclarativeengine.cpp
 +++ b/src/declarative/qml/qdeclarativeengine.cpp
 @@ -105,6 +105,11 @@
- #define CSIDL_APPDATA		0x001a	// <username>\Application Data
+ #define CSIDL_APPDATA           0x001a  // <username>\Application Data
  #endif
  
 +#ifdef ENABLE_SA_TRACE
