@@ -1,0 +1,333 @@
+Index: git/src/qml/qml.pro
+===================================================================
+--- git.orig/src/qml/qml.pro
++++ git/src/qml/qml.pro
+@@ -79,7 +79,7 @@ qtConfig(animation) {
+ include(types/types.pri)
+ include(../3rdparty/masm/masm-defs.pri)
+ include(../3rdparty/masm/masm.pri)
+-
++contains(QT_CONFIG,sa-trace):CONFIG += sa-trace
+ MODULE_PLUGIN_TYPES = \
+     qmltooling
+ load(qt_module)
+Index: git/src/qml/qml/qqmlbinding.cpp
+===================================================================
+--- git.orig/src/qml/qml/qqmlbinding.cpp
++++ git/src/qml/qml/qqmlbinding.cpp
+@@ -57,6 +57,10 @@
+ #include <QtCore/qdebug.h>
+ #include <QVector>
+ 
++#ifdef ENABLE_SA_TRACE
++    #include <sa-trace/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ QQmlBinding *QQmlBinding::create(const QQmlPropertyData *property, const QQmlScriptString &script, QObject *obj, QQmlContext *ctxt)
+@@ -173,6 +177,11 @@ void QQmlBinding::update(QQmlPropertyData::WriteFlags flags)
+     }
+     setUpdatingFlag(true);
+ 
++#ifdef ENABLE_SA_TRACE
++        QQmlSourceLocation loc = function()->sourceLocation();
++        QString url = loc.sourceFile;
++        qt_tracepoint(Qt, qtQmlFrameBind, 1, qPrintable(url));
++#endif // ENABLE_SA_TRACE
+     DeleteWatcher watcher(this);
+ 
+     QQmlEngine *engine = context()->engine;
+@@ -186,6 +195,11 @@ void QQmlBinding::update(QQmlPropertyData::WriteFlags flags)
+ 
+     if (!watcher.wasDeleted())
+         setUpdatingFlag(false);
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlFrameBind, 0, qPrintable(url));
++#endif // ENABLE_SA_TRACE
++
+ }
+ 
+ QV4::ReturnedValue QQmlBinding::evaluate(bool *isUndefined)
+Index: git/src/qml/qml/qqmlcomponent.cpp
+===================================================================
+--- git.orig/src/qml/qml/qqmlcomponent.cpp
++++ git/src/qml/qml/qqmlcomponent.cpp
+@@ -68,6 +68,10 @@
+ #include <qqmlinfo.h>
+ #include "qqmlmemoryprofiler_p.h"
+ 
++#ifdef ENABLE_SA_TRACE
++    #include <sa-trace/qt_tracepoints.h> 
++#endif // ENABLE_SA_TRACE
++
+ namespace {
+     QThreadStorage<int> creationDepth;
+ }
+@@ -858,6 +862,10 @@ QQmlComponentPrivate::beginCreate(QQmlContextData *context)
+ 
+     QQmlEnginePrivate *enginePriv = QQmlEnginePrivate::get(engine);
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlFrameCreate, 1, qPrintable(compilationUnit->url().toString()));
++#endif // ENABLE_SA_TRACE
++
+     enginePriv->inProgressCreations++;
+     state.errors.clear();
+     state.completePending = true;
+@@ -957,6 +965,10 @@ void QQmlComponentPrivate::completeCreate()
+     if (state.completePending) {
+         QQmlEnginePrivate *ep = QQmlEnginePrivate::get(engine);
+         complete(ep, &state);
++
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtQmlFrameCreate, 0, qPrintable(url.toString()));
++#endif // ENABLE_SA_TRACE
+     }
+ 
+     if (depthIncreased) {
+Index: git/src/qml/qml/qqmlengine.cpp
+===================================================================
+--- git.orig/src/qml/qml/qqmlengine.cpp
++++ git/src/qml/qml/qqmlengine.cpp
+@@ -107,6 +107,11 @@
+ #  endif
+ #endif // Q_OS_WIN
+ 
++#ifdef ENABLE_SA_TRACE
++    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
++    #include <sa-trace/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
+ Q_DECLARE_METATYPE(QQmlProperty)
+ 
+ QT_BEGIN_NAMESPACE
+@@ -1533,6 +1538,11 @@ void qmlExecuteDeferred(QObject *object)
+     QQmlData *data = QQmlData::get(object);
+ 
+     if (data && !data->deferredData.isEmpty() && !data->wasDeleted(object)) {
++#ifdef ENABLE_SA_TRACE
++        if (data->outerContext)
++            qt_tracepoint(Qt, qtQmlFrameCreate, 1, qPrintable(data->outerContext->urlString()));
++#endif // ENABLE_SA_TRACE
++
+         QQmlEnginePrivate *ep = QQmlEnginePrivate::get(data->context->engine);
+ 
+         QQmlComponentPrivate::DeferredState state;
+@@ -1542,6 +1552,11 @@ void qmlExecuteDeferred(QObject *object)
+         data->releaseDeferredData();
+ 
+         QQmlComponentPrivate::completeDeferred(ep, &state);
++
++#ifdef ENABLE_SA_TRACE
++        if (data->outerContext)
++            qt_tracepoint(Qt, qtQmlFrameCreate, 0, qPrintable(data->outerContext->urlString()));
++#endif // ENABLE_SA_TRACE
+     }
+ }
+ 
+Index: git/src/qml/qml/qqmltypeloader.cpp
+===================================================================
+--- git.orig/src/qml/qml/qqmltypeloader.cpp
++++ git/src/qml/qml/qqmltypeloader.cpp
+@@ -69,6 +69,10 @@
+ 
+ #include <functional>
+ 
++#ifdef ENABLE_SA_TRACE
++    #include <sa-trace/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
+ #if defined (Q_OS_UNIX)
+ #include <sys/types.h>
+ #include <sys/stat.h>
+@@ -1046,6 +1050,10 @@ void QQmlTypeLoader::doLoad(const Loader &loader, QQmlDataBlob *blob, Mode mode)
+ #endif
+     blob->startLoading();
+ 
++#ifdef ENABLE_SA_TRACE
++    if (blob) qt_tracepoint(Qt, qtQmlResourceLoad, 1, qPrintable(blob->url().toString()));
++#endif // ENABLE_SA_TRACE
++
+     if (m_thread->isThisThread()) {
+         unlock();
+         loader.loadThread(this, blob);
+@@ -1146,6 +1154,13 @@ void QQmlTypeLoader::loadThread(QQmlDataBlob *blob)
+ 
+         setData(blob, fileName);
+ 
++#ifdef ENABLE_SA_TRACE
++                if (blob) qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->url().toString()));
++#endif // ENABLE_SA_TRACE
++#ifdef ENABLE_SA_TRACE
++        if (blob) qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->url().toString()));
++#endif // ENABLE_SA_TRACE
++
+     } else {
+ #if QT_CONFIG(qml_network)
+         QNetworkReply *reply = m_thread->networkAccessManager()->get(QNetworkRequest(blob->m_url));
+@@ -1210,6 +1225,10 @@ void QQmlTypeLoader::networkReplyFinished(QNetworkReply *reply)
+         setData(blob, data);
+     }
+ 
++#ifdef ENABLE_SA_TRACE
++    if (blob) qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(blob->url().toString()));
++#endif // ENABLE_SA_TRACE
++
+     blob->release();
+ }
+ 
+@@ -2234,6 +2253,10 @@ static bool addTypeReferenceChecksumsToHash(const QList<QQmlTypeData::TypeRefere
+ 
+ void QQmlTypeData::done()
+ {
++#ifdef ENABLE_SA_TRACE
++       qt_tracepoint(Qt, qtQmlResourceLoad, 0, qPrintable(url().toString()));
++#endif // ENABLE_SA_TRACE
++
+     QDeferredCleanup cleanup([this]{
+         m_document.reset();
+         m_typeReferences.clear();
+@@ -2607,6 +2630,9 @@ void QQmlTypeData::compile(const QQmlRefPointer<QQmlTypeNameCache> &typeNameCach
+                            const QV4::CompiledData::DependentTypesHasher &dependencyHasher)
+ {
+     Q_ASSERT(m_compiledData.isNull());
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlFrameCompile, 1, qPrintable(url().toString()));
++#endif // ENABLE_SA_TRACE
+ 
+     const bool typeRecompilation = m_document && m_document->javaScriptCompilationUnit && m_document->javaScriptCompilationUnit->data->flags & QV4::CompiledData::Unit::PendingTypeCompilation;
+ 
+@@ -2630,6 +2656,10 @@ void QQmlTypeData::compile(const QQmlRefPointer<QQmlTypeNameCache> &typeNameCach
+             qCDebug(DBG_DISK_CACHE) << "Error saving cached version of" << m_compiledData->fileName() << "to disk:" << errorString;
+         }
+     }
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlFrameCompile, 0, qPrintable(url().toString()));
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ void QQmlTypeData::resolveTypes()
+Index: git/src/quick/items/qquickwindow.cpp
+===================================================================
+--- git.orig/src/quick/items/qquickwindow.cpp
++++ git/src/quick/items/qquickwindow.cpp
+@@ -82,6 +82,13 @@
+ #include <private/qdebug_p.h>
+ #endif
+ 
++#ifdef ENABLE_SA_TRACE
++    #define QT_TRACEPOINT_PER_LIBRARY_DEFINITION
++    #include <sa-trace/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ Q_LOGGING_CATEGORY(DBG_TOUCH, "qt.quick.touch")
+@@ -1551,6 +1556,11 @@ bool QQuickWindow::event(QEvent *e)
+ {
+     Q_D(QQuickWindow);
+ 
++#ifdef ENABLE_SA_TRACE
++    if (e)
++        qt_tracepoint(Qt, qtGraphicsSceneEvents, e->type());
++#endif // ENABLE_SA_TRACE
++
+     switch (e->type()) {
+ 
+     case QEvent::TouchBegin:
+@@ -1663,6 +1673,10 @@ void QQuickWindowPrivate::deliverKeyEvent(QKeyEvent *e)
+             QCoreApplication::sendEvent(item, e);
+         }
+     }
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtKeyEventConsumed, e->type(), e->key(), e->modifiers());
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ QMouseEvent *QQuickWindowPrivate::cloneMouseEvent(QMouseEvent *event, QPointF *transformedLocalPos)
+@@ -2123,18 +2137,30 @@ void QQuickWindow::mouseMoveEvent(QMouseEvent *event)
+ {
+     Q_D(QQuickWindow);
+     d->handleMouseEvent(event);
++
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtMouseEventConsumed, event->buttons());
++#endif // ENABLE_SA_TRACE
+ }
+ /*! \reimp */
+ void QQuickWindow::mouseDoubleClickEvent(QMouseEvent *event)
+ {
+     Q_D(QQuickWindow);
+     d->handleMouseEvent(event);
++
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtMouseEventConsumed, event->buttons());
++#endif // ENABLE_SA_TRACE
+ }
+ /*! \reimp */
+ void QQuickWindow::mouseReleaseEvent(QMouseEvent *event)
+ {
+     Q_D(QQuickWindow);
+     d->handleMouseEvent(event);
++
++#ifdef ENABLE_SA_TRACE
++        qt_tracepoint(Qt, qtMouseEventConsumed, event->buttons());
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ void QQuickWindowPrivate::handleMouseEvent(QMouseEvent *event)
+Index: git/src/quick/quick.pro
+===================================================================
+--- git.orig/src/quick/quick.pro
++++ git/src/quick/quick.pro
+@@ -36,7 +36,7 @@ qtConfig(quick-designer): \
+ qtConfig(accessibility) {
+     include(accessible/accessible.pri)
+ }
+-
++contains(QT_CONFIG,sa-trace):CONFIG += sa-trace
+ HEADERS += \
+     qtquickglobal.h \
+     qtquickglobal_p.h \
+Index: git/src/quick/scenegraph/coreapi/qsgrenderer.cpp
+===================================================================
+--- git.orig/src/quick/scenegraph/coreapi/qsgrenderer.cpp
++++ git/src/quick/scenegraph/coreapi/qsgrenderer.cpp
+@@ -48,6 +48,10 @@
+ 
+ #include <QtCore/QElapsedTimer>
+ 
++#ifdef ENABLE_SA_TRACE
++    #include <sa-trace/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ #if QT_CONFIG(opengl)
+@@ -206,6 +210,10 @@ void QSGRenderer::renderScene(const QSGBindable &bindable)
+     if (!rootNode())
+         return;
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtFrameSync, 1);
++#endif // ENABLE_SA_TRACE
++
+     m_is_rendering = true;
+ 
+ 
+@@ -258,6 +266,9 @@ void QSGRenderer::renderScene(const QSGBindable &bindable)
+             int((updatePassTime - preprocessTime) / 1000000),
+             int((bindTime - updatePassTime) / 1000000),
+             int((renderTime - bindTime) / 1000000));
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtFrameSync, 0);
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ /*!
