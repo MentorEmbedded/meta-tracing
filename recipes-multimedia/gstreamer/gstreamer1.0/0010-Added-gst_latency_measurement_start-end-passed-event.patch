@@ -1,8 +1,9 @@
-From adf34d89c4a6f083e05e64e57988a536e0e08b6e Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 15:13:24 +0200
-Subject: [PATCH 10/11] Added gst_latency_measurement_start/end/passed events.
+From dddf7499a64e1673b752b59e92346149b4040456 Mon Sep 17 00:00:00 2001
+From: Sajjad Ahmed <sajjad_ahmed@mentor.com>
+Date: Thu, 12 Sep 2019 18:00:17 +0500
+Subject: [PATCH 10/11] Added gst_latency_measurement_start/end/passed events
 
+Signed-off-by: Sajjad Ahmed <sajjad_ahmed@mentor.com>
 ---
  gst/gst_tracepoints.c |  1 +
  gst/gst_tracepoints.h | 15 +++++++++++++++
@@ -47,5 +48,5 @@ index 67a26a6..fed35fa 100644
  
  #include <lttng/tracepoint-event.h>
 -- 
-2.2.1
+2.7.4
 

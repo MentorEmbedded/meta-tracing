@@ -1,17 +1,17 @@
-From efb6c3840a77467755f61d335b7745cc71b256cc Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 14:06:40 +0200
-Subject: [PATCH 01/11] Add optional LTTng support in configure.
+From 89ce45ba69b48a1389639b3de79e4de52237ef6c Mon Sep 17 00:00:00 2001
+From: Sajjad Ahmed <sajjad_ahmed@mentor.com>
+Date: Thu, 12 Sep 2019 14:05:58 +0500
+Subject: [PATCH 01/11] Add optional LTTng support in configure
 
 ---
  configure.ac | 21 +++++++++++++++++++++
  1 file changed, 21 insertions(+)
 
 diff --git a/configure.ac b/configure.ac
-index 7b050ac..81d3b66 100644
+index 2b59482..00982ff 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -800,6 +800,26 @@ if test "x${GST_DISABLE_GST_DEBUG}" != "xyes"; then
+@@ -782,6 +782,26 @@ if test "x${GST_DISABLE_GST_DEBUG}" != "xyes"; then
    AC_TYPE_SIZE_T
  fi
  
@@ -38,7 +38,7 @@ index 7b050ac..81d3b66 100644
  dnl *** checks for dependency libraries ***
  
  dnl GLib
-@@ -1157,6 +1177,7 @@ Configuration
+@@ -1160,6 +1180,7 @@ Configuration
  	libdw support              : ${HAVE_DW}
  
  	Debug                      : ${USE_DEBUG}
@@ -47,5 +47,5 @@ index 7b050ac..81d3b66 100644
  
  	Building benchmarks        : ${BUILD_BENCHMARKS}
 -- 
-2.2.1
+2.7.4
 
