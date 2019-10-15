@@ -1,17 +1,19 @@
-From c9b46bec5e0f786375871f9d063f8cbfd73aef2e Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 15:11:36 +0200
-Subject: [PATCH 08/11] Added support for gst_flow_event_caps LTTng tracepoint.
+From 645333fc4bca698f1123d1780581dc54075dcd48 Mon Sep 17 00:00:00 2001
+From: Sajjad Ahmed <sajjad_ahmed@mentor.com>
+Date: Thu, 12 Sep 2019 17:49:33 +0500
+Subject: [PATCH 08/11] Added support for gst_flow_event_caps LTTng tracepoint
 
 The gst_flow_event_caps tracepoints output the flags and text fields of the GST_EVENT_CAPS event.
 This tracepoint immediately follows the gst_flow_event tracepoint and precedes
 the gst_flow tracepoint on the same thread.
+
+Signed-off-by: Sajjad Ahmed <sajjad_ahmed@mentor.com>
 ---
  gst/gst_tracepoints.h | 20 ++++++++++++++++++++
  1 file changed, 20 insertions(+)
 
 diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
-index 85b962c..c175afc 100644
+index 6f4da28..6e3e8f0 100644
 --- a/gst/gst_tracepoints.h
 +++ b/gst/gst_tracepoints.h
 @@ -26,6 +26,7 @@
@@ -56,5 +58,5 @@ index 85b962c..c175afc 100644
                  break;                                                  \
              }                                                           \
 -- 
-2.2.1
+2.7.4
 
