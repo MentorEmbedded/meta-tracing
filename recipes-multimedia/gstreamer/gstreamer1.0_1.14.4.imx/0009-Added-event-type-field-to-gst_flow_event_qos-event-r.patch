@@ -1,16 +1,18 @@
-From 46709a29222272f985925e2e57caa78e094d3a20 Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 15:12:35 +0200
-Subject: [PATCH 09/11] Added event type field to gst_flow_event_qos event;
- renamed field diff->jitter.
+From 3c08962b9f33cf65db8ead1233942bafb03a966e Mon Sep 17 00:00:00 2001
+From: Sajjad Ahmed <sajjad_ahmed@mentor.com>
+Date: Thu, 12 Sep 2019 17:57:41 +0500
+Subject: [PATCH 09/11] Added event type field to gst_flow_event_qos event
 
+renamed field diff->jitter.
+
+Signed-off-by: Sajjad Ahmed <sajjad_ahmed@mentor.com>
 ---
  gst/gst_tracepoints.c | 15 +++++++++++++--
  gst/gst_tracepoints.h |  5 +++--
  2 files changed, 16 insertions(+), 4 deletions(-)
 
 diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
-index 4be57c0..aea8858 100644
+index 04b4e2e..652842a 100644
 --- a/gst/gst_tracepoints.c
 +++ b/gst/gst_tracepoints.c
 @@ -52,6 +52,9 @@ gst_tracepoints_extract_qos_event_diff (GstEvent * event,
@@ -55,7 +57,7 @@ index 4be57c0..aea8858 100644
 +
  #endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
 diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
-index c175afc..6c6580f 100644
+index 6e3e8f0..67a26a6 100644
 --- a/gst/gst_tracepoints.h
 +++ b/gst/gst_tracepoints.h
 @@ -52,7 +52,7 @@ typedef enum GstFlowTracepointDataType {
@@ -78,5 +80,5 @@ index c175afc..6c6580f 100644
  
  GST_TRACEPOINT_EVENT (gst_flow_event_caps,
 -- 
-2.2.1
+2.7.4
 

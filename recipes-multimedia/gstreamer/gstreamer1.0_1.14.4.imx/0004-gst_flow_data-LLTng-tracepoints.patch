@@ -1,7 +1,7 @@
-From fd0adeb58d24e0f9e0bf35102950c474ba64ebe7 Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 15:07:56 +0200
-Subject: [PATCH 04/11] gst_flow_data LLTng tracepoints.
+From 70a535d9da4268655243e6fd06c9487ad92dba5b Mon Sep 17 00:00:00 2001
+From: Sajjad Ahmed <sajjad_ahmed@mentor.com>
+Date: Thu, 12 Sep 2019 16:43:51 +0500
+Subject: [PATCH 04/11] gst_flow_data LLTng tracepoints
 
 The gst_flow_data tracepoints trace the properties of data flowing through the gstreamer pipeline.
 They can be used to observe throughput of the pipeline and its elements.
@@ -28,12 +28,16 @@ At this stage, only minimal data is stored for each tracepoint:
     -- the type of data: buffer or buffer list.
 
 For buffer lists, every buffer in the list is also traced.
+
+Signed-off-by: Sajjad Ahmed <sajjad_ahmed@mentor.com>
 ---
  gst/gst_tracepoints.c | 19 +++++++++++++++++++
- gst/gst_tracepoints.h | 39 ++++++++++++++++++++++++++++++++++++++-
+ gst/gst_tracepoints.h | 37 +++++++++++++++++++++++++++++++++++++
  gst/gstpad.c          |  4 ++++
- 3 files changed, 61 insertions(+), 1 deletion(-)
+ 3 files changed, 60 insertions(+)
 
+diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
+index 1a9e8df..f937b48 100644
 --- a/gst/gst_tracepoints.c
 +++ b/gst/gst_tracepoints.c
 @@ -29,6 +29,7 @@
@@ -44,7 +48,7 @@ For buffer lists, every buffer in the list is also traced.
  
  enum GstFlowTracepointType;
  static const gchar *gst_tracepoints_get_pad_element_name_if_needed (GstPad *
-@@ -88,4 +89,22 @@
+@@ -88,4 +89,22 @@ gst_tracepoints_get_thread_id (void)
    return thread_id;
  }
  
@@ -67,6 +71,8 @@ For buffer lists, every buffer in the list is also traced.
 +}
 +
  #endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
+diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
+index 0d33653..5267af4 100644
 --- a/gst/gst_tracepoints.h
 +++ b/gst/gst_tracepoints.h
 @@ -27,6 +27,7 @@
@@ -77,7 +83,7 @@ For buffer lists, every buffer in the list is also traced.
  
  enum GstFlowTracepointType {
    GST_TRACEPOINT_FLAG_ENTER = 0,
-@@ -41,6 +42,11 @@
+@@ -41,6 +42,11 @@ enum GstFlowTracepointKind {
    GST_TRACEPOINT_FLAG_SEND_EVENT = 2,
  };
  
@@ -89,7 +95,7 @@ For buffer lists, every buffer in the list is also traced.
  #define GST_TRACEPOINT_HELPER2(...) __VA_ARGS__
  #define GST_TRACEPOINT_HELPER(...) GST_TRACEPOINT_HELPER2 (__VA_ARGS__)
  #define GST_TRACEPOINT_EVENT(name, args, fields) \
-@@ -52,6 +58,7 @@
+@@ -52,6 +58,7 @@ enum GstFlowTracepointKind {
  #define ctf_gst_thread_id_field(name) ctf_integer (guint16, name, gst_tracepoints_get_thread_id ())
  #define ctf_gst_tracepoint_type_field(name, type) ctf_integer (guint8, name, (guint8) (type))
  #define ctf_gst_tracepoint_kind_field(name, kind) ctf_integer (guint8, name, (guint8) (kind))
@@ -97,7 +103,7 @@ For buffer lists, every buffer in the list is also traced.
  
  #endif /* _GST_TRACEPOINTS_H */
  
-@@ -83,6 +90,12 @@
+@@ -83,6 +90,12 @@ GST_TRACEPOINT_EVENT (gst_flow,
                                   ctf_string (element_name,
                                               gst_tracepoints_get_pad_element_name_if_needed (pad, tracepoint_type))))
  
@@ -110,7 +116,7 @@ For buffer lists, every buffer in the list is also traced.
  #endif /* _GST_TRACEPOINTS_H */
  
  #include <lttng/tracepoint-event.h>
-@@ -123,6 +136,27 @@
+@@ -123,6 +136,27 @@ GST_TRACEPOINT_EVENT (gst_flow,
  #define GST_FLOW_TRACEPOINT_SEND_EVENT_DROPPED(pad) \
      GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_SEND_EVENT, GST_TRACEPOINT_FLAG_DROPPED)
  
@@ -138,7 +144,7 @@ For buffer lists, every buffer in the list is also traced.
  #define GST_TRACEPOINT(...) tracepoint (Gst, __VA_ARGS__)
  
  #else /* !GST_ENABLE_LTTNG_TRACEPOINTS */
-@@ -139,6 +173,9 @@
+@@ -139,6 +173,9 @@ GST_TRACEPOINT_EVENT (gst_flow,
  #define GST_FLOW_TRACEPOINT_SEND_EVENT_EXIT(pad, ret)
  #define GST_FLOW_TRACEPOINT_SEND_EVENT_ERROR(pad)
  #define GST_FLOW_TRACEPOINT_SEND_EVENT_DROPPED(pad)
@@ -148,9 +154,11 @@ For buffer lists, every buffer in the list is also traced.
  
  #define GST_TRACEPOINT(...)
  
+diff --git a/gst/gstpad.c b/gst/gstpad.c
+index da99f30..090f739 100644
 --- a/gst/gstpad.c
 +++ b/gst/gstpad.c
-@@ -4126,6 +4126,7 @@
+@@ -4272,6 +4272,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
    GST_PAD_STREAM_LOCK (pad);
  
    GST_OBJECT_LOCK (pad);
@@ -158,7 +166,7 @@ For buffer lists, every buffer in the list is also traced.
    GST_FLOW_TRACEPOINT_PUSH_ENTER (pad, data);
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
-@@ -4387,6 +4388,7 @@
+@@ -4533,6 +4534,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
    gboolean handled = FALSE;
  
    GST_OBJECT_LOCK (pad);
@@ -166,7 +174,7 @@ For buffer lists, every buffer in the list is also traced.
    GST_FLOW_TRACEPOINT_PUSH_ENTER (pad, data);
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
-@@ -4672,6 +4674,7 @@
+@@ -4822,6 +4824,7 @@ probed_data:
  
    *buffer = res_buf;
  
@@ -174,7 +182,7 @@ For buffer lists, every buffer in the list is also traced.
    GST_FLOW_TRACEPOINT_PULL_EXIT (pad, *buffer, ret);
    return ret;
  
-@@ -4931,6 +4934,7 @@
+@@ -5081,6 +5084,7 @@ probed_data:
  
    *buffer = res_buf;
  
@@ -182,3 +190,6 @@ For buffer lists, every buffer in the list is also traced.
    GST_FLOW_TRACEPOINT_PULL_EXIT (pad, *buffer, ret);
  
    GST_TRACER_PAD_PULL_RANGE_POST (pad, *buffer, ret);
+-- 
+2.7.4
+

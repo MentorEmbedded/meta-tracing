@@ -1,4 +1,6 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+# In case of imx8 bsp, use patches placed in version specific directory.
+FILESEXTRAPATHS_prepend_mx8 := "${THISDIR}/${PN}_${PV}:"
 
 SRC_URI += "file://0001-Add-optional-LTTng-support-in-configure.patch \
             file://0002-Add-basic-LTTng-tracepoints-infrastructure.patch \

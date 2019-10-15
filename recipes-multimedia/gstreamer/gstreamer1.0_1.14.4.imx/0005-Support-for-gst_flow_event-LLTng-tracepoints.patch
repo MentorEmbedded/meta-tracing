@@ -1,7 +1,7 @@
-From 5fb22c3b5cd8c5b5eb38bd215b005ad9f2161831 Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 15:09:23 +0200
-Subject: [PATCH 05/11] Support for gst_flow_event LLTng tracepoints.
+From 927aac742f21997606a6dbb5729a3158fa5fc824 Mon Sep 17 00:00:00 2001
+From: Sajjad Ahmed <sajjad_ahmed@mentor.com>
+Date: Thu, 12 Sep 2019 16:54:30 +0500
+Subject: [PATCH 05/11] upport for gst_flow_event LLTng tracepoints
 
 The gst_flow_event tracepoints trace the properties of events sent through the gstreamer pipeline.
 This replaces gst_flow_data tracepoints for event data.
@@ -19,6 +19,8 @@ At this stage, only minimal data is stored for each tracepoint:
     -- a unique integer ID of the invoking thread;
     -- the value of the pointer to the event.
     -- the type of event.
+
+Signed-off-by: Sajjad Ahmed <sajjad_ahmed@mentor.com>
 ---
  gst/gst_tracepoints.h | 11 +++++++++++
  gst/gstpad.c          |  1 +
@@ -68,17 +70,17 @@ index 5267af4..15d85f5 100644
  #define GST_FLOW_TRACEPOINT_BUFFER_LIST(list)
  
 diff --git a/gst/gstpad.c b/gst/gstpad.c
-index 8916da5..579fb1c 100644
+index 090f739..bc7a757 100644
 --- a/gst/gstpad.c
 +++ b/gst/gstpad.c
-@@ -5388,6 +5388,7 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
-   GstObject *parent;
+@@ -5682,6 +5682,7 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
  
-   GST_OBJECT_LOCK (pad);
+   old_pad_offset = pad->offset;
+   event = apply_pad_offset (pad, event, GST_PAD_IS_SRC (pad));
 +  GST_FLOW_TRACEPOINT_EVENT (event);
    GST_FLOW_TRACEPOINT_SEND_EVENT_ENTER (pad, event);
  
-   event = apply_pad_offset (pad, event, GST_PAD_IS_SRC (pad));
+   if (GST_PAD_IS_SINK (pad))
 -- 
-2.2.1
+2.7.4
 
