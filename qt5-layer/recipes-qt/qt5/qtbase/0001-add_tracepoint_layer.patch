@@ -104,6 +104,19 @@ index 0292bf0d..241c09fe 100644
  );
  %moduleheaders = ( # restrict the module headers to those found in relative path
      "QtEglFSDeviceIntegration" => "api",
+diff --git a/src/corelib/corelib.pro b/src/corelib/corelib.pro
+index 7d057e01..96f49dd8 100644
+--- a/src/corelib/corelib.pro
++++ b/src/corelib/corelib.pro
+@@ -50,6 +50,8 @@ include(statemachine/statemachine.pri)
+ include(mimetypes/mimetypes.pri)
+ include(platform/platform.pri)
+ 
++contains(QT_CONFIG,sa-trace):include(../3rdparty/sa-trace.pri)
++
+ win32 {
+     QMAKE_USE_PRIVATE += ws2_32
+     !winrt: QMAKE_USE_PRIVATE += advapi32 kernel32 ole32 shell32 uuid user32 winmm
 diff --git a/src/3rdparty/sa-trace.pri b/src/3rdparty/sa-trace.pri
 new file mode 100644
 index 00000000..bfb66697
@@ -121,7 +134,7 @@ index 00000000..da2d39d9
 @@ -0,0 +1,3 @@
 +DEFINES         += ENABLE_SA_TRACE
 +CFLAGS          += -g3 -O1
-+LIBS            += -lsa-trace -ldl -llttng-ust -lurcu-bp
++LIBS            += -L$$OUT_PWD/../../lib -lsa-trace -ldl -llttng-ust -lurcu-bp
 diff --git a/src/3rdparty/sa-trace/sa-trace.pro b/src/3rdparty/sa-trace/sa-trace.pro
 new file mode 100644
 index 00000000..5bc72fe2
@@ -147,6 +160,20 @@ index 00000000..5bc72fe2
 +SOURCES = qt_tracepoints.c
 +
 +HEADERS += qt_tracepoints.h
+diff --git a/src/gui/gui.pro b/src/gui/gui.pro
+index 20372d92..dff51689 100644
+--- a/src/gui/gui.pro
++++ b/src/gui/gui.pro
+@@ -52,6 +52,9 @@ include(vulkan/vulkan.pri)
+ include(platform/platform.pri)
+ include(rhi/rhi.pri)
+ 
++contains(QT_CONFIG,sa-trace):include(../3rdparty/sa-trace.pri)
++contains(QT_CONFIG,sa-trace):CONFIG += sa-trace
++
+ QMAKE_LIBS += $$QMAKE_LIBS_GUI
+ 
+ load(qt_module)
 diff --git a/src/3rdparty/sa-trace/qt_tracepoints.c b/src/3rdparty/sa-trace/qt_tracepoints.c
 new file mode 100644
 index 00000000..121df3d6
@@ -514,21 +541,6 @@ index 5cb7e132..29e15f64 100644
      return true;
  }
  
-diff --git a/src/gui/gui.pro b/src/gui/gui.pro
-index 20372d92..dff51689 100644
---- a/src/gui/gui.pro
-+++ b/src/gui/gui.pro
-@@ -52,6 +52,10 @@ include(vulkan/vulkan.pri)
- include(platform/platform.pri)
- include(rhi/rhi.pri)
- 
-+contains(QT_CONFIG,sa-trace):include(../3rdparty/sa-trace.pri)
-+contains(QT_CONFIG,sa-trace):CONFIG += sa-trace
-+contains(QT_CONFIG,sa-trace):LIBS += -L$$OUT_PWD/../../lib
-+
- QMAKE_LIBS += $$QMAKE_LIBS_GUI
- 
- load(qt_module)
 diff --git a/src/corelib/kernel/qcoreapplication.cpp b/src/corelib/kernel/qcoreapplication.cpp
 index 5fdcc9b9..1e99214a 100644
 --- a/src/corelib/kernel/qcoreapplication.cpp
@@ -592,19 +604,6 @@ index 5fdcc9b9..1e99214a 100644
      bool selfRequired = QCoreApplicationPrivate::threadRequiresCoreApplication();
      if (!self && selfRequired)
          return false;
-diff --git a/src/corelib/corelib.pro b/src/corelib/corelib.pro
-index 7d057e01..96f49dd8 100644
---- a/src/corelib/corelib.pro
-+++ b/src/corelib/corelib.pro
-@@ -50,6 +50,8 @@ include(statemachine/statemachine.pri)
- include(mimetypes/mimetypes.pri)
- include(platform/platform.pri)
- 
-+contains(QT_CONFIG,sa-trace):include(../3rdparty/sa-trace.pri)
-+
- win32 {
-     QMAKE_USE_PRIVATE += ws2_32
-     !winrt: QMAKE_USE_PRIVATE += advapi32 kernel32 ole32 shell32 uuid user32 winmm
 diff --git a/src/corelib/animation/qabstractanimation.cpp b/src/corelib/animation/qabstractanimation.cpp
 index b7136dc0..fa8a0916 100644
 --- a/src/corelib/animation/qabstractanimation.cpp
