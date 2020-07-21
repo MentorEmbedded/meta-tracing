@@ -1,3 +1,4 @@
+#TODO: update tracing patches and remove BBMASK from layer.conf
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 SRC_URI += "file://0001-Add-optional-LTTng-support-in-configure.patch \
