@@ -1,6 +1,6 @@
-From f0f98d4f7859424d3a8c313533dc106afd8ef7da Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 15:23:06 +0200
+From c76524c702acb52be9da687ddacebf26ecc670c4 Mon Sep 17 00:00:00 2001
+From: Arulpandiyan Vadivel <arulpandiyan_vadivel@mentor.com>
+Date: Mon, 27 Jul 2020 15:41:48 +0530
 Subject: [PATCH 11/11] Added latency probe tracepoint event.
 
 1) Added declaration macros (GST_FLOW_TRACEPOINT_PUSH_DECLARATION)
@@ -15,15 +15,15 @@ Subject: [PATCH 11/11] Added latency probe tracepoint event.
    When it is received in the sink, we can then deduce the time it
    took, which is also approximately the time of the buffer preceding it.
 ---
- gst/gst_tracepoints.c | 92 +++++++++++++++++++++++++++++++++++++++++++++++++++
- gst/gst_tracepoints.h | 37 +++++++++++++++------
- gst/gstpad.c          | 80 +++++++++++++++++++++++---------------------
- 3 files changed, 161 insertions(+), 48 deletions(-)
+ gst/gst_tracepoints.c | 90 +++++++++++++++++++++++++++++++++++++++++++
+ gst/gst_tracepoints.h | 37 +++++++++++++-----
+ gst/gstpad.c          | 75 +++++++++++++++++++-----------------
+ 3 files changed, 157 insertions(+), 45 deletions(-)
 
-Index: gstreamer-1.16.1/gst/gst_tracepoints.c
-===================================================================
---- gstreamer-1.16.1.orig/gst/gst_tracepoints.c
-+++ gstreamer-1.16.1/gst/gst_tracepoints.c
+diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
+index 4840846..0d85050 100644
+--- a/gst/gst_tracepoints.c
++++ b/gst/gst_tracepoints.c
 @@ -31,12 +31,25 @@
  #include "gstelement.h"
  #include "gstbufferlist.h"
@@ -50,7 +50,7 @@ Index: gstreamer-1.16.1/gst/gst_tracepoints.c
  
  static inline GstClockTime
  gst_tracepoints_extract_event_latency (GstEvent * event)
-@@ -162,4 +175,82 @@ gst_tracepoints_extract_qos_event_type (
+@@ -164,4 +177,81 @@ gst_tracepoints_extract_qos_event_type (GstEvent * event,
    return event_data->type;
  }
  
@@ -131,12 +131,11 @@ Index: gstreamer-1.16.1/gst/gst_tracepoints.c
 +  return GST_ELEMENT_CAST (parent);
 +}
 +
-+
  #endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
-Index: gstreamer-1.16.1/gst/gst_tracepoints.h
-===================================================================
---- gstreamer-1.16.1.orig/gst/gst_tracepoints.h
-+++ gstreamer-1.16.1/gst/gst_tracepoints.h
+diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
+index 2b7e246..2b3a9e2 100644
+--- a/gst/gst_tracepoints.h
++++ b/gst/gst_tracepoints.h
 @@ -30,6 +30,9 @@
  
  extern GstPad *_priv_gst_ghostpad_get_target (GstGhostPad *gpad);
@@ -147,7 +146,7 @@ Index: gstreamer-1.16.1/gst/gst_tracepoints.h
  
  enum GstFlowTracepointType {
    GST_TRACEPOINT_FLAG_ENTER = 0,
-@@ -135,29 +138,37 @@ GST_TRACEPOINT_EVENT (gst_flow_event_cap
+@@ -135,29 +138,37 @@ GST_TRACEPOINT_EVENT (gst_flow_event_caps,
                                   ctf_string (text, str)))
  
  GST_TRACEPOINT_EVENT (gst_latency_measurement_start,
@@ -193,7 +192,7 @@ Index: gstreamer-1.16.1/gst/gst_tracepoints.h
  
  #define GST_FLOW_TRACEPOINT_PUSH_ERROR(pad, ret) \
      GST_TRACEPOINT (gst_flow, pad, NULL, ret, GST_TRACEPOINT_FLAG_PUSH, GST_TRACEPOINT_FLAG_ERROR)
-@@ -166,7 +177,10 @@ GST_TRACEPOINT_EVENT (gst_latency_measur
+@@ -166,7 +177,10 @@ GST_TRACEPOINT_EVENT (gst_latency_measurement_passed,
      GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_PUSH, GST_TRACEPOINT_FLAG_DROPPED)
  
  #define GST_FLOW_TRACEPOINT_PULL_ENTER(pad) \
@@ -205,7 +204,7 @@ Index: gstreamer-1.16.1/gst/gst_tracepoints.h
  
  #define GST_FLOW_TRACEPOINT_PULL_EXIT(pad, data, ret) \
      GST_TRACEPOINT (gst_flow, pad, data, ret, GST_TRACEPOINT_FLAG_PULL, GST_TRACEPOINT_FLAG_EXIT)
-@@ -178,7 +192,10 @@ GST_TRACEPOINT_EVENT (gst_latency_measur
+@@ -178,7 +192,10 @@ GST_TRACEPOINT_EVENT (gst_latency_measurement_passed,
      GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_PULL, GST_TRACEPOINT_FLAG_DROPPED)
  
  #define GST_FLOW_TRACEPOINT_SEND_EVENT_ENTER(pad, event)                \
@@ -217,11 +216,11 @@ Index: gstreamer-1.16.1/gst/gst_tracepoints.h
  
  #define GST_FLOW_TRACEPOINT_SEND_EVENT_EXIT(pad, ret) \
    GST_TRACEPOINT (gst_flow, pad, NULL, (ret) ? GST_FLOW_OK : GST_FLOW_ERROR, GST_TRACEPOINT_FLAG_SEND_EVENT, GST_TRACEPOINT_FLAG_EXIT)
-Index: gstreamer-1.16.1/gst/gstpad.c
-===================================================================
---- gstreamer-1.16.1.orig/gst/gstpad.c
-+++ gstreamer-1.16.1/gst/gstpad.c
-@@ -4273,12 +4273,14 @@ gst_pad_chain_data_unchecked (GstPad * p
+diff --git a/gst/gstpad.c b/gst/gstpad.c
+index 08e0160..0537ab5 100644
+--- a/gst/gstpad.c
++++ b/gst/gstpad.c
+@@ -4272,12 +4272,14 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
    GstFlowReturn ret;
    GstObject *parent;
    gboolean handled = FALSE;
@@ -238,7 +237,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -4351,39 +4353,40 @@ gst_pad_chain_data_unchecked (GstPad * p
+@@ -4350,39 +4352,40 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
  
    RELEASE_PARENT (parent);
  
@@ -283,7 +282,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      return GST_FLOW_ERROR;
    }
  probe_handled:
-@@ -4422,11 +4425,11 @@ no_parent:
+@@ -4421,11 +4424,11 @@ no_parent:
  no_function:
    {
      RELEASE_PARENT (parent);
@@ -296,7 +295,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      return GST_FLOW_NOT_SUPPORTED;
    }
  }
-@@ -4537,10 +4540,11 @@ gst_pad_push_data (GstPad * pad, GstPadP
+@@ -4536,10 +4539,11 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
    GstPad *peer;
    GstFlowReturn ret;
    gboolean handled = FALSE;
@@ -309,7 +308,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -4605,50 +4609,50 @@ gst_pad_push_data (GstPad * pad, GstPadP
+@@ -4604,50 +4608,50 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
      PROBE_NO_DATA (pad, GST_PAD_PROBE_TYPE_PUSH | GST_PAD_PROBE_TYPE_IDLE,
          probe_stopped, ret);
    }
@@ -365,7 +364,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      return ret;
    }
  probe_handled:
-@@ -4677,12 +4681,12 @@ probe_stopped:
+@@ -4676,12 +4680,12 @@ probe_stopped:
    }
  not_linked:
    {
@@ -379,7 +378,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      return GST_FLOW_NOT_LINKED;
    }
  }
-@@ -4774,10 +4778,11 @@ gst_pad_get_range_unchecked (GstPad * pa
+@@ -4773,10 +4777,11 @@ gst_pad_get_range_unchecked (GstPad * pad, guint64 offset, guint size,
    GstObject *parent;
    GstBuffer *res_buf;
  
@@ -392,7 +391,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -4836,49 +4841,49 @@ probed_data:
+@@ -4835,49 +4840,49 @@ probed_data:
    /* ERRORS */
  flushing:
    {
@@ -447,16 +446,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      return GST_FLOW_NOT_SUPPORTED;
    }
  probe_stopped:
-@@ -4899,37 +4904,36 @@ probe_stopped:
-       }
-     }
-     pad->ABI.abi.last_flowret = ret;
--    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
-     GST_OBJECT_UNLOCK (pad);
-     GST_PAD_STREAM_UNLOCK (pad);
- 
-+    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
-     return ret;
+@@ -4905,29 +4910,28 @@ probe_stopped:
    }
  probe_stopped_unref:
    {
@@ -488,20 +478,15 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      return ret;
    }
  }
-@@ -5040,10 +5044,10 @@ gst_pad_pull_range (GstPad * pad, guint6
- 
-   GST_TRACER_PAD_PULL_RANGE_PRE (pad, offset, size);
- 
--  GST_OBJECT_LOCK (pad);
--
+@@ -5041,6 +5045,7 @@ gst_pad_pull_range (GstPad * pad, guint64 offset, guint size,
    GST_FLOW_TRACEPOINT_PULL_ENTER (pad);
  
-+  GST_OBJECT_LOCK (pad);
+   GST_OBJECT_LOCK (pad);
 +
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -5098,21 +5102,21 @@ probed_data:
+@@ -5095,21 +5100,21 @@ probed_data:
    /* ERROR recovery here */
  flushing:
    {
@@ -525,7 +510,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      ret = GST_FLOW_ERROR;
      goto done;
    }
-@@ -5134,28 +5138,28 @@ probe_stopped:
+@@ -5131,28 +5136,28 @@ probe_stopped:
        }
      }
      pad->ABI.abi.last_flowret = ret;
@@ -557,7 +542,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      goto done;
    }
  probe_stopped_unref:
-@@ -5170,9 +5174,9 @@ probe_stopped_unref:
+@@ -5167,9 +5172,9 @@ probe_stopped_unref:
      pad->ABI.abi.last_flowret = ret;
      GST_OBJECT_UNLOCK (pad);
  
@@ -568,7 +553,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      goto done;
    }
  done:
-@@ -5683,10 +5687,10 @@ gst_pad_send_event_unchecked (GstPad * p
+@@ -5680,10 +5685,10 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
    GstObject *parent;
    gint64 old_pad_offset;
  
@@ -580,7 +565,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
    old_pad_offset = pad->offset;
    event = apply_pad_offset (pad, event, GST_PAD_IS_SRC (pad));
  
-@@ -5854,13 +5858,13 @@ gst_pad_send_event_unchecked (GstPad * p
+@@ -5851,13 +5856,13 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
    /* ERROR handling */
  flushing:
    {
@@ -595,7 +580,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      return GST_FLOW_FLUSHING;
    }
  inactive:
-@@ -5875,13 +5879,13 @@ inactive:
+@@ -5872,13 +5877,13 @@ inactive:
    }
  eos:
    {
@@ -610,7 +595,7 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      return GST_FLOW_EOS;
    }
  probe_stopped:
-@@ -5909,33 +5913,33 @@ probe_stopped:
+@@ -5906,33 +5911,33 @@ probe_stopped:
    }
  no_function:
    {
@@ -647,3 +632,6 @@ Index: gstreamer-1.16.1/gst/gstpad.c
      return ret;
    }
  }
+-- 
+2.25.1
+

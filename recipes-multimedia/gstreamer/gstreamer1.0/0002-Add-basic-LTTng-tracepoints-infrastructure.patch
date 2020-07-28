@@ -1,24 +1,24 @@
-From 92448819f186cc78f111e7314c3e2ce0fd7518f5 Mon Sep 17 00:00:00 2001
+From d80e6d8d762f0fd54d63909a4e65dca84f8047aa Mon Sep 17 00:00:00 2001
 From: Alexander Barabash <alexander_barabash@mentor.com>
 Date: Tue, 8 Dec 2015 14:08:22 +0200
 Subject: [PATCH 02/11] Add basic LTTng tracepoints infrastructure.
 
 ---
- gst/Makefile.am       |  9 +++++++-
- gst/gst_tracepoints.c | 35 ++++++++++++++++++++++++++++++
- gst/gst_tracepoints.h | 59 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 102 insertions(+), 1 deletion(-)
+ gst/Makefile.am       | 11 ++++++--
+ gst/gst_tracepoints.c | 35 +++++++++++++++++++++++++
+ gst/gst_tracepoints.h | 59 +++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 103 insertions(+), 2 deletions(-)
  create mode 100644 gst/gst_tracepoints.c
  create mode 100644 gst/gst_tracepoints.h
 
 diff --git a/gst/Makefile.am b/gst/Makefile.am
-index 213e3fd..3cecaea 100644
+index 1ca0765..1891992 100644
 --- a/gst/Makefile.am
 +++ b/gst/Makefile.am
-@@ -34,6 +34,12 @@ SUBDIRS_PRINTF =
+@@ -28,6 +28,12 @@ SUBDIRS_PRINTF =
  GST_PRINTF_LA =
  endif
- 
+
 +if GST_ENABLE_LTTNG_TRACEPOINTS
 +GST_TRACEPOINTS_SRC = gst_tracepoints.c
 +else
@@ -26,18 +26,27 @@ index 213e3fd..3cecaea 100644
 +endif
 +
  SUBDIRS = $(SUBDIRS_PARSE) $(SUBDIRS_PRINTF)
- 
+
  DIST_SUBDIRS = parse printf
-@@ -121,7 +127,8 @@ libgstreamer_@GST_API_VERSION@_la_SOURCES = \
+@@ -119,7 +125,8 @@ libgstreamer_@GST_API_VERSION@_la_SOURCES = \
  	gstutils.c		\
  	gstvalue.c		\
  	gstparse.c		\
 -	$(GST_REGISTRY_SRC)
 +	$(GST_REGISTRY_SRC)	\
 +	$(GST_TRACEPOINTS_SRC)
- 
+
  # do not put files in the distribution that are generated
  nodist_libgstreamer_@GST_API_VERSION@_la_SOURCES = $(built_source_make)
+@@ -137,7 +144,7 @@ DISTCLEANFILES = $(built_headers_configure)
+ libgstreamer_@GST_API_VERSION@_la_CFLAGS =		\
+ 	-D_GNU_SOURCE					\
+ 	-DBUILDING_GST					\
+-	-DG_LOG_DOMAIN=g_log_domain_gstreamer 		\
++	-DG_LOG_DOMAIN=\"GStreamer\"            \
+ 	-DGST_API_VERSION=\""$(GST_API_VERSION)"\" 	\
+ 	-DGST_DISABLE_DEPRECATED			\
+ 	$(VALGRIND_CFLAGS)				\
 diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
 new file mode 100644
 index 0000000..326472a
@@ -144,6 +153,5 @@ index 0000000..579acf5
 +#define GST_TRACEPOINT(...)
 +
 +#endif /* !GST_ENABLE_LTTNG_TRACEPOINTS */
--- 
-2.2.1
-
+--
+2.25.1
