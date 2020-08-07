@@ -1,29 +1,30 @@
-From 46709a29222272f985925e2e57caa78e094d3a20 Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 15:12:35 +0200
+From 9ef9476aea1e39ed03897c93b7a6921f7730ad5a Mon Sep 17 00:00:00 2001
+From: Arulpandiyan Vadivel <arulpandiyan_vadivel@mentor.com>
+Date: Tue, 28 Jul 2020 12:24:54 +0530
 Subject: [PATCH 09/11] Added event type field to gst_flow_event_qos event;
- renamed field diff->jitter.
 
+renamed field diff->jitter.
 ---
- gst/gst_tracepoints.c | 15 +++++++++++++--
+ gst/gst_tracepoints.c | 16 ++++++++++++++--
  gst/gst_tracepoints.h |  5 +++--
- 2 files changed, 16 insertions(+), 4 deletions(-)
+ 2 files changed, 17 insertions(+), 4 deletions(-)
 
 diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
-index 4be57c0..aea8858 100644
+index ed5ba94..75cdfaa 100644
 --- a/gst/gst_tracepoints.c
 +++ b/gst/gst_tracepoints.c
-@@ -52,6 +52,9 @@ gst_tracepoints_extract_qos_event_diff (GstEvent * event,
+@@ -52,6 +52,10 @@ gst_tracepoints_extract_qos_event_diff (GstEvent * event,
  static inline gdouble
  gst_tracepoints_extract_qos_event_proportion (GstEvent * event,
      struct GstFlowTracepointQOSEventData *event_data);
 +static inline GstQOSType
 +gst_tracepoints_extract_qos_event_type (GstEvent * event,
 +    struct GstFlowTracepointQOSEventData *event_data);
++
  
  #define GST_TRACEPOINTS_CREATE_PROBES
  #define TRACEPOINT_CREATE_PROBES
-@@ -130,7 +133,7 @@ gst_tracepoints_extract_qos_event_data (GstEvent * event,
+@@ -131,7 +135,7 @@ gst_tracepoints_extract_qos_event_data (GstEvent * event,
    if (!event_data->data_ready) {
      event_data->data_ready = TRUE;
      gst_event_parse_qos (event, &event_data->type, &event_data->proportion,
@@ -32,7 +33,7 @@ index 4be57c0..aea8858 100644
    }
  }
  
-@@ -139,7 +142,7 @@ gst_tracepoints_extract_qos_event_diff (GstEvent * event,
+@@ -140,7 +144,7 @@ gst_tracepoints_extract_qos_event_diff (GstEvent * event,
      struct GstFlowTracepointQOSEventData *event_data)
  {
    gst_tracepoints_extract_qos_event_data (event, event_data);
@@ -41,7 +42,7 @@ index 4be57c0..aea8858 100644
  }
  
  static inline gdouble
-@@ -150,4 +153,12 @@ gst_tracepoints_extract_qos_event_proportion (GstEvent * event,
+@@ -151,4 +155,12 @@ gst_tracepoints_extract_qos_event_proportion (GstEvent * event,
    return event_data->proportion;
  }
  
@@ -55,7 +56,7 @@ index 4be57c0..aea8858 100644
 +
  #endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
 diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
-index c175afc..6c6580f 100644
+index f0eca85..02c63bd 100644
 --- a/gst/gst_tracepoints.h
 +++ b/gst/gst_tracepoints.h
 @@ -52,7 +52,7 @@ typedef enum GstFlowTracepointDataType {
@@ -78,5 +79,5 @@ index c175afc..6c6580f 100644
  
  GST_TRACEPOINT_EVENT (gst_flow_event_caps,
 -- 
-2.2.1
+2.25.1
 

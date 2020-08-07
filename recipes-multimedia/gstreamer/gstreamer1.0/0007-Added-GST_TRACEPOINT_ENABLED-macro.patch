@@ -1,6 +1,6 @@
-From a2f8f2a518d4e37ae76b92a86d41ed3589a939ff Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 15:10:51 +0200
+From 9694dc1f45a53f3a630d68372976df4b4431b162 Mon Sep 17 00:00:00 2001
+From: Arulpandiyan Vadivel <arulpandiyan_vadivel@mentor.com>
+Date: Mon, 27 Jul 2020 12:48:27 +0530
 Subject: [PATCH 07/11] Added GST_TRACEPOINT_ENABLED() macro.
 
 GST_TRACEPOINT_ENABLED(name) is true iff the tracepoint Gst:name is enabled.
@@ -9,9 +9,11 @@ GST_TRACEPOINT_ENABLED(name) is true iff the tracepoint Gst:name is enabled.
  gst/gst_tracepoints.h | 28 ++++++++++++++--------------
  2 files changed, 15 insertions(+), 16 deletions(-)
 
+diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
+index b460b39..ed5ba94 100644
 --- a/gst/gst_tracepoints.c
 +++ b/gst/gst_tracepoints.c
-@@ -111,8 +111,7 @@
+@@ -112,8 +112,7 @@ gst_tracepoints_trace_buffer_list_item (GstBuffer ** buffer,
      guint idx, gpointer user_data)
  {
    if (*buffer != NULL) {
@@ -21,9 +23,11 @@ GST_TRACEPOINT_ENABLED(name) is true iff the tracepoint Gst:name is enabled.
    }
  
    return TRUE;
+diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
+index f959282..27b7873 100644
 --- a/gst/gst_tracepoints.h
 +++ b/gst/gst_tracepoints.h
-@@ -86,6 +86,9 @@
+@@ -86,6 +86,9 @@ typedef struct GstFlowTracepointQOSEventData {
  
  #include <lttng/tracepoint.h>
  
@@ -33,7 +37,7 @@ GST_TRACEPOINT_ENABLED(name) is true iff the tracepoint Gst:name is enabled.
  GST_TRACEPOINT_EVENT (gst_flow,
                        TP_ARGS (GstPad *, pad,
                                 void *, data,
-@@ -102,15 +105,15 @@
+@@ -102,15 +105,15 @@ GST_TRACEPOINT_EVENT (gst_flow,
                                               gst_tracepoints_get_pad_element_name_if_needed (pad, tracepoint_type))))
  
  GST_TRACEPOINT_EVENT (gst_flow_data,
@@ -53,8 +57,8 @@ GST_TRACEPOINT_ENABLED(name) is true iff the tracepoint Gst:name is enabled.
  
  GST_TRACEPOINT_EVENT (gst_flow_event_latency,
                        TP_ARGS (GstEvent *, event),
-@@ -164,13 +167,12 @@
-     GST_TRACEPOINT (gst_flow, pad, NULL, GST_FLOW_OK, GST_TRACEPOINT_FLAG_SEND_EVENT, GST_TRACEPOINT_FLAG_DROPPED)
+@@ -165,13 +168,12 @@ GST_TRACEPOINT_EVENT (gst_flow_event_qos,
+ #define GST_TRACEPOINT(...) tracepoint (Gst, __VA_ARGS__)
  
  #define GST_FLOW_TRACEPOINT_BUFFER(buffer) \
 -  GST_TRACEPOINT (gst_flow_data, buffer, GST_TRACEPOINT_DATA_TYPE_BUFFER, NULL)
@@ -70,7 +74,7 @@ GST_TRACEPOINT_ENABLED(name) is true iff the tracepoint Gst:name is enabled.
              switch(event->type) {                                       \
              case GST_EVENT_LATENCY:                                     \
                  GST_TRACEPOINT (gst_flow_event_latency, event);         \
-@@ -191,18 +193,16 @@
+@@ -192,18 +194,16 @@ GST_TRACEPOINT_EVENT (gst_flow_event_qos,
  
  #define GST_FLOW_TRACEPOINT_DATA(data, is_buffer)                       \
      do {                                                                \
@@ -93,3 +97,6 @@ GST_TRACEPOINT_ENABLED(name) is true iff the tracepoint Gst:name is enabled.
        _priv_gst_tracepoints_trace_buffer_list (list);                   \
      }                                                                   \
    } while (0)
+-- 
+2.25.1
+

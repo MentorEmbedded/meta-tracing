@@ -1,6 +1,6 @@
-From d1273bb861e2bd811c1c368a959f2dfa3976655c Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 14:56:15 +0200
+From 12205c60875774ab553580c3eb1f95aacb54d784 Mon Sep 17 00:00:00 2001
+From: Arulpandiyan Vadivel <arulpandiyan_vadivel@mentor.com>
+Date: Fri, 24 Jul 2020 19:44:39 +0530
 Subject: [PATCH 03/11] Add gst_flow LLTng tracepoints.
 
 The gst_flow tracepoints trace the flow of data through the gstreamer pipeline.
@@ -40,17 +40,19 @@ the value of the pointer to the data is traced.
 
 At exit points, the call result is traced.
 ---
- gst/gst_tracepoints.c                              | 56 +++++++++++++
- gst/gst_tracepoints.h                              | 92 +++++++++++++++++++++-
- gst/gstghostpad.c                                  |  2 +
- ...gst_tracepoints.c => gstghostpad_tracepoints.h} | 18 ++---
- gst/gstpad.c                                       | 49 ++++++++++++
- 5 files changed, 202 insertions(+), 15 deletions(-)
- copy gst/{gst_tracepoints.c => gstghostpad_tracepoints.h} (74%)
+ gst/gst_tracepoints.c         | 57 ++++++++++++++++++++++
+ gst/gst_tracepoints.h         | 92 +++++++++++++++++++++++++++++++++--
+ gst/gstghostpad.c             |  2 +
+ gst/gstghostpad_tracepoints.h | 33 +++++++++++++
+ gst/gstpad.c                  | 47 ++++++++++++++++++
+ 5 files changed, 228 insertions(+), 3 deletions(-)
+ create mode 100644 gst/gstghostpad_tracepoints.h
 
+diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
+index 326472a..ef64cac 100644
 --- a/gst/gst_tracepoints.c
 +++ b/gst/gst_tracepoints.c
-@@ -26,10 +26,66 @@
+@@ -26,10 +26,67 @@
  #include "config.h"
  
  #ifdef GST_ENABLE_LTTNG_TRACEPOINTS
@@ -67,6 +69,7 @@ At exit points, the call result is traced.
  #define TRACEPOINT_CREATE_PROBES
  #define TRACEPOINT_DEFINE
  #include "gst_tracepoints.h"
+ 
 +static const gchar *
 +gst_tracepoints_get_pad_element_name (GstPad * pad)
 +{
@@ -115,8 +118,10 @@ At exit points, the call result is traced.
 +  }
 +  return thread_id;
 +}
- 
++
  #endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
+diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
+index 579acf5..0d33653 100644
 --- a/gst/gst_tracepoints.h
 +++ b/gst/gst_tracepoints.h
 @@ -22,11 +22,37 @@
@@ -239,14 +244,19 @@ At exit points, the call result is traced.
  #define GST_TRACEPOINT(...)
  
  #endif /* !GST_ENABLE_LTTNG_TRACEPOINTS */
+diff --git a/gst/gstghostpad.c b/gst/gstghostpad.c
+index ffbe650..2ec3b83 100644
 --- a/gst/gstghostpad.c
 +++ b/gst/gstghostpad.c
-@@ -882,3 +882,5 @@
+@@ -890,3 +890,5 @@ link_failed:
      return FALSE;
    }
  }
 +
 +#include "gstghostpad_tracepoints.h"
+diff --git a/gst/gstghostpad_tracepoints.h b/gst/gstghostpad_tracepoints.h
+new file mode 100644
+index 0000000..0b9e912
 --- /dev/null
 +++ b/gst/gstghostpad_tracepoints.h
 @@ -0,0 +1,33 @@
@@ -283,9 +293,11 @@ At exit points, the call result is traced.
 +}
 +
 +#endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
+diff --git a/gst/gstpad.c b/gst/gstpad.c
+index 12eb561..e46522f 100644
 --- a/gst/gstpad.c
 +++ b/gst/gstpad.c
-@@ -97,6 +97,7 @@
+@@ -98,6 +98,7 @@
  #include "gsttracerutils.h"
  #include "gstvalue.h"
  #include "glib-compat-private.h"
@@ -293,7 +305,7 @@ At exit points, the call result is traced.
  
  GST_DEBUG_CATEGORY_STATIC (debug_dataflow);
  #define GST_CAT_DEFAULT GST_CAT_PADS
-@@ -4125,6 +4126,7 @@
+@@ -4275,6 +4276,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
    GST_PAD_STREAM_LOCK (pad);
  
    GST_OBJECT_LOCK (pad);
@@ -301,7 +313,7 @@ At exit points, the call result is traced.
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -4197,6 +4199,7 @@
+@@ -4347,6 +4349,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
  
    RELEASE_PARENT (parent);
  
@@ -309,7 +321,7 @@ At exit points, the call result is traced.
    GST_PAD_STREAM_UNLOCK (pad);
  
    return ret;
-@@ -4204,6 +4207,7 @@
+@@ -4354,6 +4357,7 @@ gst_pad_chain_data_unchecked (GstPad * pad, GstPadProbeType type, void *data)
    /* ERRORS */
  flushing:
    {
@@ -317,7 +329,7 @@ At exit points, the call result is traced.
      GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
          "chaining, but pad was flushing");
      GST_OBJECT_UNLOCK (pad);
-@@ -4213,6 +4217,7 @@
+@@ -4363,6 +4367,7 @@ flushing:
    }
  eos:
    {
@@ -325,7 +337,7 @@ At exit points, the call result is traced.
      GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad, "chaining, but pad was EOS");
      GST_OBJECT_UNLOCK (pad);
      GST_PAD_STREAM_UNLOCK (pad);
-@@ -4221,6 +4226,7 @@
+@@ -4371,6 +4376,7 @@ eos:
    }
  wrong_mode:
    {
@@ -333,7 +345,7 @@ At exit points, the call result is traced.
      g_critical ("chain on pad %s:%s but it was not in push mode",
          GST_DEBUG_PAD_NAME (pad));
      GST_OBJECT_UNLOCK (pad);
-@@ -4243,9 +4249,11 @@
+@@ -4393,9 +4399,11 @@ probe_stopped:
        case GST_FLOW_CUSTOM_SUCCESS:
        case GST_FLOW_CUSTOM_SUCCESS_1:
          GST_DEBUG_OBJECT (pad, "dropped or handled buffer");
@@ -345,7 +357,7 @@ At exit points, the call result is traced.
          GST_DEBUG_OBJECT (pad, "an error occurred %s", gst_flow_get_name (ret));
          break;
      }
-@@ -4262,6 +4270,7 @@
+@@ -4412,6 +4420,7 @@ no_parent:
  no_function:
    {
      RELEASE_PARENT (parent);
@@ -353,7 +365,7 @@ At exit points, the call result is traced.
      gst_mini_object_unref (GST_MINI_OBJECT_CAST (data));
      g_critical ("chain on pad %s:%s but it has no chainfunction",
          GST_DEBUG_PAD_NAME (pad));
-@@ -4378,6 +4387,7 @@
+@@ -4528,6 +4537,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
    gboolean handled = FALSE;
  
    GST_OBJECT_LOCK (pad);
@@ -361,7 +373,7 @@ At exit points, the call result is traced.
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -4438,6 +4448,7 @@
+@@ -4592,6 +4602,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
      PROBE_NO_DATA (pad, GST_PAD_PROBE_TYPE_PUSH | GST_PAD_PROBE_TYPE_IDLE,
          probe_stopped, ret);
    }
@@ -369,7 +381,7 @@ At exit points, the call result is traced.
    GST_OBJECT_UNLOCK (pad);
  
    return ret;
-@@ -4446,6 +4457,7 @@
+@@ -4600,6 +4611,7 @@ gst_pad_push_data (GstPad * pad, GstPadProbeType type, void *data)
    /* ERRORS */
  flushing:
    {
@@ -377,7 +389,7 @@ At exit points, the call result is traced.
      GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
          "pushing, but pad was flushing");
      pad->ABI.abi.last_flowret = GST_FLOW_FLUSHING;
-@@ -4455,6 +4467,7 @@
+@@ -4609,6 +4621,7 @@ flushing:
    }
  eos:
    {
@@ -385,7 +397,7 @@ At exit points, the call result is traced.
      GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad, "pushing, but pad was EOS");
      pad->ABI.abi.last_flowret = GST_FLOW_EOS;
      GST_OBJECT_UNLOCK (pad);
-@@ -4463,6 +4476,7 @@
+@@ -4617,6 +4630,7 @@ eos:
    }
  wrong_mode:
    {
@@ -393,7 +405,7 @@ At exit points, the call result is traced.
      g_critical ("pushing on pad %s:%s but it was not activated in push mode",
          GST_DEBUG_PAD_NAME (pad));
      pad->ABI.abi.last_flowret = GST_FLOW_ERROR;
-@@ -4472,6 +4486,7 @@
+@@ -4626,6 +4640,7 @@ wrong_mode:
    }
  events_error:
    {
@@ -401,7 +413,7 @@ At exit points, the call result is traced.
      GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
          "error pushing events, return %s", gst_flow_get_name (ret));
      pad->ABI.abi.last_flowret = ret;
-@@ -4492,9 +4507,11 @@
+@@ -4646,9 +4661,11 @@ probe_stopped:
        case GST_FLOW_CUSTOM_SUCCESS:
        case GST_FLOW_CUSTOM_SUCCESS_1:
          GST_DEBUG_OBJECT (pad, "dropped or handled buffer");
@@ -413,7 +425,7 @@ At exit points, the call result is traced.
          GST_DEBUG_OBJECT (pad, "an error occurred %s", gst_flow_get_name (ret));
          break;
      }
-@@ -4503,6 +4520,7 @@
+@@ -4657,6 +4674,7 @@ probe_stopped:
    }
  not_linked:
    {
@@ -421,7 +433,7 @@ At exit points, the call result is traced.
      GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
          "pushing, but it was not linked");
      pad->ABI.abi.last_flowret = GST_FLOW_NOT_LINKED;
-@@ -4602,6 +4620,7 @@
+@@ -4756,6 +4774,7 @@ gst_pad_get_range_unchecked (GstPad * pad, guint64 offset, guint size,
    GST_PAD_STREAM_LOCK (pad);
  
    GST_OBJECT_LOCK (pad);
@@ -429,7 +441,7 @@ At exit points, the call result is traced.
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
  
-@@ -4653,11 +4672,13 @@
+@@ -4807,11 +4826,13 @@ probed_data:
  
    *buffer = res_buf;
  
@@ -443,7 +455,7 @@ At exit points, the call result is traced.
      GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
          "getrange, but pad was flushing");
      pad->ABI.abi.last_flowret = GST_FLOW_FLUSHING;
-@@ -4667,6 +4688,7 @@
+@@ -4821,6 +4842,7 @@ flushing:
    }
  wrong_mode:
    {
@@ -451,7 +463,7 @@ At exit points, the call result is traced.
      g_critical ("getrange on pad %s:%s but it was not activated in pull mode",
          GST_DEBUG_PAD_NAME (pad));
      pad->ABI.abi.last_flowret = GST_FLOW_ERROR;
-@@ -4676,6 +4698,7 @@
+@@ -4830,6 +4852,7 @@ wrong_mode:
    }
  events_error:
    {
@@ -459,7 +471,7 @@ At exit points, the call result is traced.
      GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad, "error pushing events");
      pad->ABI.abi.last_flowret = ret;
      GST_OBJECT_UNLOCK (pad);
-@@ -4684,6 +4707,7 @@
+@@ -4838,6 +4861,7 @@ events_error:
    }
  no_parent:
    {
@@ -467,7 +479,7 @@ At exit points, the call result is traced.
      GST_DEBUG_OBJECT (pad, "no parent");
      pad->ABI.abi.last_flowret = GST_FLOW_FLUSHING;
      GST_OBJECT_UNLOCK (pad);
-@@ -4692,6 +4716,7 @@
+@@ -4846,6 +4870,7 @@ no_parent:
    }
  no_function:
    {
@@ -475,15 +487,7 @@ At exit points, the call result is traced.
      g_critical ("getrange on pad %s:%s but it has no getrangefunction",
          GST_DEBUG_PAD_NAME (pad));
      RELEASE_PARENT (parent);
-@@ -4716,6 +4741,7 @@
-       }
-     }
-     pad->ABI.abi.last_flowret = ret;
-+    GST_FLOW_TRACEPOINT_PULL_ERROR (pad, ret);
-     GST_OBJECT_UNLOCK (pad);
-     GST_PAD_STREAM_UNLOCK (pad);
- 
-@@ -4723,12 +4749,14 @@
+@@ -4877,12 +4902,14 @@ probe_stopped:
    }
  probe_stopped_unref:
    {
@@ -498,7 +502,7 @@ At exit points, the call result is traced.
      GST_OBJECT_UNLOCK (pad);
      GST_PAD_STREAM_UNLOCK (pad);
      if (*buffer == NULL)
-@@ -4738,6 +4766,7 @@
+@@ -4892,6 +4919,7 @@ probe_stopped_unref:
  get_range_failed:
    {
      pad->ABI.abi.last_flowret = ret;
@@ -506,25 +510,24 @@ At exit points, the call result is traced.
      GST_OBJECT_UNLOCK (pad);
      GST_PAD_STREAM_UNLOCK (pad);
      GST_CAT_LEVEL_LOG (GST_CAT_SCHEDULING,
-@@ -4854,6 +4883,9 @@
+@@ -5007,6 +5035,8 @@ gst_pad_pull_range (GstPad * pad, guint64 offset, guint size,
+ 
    GST_TRACER_PAD_PULL_RANGE_PRE (pad, offset, size);
  
-   GST_OBJECT_LOCK (pad);
-+
 +  GST_FLOW_TRACEPOINT_PULL_ENTER (pad);
 +
+   GST_OBJECT_LOCK (pad);
    if (G_UNLIKELY (GST_PAD_IS_FLUSHING (pad)))
      goto flushing;
- 
-@@ -4899,12 +4931,15 @@
+@@ -5052,6 +5082,7 @@ probed_data:
+   GST_OBJECT_UNLOCK (pad);
  
    *buffer = res_buf;
- 
 +  GST_FLOW_TRACEPOINT_PULL_EXIT (pad, *buffer, ret);
-+
+ 
    GST_TRACER_PAD_PULL_RANGE_POST (pad, *buffer, ret);
    return ret;
- 
+@@ -5059,6 +5090,7 @@ probed_data:
    /* ERROR recovery here */
  flushing:
    {
@@ -532,7 +535,7 @@ At exit points, the call result is traced.
      GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
          "pullrange, but pad was flushing");
      pad->ABI.abi.last_flowret = GST_FLOW_FLUSHING;
-@@ -4914,6 +4949,7 @@
+@@ -5068,6 +5100,7 @@ flushing:
    }
  wrong_mode:
    {
@@ -540,7 +543,7 @@ At exit points, the call result is traced.
      g_critical ("pullrange on pad %s:%s but it was not activated in pull mode",
          GST_DEBUG_PAD_NAME (pad));
      pad->ABI.abi.last_flowret = GST_FLOW_ERROR;
-@@ -4939,11 +4975,13 @@
+@@ -5093,11 +5126,13 @@ probe_stopped:
        }
      }
      pad->ABI.abi.last_flowret = ret;
@@ -554,7 +557,7 @@ At exit points, the call result is traced.
      GST_CAT_LOG_OBJECT (GST_CAT_SCHEDULING, pad,
          "pulling range, but it was not linked");
      pad->ABI.abi.last_flowret = GST_FLOW_NOT_LINKED;
-@@ -4954,6 +4992,7 @@
+@@ -5108,6 +5143,7 @@ not_linked:
  pull_range_failed:
    {
      pad->ABI.abi.last_flowret = ret;
@@ -562,7 +565,7 @@ At exit points, the call result is traced.
      GST_OBJECT_UNLOCK (pad);
      GST_CAT_LEVEL_LOG (GST_CAT_SCHEDULING,
          (ret >= GST_FLOW_EOS) ? GST_LEVEL_INFO : GST_LEVEL_WARNING,
-@@ -4972,6 +5011,7 @@
+@@ -5126,6 +5162,7 @@ probe_stopped_unref:
      pad->ABI.abi.last_flowret = ret;
      GST_OBJECT_UNLOCK (pad);
  
@@ -570,15 +573,15 @@ At exit points, the call result is traced.
      if (*buffer == NULL)
        gst_buffer_unref (res_buf);
      goto done;
-@@ -5461,6 +5501,7 @@
-   GstObject *parent;
+@@ -5639,6 +5676,7 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
+   gint64 old_pad_offset;
  
    GST_OBJECT_LOCK (pad);
 +  GST_FLOW_TRACEPOINT_SEND_EVENT_ENTER (pad, event);
  
+   old_pad_offset = pad->offset;
    event = apply_pad_offset (pad, event, GST_PAD_IS_SRC (pad));
- 
-@@ -5610,11 +5651,14 @@
+@@ -5800,11 +5838,14 @@ gst_pad_send_event_unchecked (GstPad * pad, GstEvent * event,
    if (need_unlock)
      GST_PAD_STREAM_UNLOCK (pad);
  
@@ -593,7 +596,7 @@ At exit points, the call result is traced.
      GST_OBJECT_UNLOCK (pad);
      if (need_unlock)
        GST_PAD_STREAM_UNLOCK (pad);
-@@ -5635,6 +5679,7 @@
+@@ -5825,6 +5866,7 @@ inactive:
    }
  eos:
    {
@@ -601,7 +604,7 @@ At exit points, the call result is traced.
      GST_OBJECT_UNLOCK (pad);
      if (need_unlock)
        GST_PAD_STREAM_UNLOCK (pad);
-@@ -5656,9 +5701,11 @@
+@@ -5846,9 +5888,11 @@ probe_stopped:
        case GST_FLOW_CUSTOM_SUCCESS_1:
        case GST_FLOW_CUSTOM_SUCCESS:
          GST_DEBUG_OBJECT (pad, "dropped or handled event");
@@ -613,7 +616,7 @@ At exit points, the call result is traced.
          GST_DEBUG_OBJECT (pad, "an error occurred %s", gst_flow_get_name (ret));
          break;
      }
-@@ -5666,6 +5713,7 @@
+@@ -5856,6 +5900,7 @@ probe_stopped:
    }
  no_function:
    {
@@ -621,7 +624,7 @@ At exit points, the call result is traced.
      g_warning ("pad %s:%s has no event handler, file a bug.",
          GST_DEBUG_PAD_NAME (pad));
      GST_OBJECT_UNLOCK (pad);
-@@ -5676,6 +5724,7 @@
+@@ -5866,6 +5911,7 @@ no_function:
    }
  no_parent:
    {
@@ -629,7 +632,7 @@ At exit points, the call result is traced.
      GST_DEBUG_OBJECT (pad, "no parent");
      GST_OBJECT_UNLOCK (pad);
      if (need_unlock)
-@@ -5685,6 +5734,7 @@
+@@ -5875,6 +5921,7 @@ no_parent:
    }
  precheck_failed:
    {
@@ -637,3 +640,6 @@ At exit points, the call result is traced.
      GST_DEBUG_OBJECT (pad, "pre event check failed");
      RELEASE_PARENT (parent);
      if (need_unlock)
+-- 
+2.25.1
+

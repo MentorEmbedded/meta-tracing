@@ -1,8 +1,9 @@
-From 9f4f2d0ebe125cd135dbbced53091d8fef74f573 Mon Sep 17 00:00:00 2001
-From: Alexander Barabash <alexander_barabash@mentor.com>
-Date: Tue, 8 Dec 2015 15:10:11 +0200
+From 0efcb17e091bb3a318d992fcfe146ad75f45f8c1 Mon Sep 17 00:00:00 2001
+From: Arulpandiyan Vadivel <arulpandiyan_vadivel@mentor.com>
+Date: Mon, 27 Jul 2020 12:34:39 +0530
 Subject: [PATCH 06/11] Added support for gst_flow_event_latency and
- gst_flow_event_qos LTTng tracepoints.
+
+gst_flow_event_qos LTTng tracepoints.
 
 The gst_flow_event_latency tracepoints output the latency field of the GST_EVENT_LATENCY event.
 This tracepoint immediately follows the gst_flow_event tracepoint and precedes
@@ -11,11 +12,15 @@ the gst_flow tracepoint on the same thread.
 The gst_flow_event_qos tracepoints output the proportion and diff fields of the GST_EVENT_QOS event.
 This tracepoint immediately follows the gst_flow_event tracepoint and precedes
 the gst_flow tracepoint on the same thread.
----
- gst/gst_tracepoints.c | 44 ++++++++++++++++++++++++++++++++++++++++++++
- gst/gst_tracepoints.h | 49 ++++++++++++++++++++++++++++++++++++++++++++-----
- 2 files changed, 88 insertions(+), 5 deletions(-)
 
+Signed-off-by: Arulpandiyan Vadivel <arulpandiyan_vadivel@mentor.com>
+---
+ gst/gst_tracepoints.c | 44 +++++++++++++++++++++++++++++++++++++
+ gst/gst_tracepoints.h | 51 ++++++++++++++++++++++++++++++++++++++-----
+ 2 files changed, 89 insertions(+), 6 deletions(-)
+
+diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
+index a05c5d8..b460b39 100644
 --- a/gst/gst_tracepoints.c
 +++ b/gst/gst_tracepoints.c
 @@ -30,12 +30,29 @@
@@ -48,7 +53,7 @@ the gst_flow tracepoint on the same thread.
  #define GST_TRACEPOINTS_CREATE_PROBES
  #define TRACEPOINT_CREATE_PROBES
  #define TRACEPOINT_DEFINE
-@@ -107,4 +124,31 @@
+@@ -108,4 +125,31 @@ _priv_gst_tracepoints_trace_buffer_list (GstBufferList * list)
    gst_buffer_list_foreach (list, gst_tracepoints_trace_buffer_list_item, NULL);
  }
  
@@ -80,6 +85,8 @@ the gst_flow tracepoint on the same thread.
 +}
 +
  #endif /* GST_ENABLE_LTTNG_TRACEPOINTS */
+diff --git a/gst/gst_tracepoints.h b/gst/gst_tracepoints.h
+index ea9b854..f959282 100644
 --- a/gst/gst_tracepoints.h
 +++ b/gst/gst_tracepoints.h
 @@ -25,6 +25,7 @@
@@ -90,7 +97,7 @@ the gst_flow tracepoint on the same thread.
  
  extern GstPad *_priv_gst_ghostpad_get_target (GstGhostPad *gpad);
  extern void _priv_gst_tracepoints_trace_buffer_list (GstBufferList *list);
-@@ -47,6 +48,14 @@
+@@ -47,6 +48,14 @@ typedef enum GstFlowTracepointDataType {
    GST_TRACEPOINT_DATA_TYPE_BUFFER_LIST = 1,
  } GstFlowTracepointDataType;
  
@@ -105,7 +112,7 @@ the gst_flow tracepoint on the same thread.
  #define GST_TRACEPOINT_HELPER2(...) __VA_ARGS__
  #define GST_TRACEPOINT_HELPER(...) GST_TRACEPOINT_HELPER2 (__VA_ARGS__)
  #define GST_TRACEPOINT_EVENT(name, args, fields) \
-@@ -60,6 +69,7 @@
+@@ -60,6 +69,7 @@ typedef enum GstFlowTracepointDataType {
  #define ctf_gst_tracepoint_kind_field(name, kind) ctf_integer (guint8, name, (guint8) (kind))
  #define ctf_gst_data_type_field(name, type) ctf_integer (guint8, name, (guint8) (type))
  #define ctf_gst_event_type_field(name, event) ctf_integer (gint, name, (gint) (event->type))
@@ -113,19 +120,20 @@ the gst_flow tracepoint on the same thread.
  
  #endif /* _GST_TRACEPOINTS_H */
  
-@@ -98,10 +108,20 @@
+@@ -98,11 +108,20 @@ GST_TRACEPOINT_EVENT (gst_flow_data,
                                   ctf_gst_data_type_field (data_type, ((trace_is_on ? (*trace_is_on = 1) : 0), data_type))))
  
  GST_TRACEPOINT_EVENT (gst_flow_event,
-+                      TP_ARGS (GstEvent *, event, int *, trace_is_on),
-+                      TP_FIELDS (ctf_gst_thread_id_field (thread_id)
-+                                 ctf_gst_event_type_field (event_type, ((trace_is_on ? (*trace_is_on = 1) : 0), event))))
-+
-+GST_TRACEPOINT_EVENT (gst_flow_event_latency,
-                       TP_ARGS (GstEvent *, event),
+-                      TP_ARGS (GstEvent *, event),
 -                      TP_FIELDS (ctf_gst_data_field (event, event)
 -                                 ctf_gst_thread_id_field (thread_id)
 -                                 ctf_gst_event_type_field (event_type, event)))
++                      TP_ARGS (GstEvent *, event, int *, trace_is_on),
++                      TP_FIELDS (ctf_gst_thread_id_field (thread_id)
++                                 ctf_gst_event_type_field (event_type, ((trace_is_on ? (*trace_is_on = 1) : 0), event))))
+ 
++GST_TRACEPOINT_EVENT (gst_flow_event_latency,
++                      TP_ARGS (GstEvent *, event),
 +                      TP_FIELDS (ctf_gst_thread_id_field (thread_id)
 +                                 ctf_gst_time_field (latency, gst_tracepoints_extract_event_latency (event))))
 +
@@ -134,10 +142,10 @@ the gst_flow tracepoint on the same thread.
 +                      TP_FIELDS (ctf_gst_thread_id_field (thread_id)
 +                                 ctf_gst_time_field (diff, gst_tracepoints_extract_qos_event_diff (event, event_data))
 +                                 ctf_float (gdouble, proportion, gst_tracepoints_extract_qos_event_proportion (event, event_data))))
- 
  #endif /* _GST_TRACEPOINTS_H */
  
-@@ -146,8 +166,28 @@
+ #include <lttng/tracepoint-event.h>
+@@ -148,8 +167,28 @@ GST_TRACEPOINT_EVENT (gst_flow_event,
  #define GST_FLOW_TRACEPOINT_BUFFER(buffer) \
    GST_TRACEPOINT (gst_flow_data, buffer, GST_TRACEPOINT_DATA_TYPE_BUFFER, NULL)
  
@@ -168,3 +176,6 @@ the gst_flow tracepoint on the same thread.
  
  #define GST_FLOW_TRACEPOINT_DATA(data, is_buffer)                       \
      do {                                                                \
+-- 
+2.25.1
+
