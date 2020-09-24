@@ -261,7 +261,7 @@ index 0000000..0b9e912
 +++ b/gst/gstghostpad_tracepoints.h
 @@ -0,0 +1,33 @@
 +/* GStreamer
-+ * Copyright (C) 2013 Mentor Graphics, Inc.
++ * Copyright (C) 2013-2020 Mentor Graphics, Inc.
 + *
 + * gstghostpad_tracepoints.h: Support for tracing events on GstGhostPads.
 + *

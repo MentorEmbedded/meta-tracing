@@ -54,7 +54,7 @@ index 0000000..326472a
 +++ b/gst/gst_tracepoints.c
 @@ -0,0 +1,35 @@
 +/* GStreamer
-+ * Copyright (C) 2013 Mentor Graphics, Inc.
++ * Copyright (C) 2013-2020 Mentor Graphics, Inc.
 + *
 + * gst_tracepoints.c: LTTng tracepoints.
 + *
@@ -95,7 +95,7 @@ index 0000000..579acf5
 +++ b/gst/gst_tracepoints.h
 @@ -0,0 +1,59 @@
 +/* GStreamer
-+ * Copyright (C) 2013 Mentor Graphics, Inc.
++ * Copyright (C) 2013-2020 Mentor Graphics, Inc.
 + *
 + * gst_tracepoints.h: Header file for LTTng tracepoints.
 + *
