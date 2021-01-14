@@ -22,13 +22,12 @@ index b9566d5..9eb9c0f 100644
  QT_BEGIN_NAMESPACE
  
  QQmlBinding *QQmlBinding::create(const QQmlPropertyData *property, const QQmlScriptString &script, QObject *obj, QQmlContext *ctxt)
-@@ -180,6 +184,12 @@ void QQmlBinding::update(QQmlPropertyData::WriteFlags flags)
+@@ -180,6 +184,11 @@ void QQmlBinding::update(QQmlPropertyData::WriteFlags flags)
      }
      setUpdatingFlag(true);
  
 +#ifdef ENABLE_SA_TRACE
-+        QQmlSourceLocation loc = function()->sourceLocation();
-+        QString url = loc.sourceFile;
++        QString url = sourceLocation().sourceFile;
 +        qt_tracepoint(Qt, qtQmlFrameBind, 1, qPrintable(url));
 +#endif // ENABLE_SA_TRACE
 +
