@@ -1,10 +1,10 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/qtbase:"
+FILESEXTRAPATHS_prepend_feature-tracing := "${THISDIR}/qtbase:"
 
-SRC_URI += " \
+SRC_URI_append_feature-tracing = " \
 	file://0001-add_tracepoint_layer.patch \
 	"
 
-QT_CONFIG_FLAGS += " -c++std c++1z -sa-trace "
-DEPENDS += "lttng-ust"
+QT_CONFIG_FLAGS_append_feature-tracing = " -c++std c++1z -sa-trace"
+DEPENDS_append_feature-tracing = " lttng-ust"
 
-OE_QMAKE_LINK += " -ldl -llttng-ust -lurcu-bp "
+OE_QMAKE_LINK_append_feature-tracing = " -ldl -llttng-ust -lurcu-bp"
