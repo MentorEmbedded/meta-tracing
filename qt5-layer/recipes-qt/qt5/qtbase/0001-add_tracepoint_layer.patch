@@ -1,5 +1,5 @@
 diff --git a/configure.json b/configure.json
-index 50d69b74..6d306afd 100644
+index 50d69b740d..6d306afd27 100644
 --- a/configure.json
 +++ b/configure.json
 @@ -139,7 +139,8 @@
@@ -46,7 +46,7 @@ index 50d69b74..6d306afd 100644
          }
      ]
 diff --git a/config_help.txt b/config_help.txt
-index d9ff8e59..7e007018 100644
+index d9ff8e598e..7e007018ec 100644
 --- a/config_help.txt
 +++ b/config_help.txt
 @@ -131,6 +131,8 @@ Build options:
@@ -59,7 +59,7 @@ index d9ff8e59..7e007018 100644
                           Instrument with the specified compiler sanitizer.
                           Note that some sanitizers cannot be combined;
 diff --git a/configure b/configure
-index b6c9b462..1099d8c3 100755
+index 4e3fcd41d1..51f8aff3d2 100755
 --- a/configure
 +++ b/configure
 @@ -369,6 +369,7 @@ OPT_VERBOSE=no
@@ -93,7 +93,7 @@ index b6c9b462..1099d8c3 100755
 +    QT_CONFIG="$QT_CONFIG sa-trace"
 +fi
 diff --git a/sync.profile b/sync.profile
-index 0292bf0d..241c09fe 100644
+index 0292bf0dc2..241c09fe94 100644
 --- a/sync.profile
 +++ b/sync.profile
 @@ -40,6 +40,7 @@
@@ -105,7 +105,7 @@ index 0292bf0d..241c09fe 100644
  %moduleheaders = ( # restrict the module headers to those found in relative path
      "QtEglFSDeviceIntegration" => "api",
 diff --git a/src/corelib/corelib.pro b/src/corelib/corelib.pro
-index 7d057e01..96f49dd8 100644
+index 7d057e010d..96f49dd86f 100644
 --- a/src/corelib/corelib.pro
 +++ b/src/corelib/corelib.pro
 @@ -50,6 +50,8 @@ include(statemachine/statemachine.pri)
@@ -119,7 +119,7 @@ index 7d057e01..96f49dd8 100644
      !winrt: QMAKE_USE_PRIVATE += advapi32 kernel32 ole32 shell32 uuid user32 winmm
 diff --git a/src/3rdparty/sa-trace.pri b/src/3rdparty/sa-trace.pri
 new file mode 100644
-index 00000000..bfb66697
+index 0000000000..bfb6669759
 --- /dev/null
 +++ b/src/3rdparty/sa-trace.pri
 @@ -0,0 +1,3 @@
@@ -128,7 +128,7 @@ index 00000000..bfb66697
 +INCLUDEPATH     *= $$PWD/sa-trace
 diff --git a/mkspecs/features/sa-trace.prf b/mkspecs/features/sa-trace.prf
 new file mode 100644
-index 00000000..da2d39d9
+index 0000000000..c93fdcc203
 --- /dev/null
 +++ b/mkspecs/features/sa-trace.prf
 @@ -0,0 +1,3 @@
@@ -137,7 +137,7 @@ index 00000000..da2d39d9
 +LIBS            += -L$$OUT_PWD/../../lib -lsa-trace -ldl -llttng-ust -lurcu-bp
 diff --git a/src/3rdparty/sa-trace/sa-trace.pro b/src/3rdparty/sa-trace/sa-trace.pro
 new file mode 100644
-index 00000000..5bc72fe2
+index 0000000000..5bc72fe26b
 --- /dev/null
 +++ b/src/3rdparty/sa-trace/sa-trace.pro
 @@ -0,0 +1,19 @@
@@ -161,7 +161,7 @@ index 00000000..5bc72fe2
 +
 +HEADERS += qt_tracepoints.h
 diff --git a/src/gui/gui.pro b/src/gui/gui.pro
-index 20372d92..dff51689 100644
+index 20372d92ce..dff51689c9 100644
 --- a/src/gui/gui.pro
 +++ b/src/gui/gui.pro
 @@ -52,6 +52,9 @@ include(vulkan/vulkan.pri)
@@ -176,7 +176,7 @@ index 20372d92..dff51689 100644
  load(qt_module)
 diff --git a/src/3rdparty/sa-trace/qt_tracepoints.c b/src/3rdparty/sa-trace/qt_tracepoints.c
 new file mode 100644
-index 00000000..121df3d6
+index 0000000000..121df3d6eb
 --- /dev/null
 +++ b/src/3rdparty/sa-trace/qt_tracepoints.c
 @@ -0,0 +1,2 @@
@@ -184,7 +184,7 @@ index 00000000..121df3d6
 +#include "qt_tracepoints.h"
 diff --git a/src/3rdparty/sa-trace/qt_tracepoints.h b/src/3rdparty/sa-trace/qt_tracepoints.h
 new file mode 100644
-index 00000000..e0c49bc3
+index 0000000000..e0c49bc3d7
 --- /dev/null
 +++ b/src/3rdparty/sa-trace/qt_tracepoints.h
 @@ -0,0 +1,89 @@
@@ -278,7 +278,7 @@ index 00000000..e0c49bc3
 +
 +#include <lttng/tracepoint-event.h>
 diff --git a/src/widgets/styles/qstylesheetstyle.cpp b/src/widgets/styles/qstylesheetstyle.cpp
-index e2c8a0a5..81f93ca3 100644
+index e2c8a0a541..81f93ca316 100644
 --- a/src/widgets/styles/qstylesheetstyle.cpp
 +++ b/src/widgets/styles/qstylesheetstyle.cpp
 @@ -121,6 +121,10 @@
@@ -314,7 +314,7 @@ index e2c8a0a5..81f93ca3 100644
  
  void QStyleSheetStyle::polish(QApplication *app)
 diff --git a/src/widgets/widgets.pro b/src/widgets/widgets.pro
-index 2d5ba05d..70af22f7 100644
+index 2d5ba05d40..70af22f70d 100644
 --- a/src/widgets/widgets.pro
 +++ b/src/widgets/widgets.pro
 @@ -30,6 +30,8 @@ qtConfig(graphicseffect) {
@@ -327,7 +327,7 @@ index 2d5ba05d..70af22f7 100644
  
  QMAKE_DYNAMIC_LIST_FILE = $$PWD/QtWidgets.dynlist
 diff --git a/src/widgets/kernel/qapplication.cpp b/src/widgets/kernel/qapplication.cpp
-index f8ca25bc..322183ea 100644
+index 0375531960..56fb4e7083 100644
 --- a/src/widgets/kernel/qapplication.cpp
 +++ b/src/widgets/kernel/qapplication.cpp
 @@ -114,6 +114,11 @@
@@ -342,7 +342,7 @@ index f8ca25bc..322183ea 100644
  //#define ALIEN_DEBUG
  
  static void initResources()
-@@ -2539,6 +2544,10 @@ bool QApplicationPrivate::sendMouseEvent(QWidget *receiver, QMouseEvent *event,
+@@ -2550,6 +2555,10 @@ bool QApplicationPrivate::sendMouseEvent(QWidget *receiver, QMouseEvent *event,
      Q_ASSERT(nativeWidget);
      Q_ASSERT(buttonDown);
  
@@ -353,7 +353,7 @@ index f8ca25bc..322183ea 100644
      if (alienWidget && !isAlien(alienWidget))
          alienWidget = nullptr;
  
-@@ -3014,6 +3023,13 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
+@@ -2973,6 +2982,13 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
      case QEvent::KeyPress:
      case QEvent::KeyRelease:
          {
@@ -367,7 +367,7 @@ index f8ca25bc..322183ea 100644
              bool isWidget = receiver->isWidgetType();
  #if QT_CONFIG(graphicsview)
              const bool isGraphicsWidget = !isWidget && qobject_cast<QGraphicsWidget *>(receiver);
-@@ -3061,6 +3077,9 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
+@@ -3020,6 +3036,9 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
  #endif
              }
              qt_in_tab_key_event = false;
@@ -377,7 +377,7 @@ index f8ca25bc..322183ea 100644
          }
          break;
      case QEvent::MouseButtonPress:
-@@ -3126,6 +3145,10 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
+@@ -3085,6 +3104,10 @@ bool QApplication::notify(QObject *receiver, QEvent *e)
  
              mouse->setAccepted(eventAccepted);
  
@@ -389,7 +389,7 @@ index f8ca25bc..322183ea 100644
                  if (!pw)
                      break;
 diff --git a/src/widgets/graphicsview/qgraphicsscene.cpp b/src/widgets/graphicsview/qgraphicsscene.cpp
-index f2ff658d..8b0b0578 100644
+index f2ff658d3b..8b0b057843 100644
 --- a/src/widgets/graphicsview/qgraphicsscene.cpp
 +++ b/src/widgets/graphicsview/qgraphicsscene.cpp
 @@ -249,6 +249,10 @@
@@ -416,7 +416,7 @@ index f2ff658d..8b0b0578 100644
  
      switch (event->type()) {
 diff --git a/src/src.pro b/src/src.pro
-index f3f8d57a..86007c0f 100644
+index e8cdd0cd73..a53caa5a95 100644
 --- a/src/src.pro
 +++ b/src/src.pro
 @@ -149,6 +149,9 @@ src_plugins.target = sub-plugins
@@ -441,7 +441,7 @@ index f3f8d57a..86007c0f 100644
      SUBDIRS += src_3rdparty_pcre2
      src_corelib.depends += src_3rdparty_pcre2
 diff --git a/src/gui/kernel/qguiapplication.cpp b/src/gui/kernel/qguiapplication.cpp
-index 8c699ea4..023f27c9 100644
+index 239a78313c..775b44e0c0 100644
 --- a/src/gui/kernel/qguiapplication.cpp
 +++ b/src/gui/kernel/qguiapplication.cpp
 @@ -124,6 +124,11 @@
@@ -456,7 +456,7 @@ index 8c699ea4..023f27c9 100644
  QT_BEGIN_NAMESPACE
  
  // Helper macro for static functions to check on the existence of the application class.
-@@ -1871,6 +1876,35 @@ int QGuiApplication::exec()
+@@ -1925,6 +1930,35 @@ void QGuiApplicationPrivate::captureGlobalModifierState(QEvent *e)
  */
  bool QGuiApplication::notify(QObject *object, QEvent *event)
  {
@@ -493,7 +493,7 @@ index 8c699ea4..023f27c9 100644
          if (QGuiApplicationPrivate::sendQWindowEventToQPlatformWindow(static_cast<QWindow *>(object), event))
              return true; // Platform plugin ate the event
 diff --git a/src/gui/image/qimagereader.cpp b/src/gui/image/qimagereader.cpp
-index 5cb7e132..29e15f64 100644
+index 5cb7e1328e..29e15f6413 100644
 --- a/src/gui/image/qimagereader.cpp
 +++ b/src/gui/image/qimagereader.cpp
 @@ -169,6 +169,11 @@
@@ -542,7 +542,7 @@ index 5cb7e132..29e15f64 100644
  }
  
 diff --git a/src/corelib/kernel/qcoreapplication.cpp b/src/corelib/kernel/qcoreapplication.cpp
-index 5fdcc9b9..1e99214a 100644
+index a97b68f372..91da7ad9b2 100644
 --- a/src/corelib/kernel/qcoreapplication.cpp
 +++ b/src/corelib/kernel/qcoreapplication.cpp
 @@ -132,6 +132,11 @@
@@ -580,7 +580,7 @@ index 5fdcc9b9..1e99214a 100644
  }
  
  #ifndef QT_NO_QOBJECT
-@@ -1024,6 +1038,11 @@ void QCoreApplication::setQuitLockEnabled(bool enabled)
+@@ -1026,6 +1040,11 @@ void QCoreApplication::setQuitLockEnabled(bool enabled)
  */
  bool QCoreApplication::notifyInternal(QObject *receiver, QEvent *event)
  {
@@ -592,7 +592,7 @@ index 5fdcc9b9..1e99214a 100644
      return notifyInternal2(receiver, event);
  }
  #endif
-@@ -1037,6 +1056,11 @@ bool QCoreApplication::notifyInternal(QObject *receiver, QEvent *event)
+@@ -1039,6 +1058,11 @@ bool QCoreApplication::notifyInternal(QObject *receiver, QEvent *event)
  */
  bool QCoreApplication::notifyInternal2(QObject *receiver, QEvent *event)
  {
@@ -605,7 +605,7 @@ index 5fdcc9b9..1e99214a 100644
      if (!self && selfRequired)
          return false;
 diff --git a/src/corelib/animation/qabstractanimation.cpp b/src/corelib/animation/qabstractanimation.cpp
-index b7136dc0..fa8a0916 100644
+index b7136dc055..fa8a0916f4 100644
 --- a/src/corelib/animation/qabstractanimation.cpp
 +++ b/src/corelib/animation/qabstractanimation.cpp
 @@ -154,6 +154,10 @@
@@ -687,4 +687,40 @@ index b7136dc0..fa8a0916 100644
  }
  
  
-
+diff --git a/src/widgets/kernel/qwidgetrepaintmanager.cpp b/src/widgets/kernel/qwidgetrepaintmanager.cpp
+index e7e85c39e7..fc6733de88 100644
+--- a/src/widgets/kernel/qwidgetrepaintmanager.cpp
++++ b/src/widgets/kernel/qwidgetrepaintmanager.cpp
+@@ -65,6 +65,10 @@
+ 
+ #include <private/qmemory_p.h>
+ 
++#ifdef ENABLE_SA_TRACE
++    #include <sa-trace/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
+ QT_BEGIN_NAMESPACE
+ 
+ #ifndef QT_NO_OPENGL
+@@ -1131,6 +1135,10 @@ void QWidgetRepaintManager::flush(QWidget *widget, const QRegion &region, QPlatf
+             return;
+     }
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtFrameSync, 1);
++#endif // ENABLE_SA_TRACE
++
+     qCInfo(lcWidgetPainting) << "Flushing" << region << "of" << widget;
+ 
+     static bool fpsDebug = qEnvironmentVariableIntValue("QT_DEBUG_FPS");
+@@ -1182,6 +1190,10 @@ void QWidgetRepaintManager::flush(QWidget *widget, const QRegion &region, QPlatf
+     } else
+ #endif
+         store->flush(effectiveRegion, widget->windowHandle(), offset);
++
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtFrameSync, 0);
++#endif // ENABLE_SA_TRACE
+ }
+ 
+ // ---------------------------------------------------------------------------
