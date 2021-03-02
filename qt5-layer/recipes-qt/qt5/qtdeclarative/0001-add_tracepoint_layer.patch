@@ -1,5 +1,5 @@
 diff --git a/src/qml/qml.pro b/src/qml/qml.pro
-index 7d5a92a..9e08a26 100644
+index 7d5a92ad92..9e08a26e06 100644
 --- a/src/qml/qml.pro
 +++ b/src/qml/qml.pro
 @@ -79,3 +79,4 @@ CONFIG += qmltypes install_qmltypes install_metatypes
@@ -8,7 +8,7 @@ index 7d5a92a..9e08a26 100644
  include(../3rdparty/masm/masm.pri)
 +contains(QT_CONFIG,sa-trace):CONFIG += sa-trace
 diff --git a/src/qml/qml/qqmlbinding.cpp b/src/qml/qml/qqmlbinding.cpp
-index b9566d5..9eb9c0f 100644
+index b9566d5862..aa8b419c36 100644
 --- a/src/qml/qml/qqmlbinding.cpp
 +++ b/src/qml/qml/qqmlbinding.cpp
 @@ -64,6 +64,10 @@
@@ -34,7 +34,7 @@ index b9566d5..9eb9c0f 100644
      DeleteWatcher watcher(this);
  
      QQmlEngine *engine = context()->engine;
-@@ -195,6 +205,11 @@ void QQmlBinding::update(QQmlPropertyData::WriteFlags flags)
+@@ -195,6 +204,11 @@ void QQmlBinding::update(QQmlPropertyData::WriteFlags flags)
  
      if (!watcher.wasDeleted())
          setUpdatingFlag(false);
@@ -47,7 +47,7 @@ index b9566d5..9eb9c0f 100644
  
  QV4::ReturnedValue QQmlBinding::evaluate(bool *isUndefined)
 diff --git a/src/qml/qml/qqmlcomponent.cpp b/src/qml/qml/qqmlcomponent.cpp
-index 9ee4fdb..6858c99 100644
+index 9ee4fdbe41..6858c99176 100644
 --- a/src/qml/qml/qqmlcomponent.cpp
 +++ b/src/qml/qml/qqmlcomponent.cpp
 @@ -66,6 +66,10 @@
@@ -84,7 +84,7 @@ index 9ee4fdb..6858c99 100644
  }
  
 diff --git a/src/qml/qml/qqmlengine.cpp b/src/qml/qml/qqmlengine.cpp
-index ab26b83..1fe2dda 100644
+index 54cc07af2e..566793d053 100644
 --- a/src/qml/qml/qqmlengine.cpp
 +++ b/src/qml/qml/qqmlengine.cpp
 @@ -102,6 +102,11 @@
@@ -99,7 +99,7 @@ index ab26b83..1fe2dda 100644
  QT_BEGIN_NAMESPACE
  
  // Declared in qqml.h
-@@ -1577,6 +1582,12 @@ void qmlExecuteDeferred(QObject *object)
+@@ -1579,6 +1584,12 @@ void qmlExecuteDeferred(QObject *object)
      QQmlData *data = QQmlData::get(object);
  
      if (data && !data->deferredData.isEmpty() && !data->wasDeleted(object)) {
@@ -112,7 +112,7 @@ index ab26b83..1fe2dda 100644
          QQmlEnginePrivate *ep = QQmlEnginePrivate::get(data->context->engine);
  
          QQmlComponentPrivate::DeferredState state;
-@@ -1586,6 +1597,11 @@ void qmlExecuteDeferred(QObject *object)
+@@ -1588,6 +1599,11 @@ void qmlExecuteDeferred(QObject *object)
          data->releaseDeferredData();
  
          QQmlComponentPrivate::completeDeferred(ep, &state);
@@ -124,8 +124,45 @@ index ab26b83..1fe2dda 100644
      }
  }
  
+diff --git a/src/qml/qml/qqmltypedata.cpp b/src/qml/qml/qqmltypedata.cpp
+index fc1d0cfbcf..df53789ff6 100644
+--- a/src/qml/qml/qqmltypedata.cpp
++++ b/src/qml/qml/qqmltypedata.cpp
+@@ -50,6 +50,10 @@
+ #include <QtCore/qloggingcategory.h>
+ #include <QtCore/qcryptographichash.h>
+ 
++#ifdef ENABLE_SA_TRACE
++#include <sa-trace/qt_tracepoints.h>
++#endif // ENABLE_SA_TRACE
++
+ Q_DECLARE_LOGGING_CATEGORY(DBG_DISK_CACHE)
+ 
+ QT_BEGIN_NAMESPACE
+@@ -768,6 +772,10 @@ void QQmlTypeData::compile(const QQmlRefPointer<QQmlTypeNameCache> &typeNameCach
+ {
+     Q_ASSERT(m_compiledData.isNull());
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlFrameCompile, 1, qPrintable(url().toString()));
++#endif // ENABLE_SA_TRACE
++
+     const bool typeRecompilation = m_document && m_document->javaScriptCompilationUnit.unitData()
+             && (m_document->javaScriptCompilationUnit.unitData()->flags & QV4::CompiledData::Unit::PendingTypeCompilation);
+ 
+@@ -781,6 +789,10 @@ void QQmlTypeData::compile(const QQmlRefPointer<QQmlTypeNameCache> &typeNameCach
+         return;
+     }
+ 
++#ifdef ENABLE_SA_TRACE
++    qt_tracepoint(Qt, qtQmlFrameCompile, 0, qPrintable(url().toString()));
++#endif // ENABLE_SA_TRACE
++
+     const bool trySaveToDisk = diskCacheEnabled() && !typeRecompilation;
+     if (trySaveToDisk) {
+         QString errorString;
 diff --git a/src/qml/qml/qqmltypeloader.cpp b/src/qml/qml/qqmltypeloader.cpp
-index 1d66e75..e817f0d 100644
+index 1d66e756fa..e817f0d6fa 100644
 --- a/src/qml/qml/qqmltypeloader.cpp
 +++ b/src/qml/qml/qqmltypeloader.cpp
 @@ -61,6 +61,10 @@
@@ -173,7 +210,7 @@ index 1d66e75..e817f0d 100644
  }
  
 diff --git a/src/quick/items/qquickwindow.cpp b/src/quick/items/qquickwindow.cpp
-index e8b6d8d..4a727a3 100644
+index 906d59e6d3..694f12dd9b 100644
 --- a/src/quick/items/qquickwindow.cpp
 +++ b/src/quick/items/qquickwindow.cpp
 @@ -89,6 +89,11 @@
@@ -242,7 +279,7 @@ index e8b6d8d..4a727a3 100644
  
  void QQuickWindowPrivate::handleMouseEvent(QMouseEvent *event)
 diff --git a/src/quick/quick.pro b/src/quick/quick.pro
-index f2d49cf..0fd6946 100644
+index f2d49cf939..0fd6946f6e 100644
 --- a/src/quick/quick.pro
 +++ b/src/quick/quick.pro
 @@ -36,6 +36,7 @@ qtConfig(accessibility) {
@@ -254,7 +291,7 @@ index f2d49cf..0fd6946 100644
      qtquickglobal.h \
      qtquickglobal_p.h \
 diff --git a/src/quick/scenegraph/coreapi/qsgrenderer.cpp b/src/quick/scenegraph/coreapi/qsgrenderer.cpp
-index 381fd7e..407da26 100644
+index 381fd7eb69..407da2633b 100644
 --- a/src/quick/scenegraph/coreapi/qsgrenderer.cpp
 +++ b/src/quick/scenegraph/coreapi/qsgrenderer.cpp
 @@ -49,6 +49,10 @@
