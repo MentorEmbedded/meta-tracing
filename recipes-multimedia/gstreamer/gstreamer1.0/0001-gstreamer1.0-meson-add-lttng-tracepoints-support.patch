@@ -1,0 +1,87 @@
+From cb1c8e21896421739c5edb81b5a89155b751a025 Mon Sep 17 00:00:00 2001
+From: "Karim, Hafiz Abdul" <HafizAbdul_Karim@mentor.com>
+Date: Fri, 5 Mar 2021 12:49:28 +0500
+Subject: [PATCH 1/1] mypatch
+
+Signed-off-by: Karim, Hafiz Abdul <HafizAbdul_Karim@mentor.com>
+---
+ gst/gst_tracepoints.c | 1 +
+ gst/meson.build       | 3 ++-
+ meson.build           | 8 ++++++++
+ meson_options.txt     | 2 ++
+ 4 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/gst/gst_tracepoints.c b/gst/gst_tracepoints.c
+index 6d961e7..4ecc11f 100644
+--- a/gst/gst_tracepoints.c
++++ b/gst/gst_tracepoints.c
+@@ -26,6 +26,7 @@
+ #include "config.h"
+ 
+ #ifdef GST_ENABLE_LTTNG_TRACEPOINTS
++#include "gst_private.h"
+ #include "glib.h"
+ #include "gstpad.h"
+ #include "gstelement.h"
+diff --git a/gst/meson.build b/gst/meson.build
+index d19689c..c96314a 100644
+--- a/gst/meson.build
++++ b/gst/meson.build
+@@ -1,5 +1,6 @@
+ gst_sources = [
+   'gst.c',
++  'gst_tracepoints.c',
+   'gstobject.c',
+   'gstallocator.c',
+   'gstbin.c',
+@@ -246,7 +247,7 @@ libgst = library('gstreamer-1.0', gst_sources,
+     # HACK, change include paths in .y and .l in final version.
+     include_directories('parse')],
+   install : true,
+-  dependencies : [gobject_dep, gmodule_dep, glib_dep, mathlib, dl_dep] + backtrace_deps
++  dependencies : [gobject_dep, gmodule_dep, glib_dep, mathlib, dl_dep, lttng_dep] + backtrace_deps
+                    + platform_deps,
+ )
+ 
+diff --git a/meson.build b/meson.build
+index 179503d..e200d40 100644
+--- a/meson.build
++++ b/meson.build
+@@ -440,6 +440,7 @@ cdata.set('HAVE_GSL', gsl_dep.found() and gslcblas_dep.found())
+ test_deps = [gmp_dep, gsl_dep, gslcblas_dep]
+ 
+ # Used by gstinfo.c
++lttng_dep = cc.find_library('lttng-ust', required : false)
+ dl_dep = cc.find_library('dl', required : false)
+ cdata.set('HAVE_DLADDR', cc.has_function('dladdr', dependencies : dl_dep))
+ cdata.set('GST_ENABLE_EXTRA_CHECKS', get_option('extra-checks'))
+@@ -545,6 +546,13 @@ subdir('pkgconfig')
+ subdir('tests')
+ subdir('data')
+ 
++if get_option('lttng-tracepoints')
++  lttng = dependency('lttng-ust', version : '>= 2.0')
++  cdata.set('GST_ENABLE_LTTNG_TRACEPOINTS', 1)
++else
++  lttng = dependency('lttng-ust', required : false)
++endif
++
+ # xgettext is optional (on Windows for instance)
+ if find_program('xgettext', required : get_option('nls')).found()
+   cdata.set('ENABLE_NLS', 1)
+diff --git a/meson_options.txt b/meson_options.txt
+index 8d7dfa7..69c3dfe 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -18,6 +18,8 @@ option('memory-alignment', type: 'combo',
+        value: 'malloc')
+ option('installed-tests', type : 'boolean', value : false, description : 'enable installed tests')
+ option('test-files-path', type : 'string', description : 'Path where to find test files')
++option('lttng-tracepoints', type : 'boolean', value : true, description : 'generate lttng tracepoints')
++
+ 
+ # Feature options
+ option('check', type : 'feature', value : 'auto', description : 'Build unit test libraries')
+-- 
+2.17.1
+
