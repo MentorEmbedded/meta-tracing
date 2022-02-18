@@ -1,6 +1,6 @@
-FILESEXTRAPATHS_prepend_feature-tracing := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend:feature-tracing := "${THISDIR}/${PN}:"
 
-SRC_URI_append_feature-tracing = "\
+SRC_URI:append:feature-tracing = "\
     file://0001-gstreamer1.0-meson-add-lttng-tracepoints-support.patch \
 "
 PACKAGECONFIG[lttng] = "-Dlttng-tracepoints=true,-Dlttng-tracepoints=false,lttng-ust"

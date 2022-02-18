@@ -1,6 +1,6 @@
-FILESEXTRAPATHS_prepend_feature-tracing := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend:feature-tracing := "${THISDIR}/${PN}:"
 
-SRC_URI_append_feature-tracing = "\
+SRC_URI:append:feature-tracing = "\
     file://0001-Add-optional-LTTng-support-in-configure.patch \
     file://0002-Add-basic-LTTng-tracepoints-infrastructure.patch \
     file://0003-Add-gst_flow-LLTng-tracepoints.patch \
@@ -14,5 +14,5 @@ SRC_URI_append_feature-tracing = "\
     file://0011-Added-latency-probe-tracepoint-event.patch \
 "
 
-PACKAGECONFIG_append_feature-tracing = " lttng"
+PACKAGECONFIG:append:feature-tracing = " lttng"
 PACKAGECONFIG[lttng] = "--enable-lttng-tracepoints,--disable-lttng-tracepoints,lttng-ust"
